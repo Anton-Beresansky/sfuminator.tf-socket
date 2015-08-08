@@ -30,6 +30,17 @@ ShopTrade.prototype.send = function () {
     }
 };
 
+ShopTrade.prototype.get = function () {
+    return {
+        partnerID: this.partner.getSteamid(),
+        mode: this.getMode(),
+        status: this.getStatus(),
+        status_info: this.getStatusInfo(),
+        last_update_date: this.getLastUpdateDate(),
+        items: this.getPlate()
+    };
+};
+
 ShopTrade.prototype.load = function (callback) {
     var self = this;
     this.database.load(function (rows) {
@@ -141,6 +152,17 @@ ShopTrade.prototype.setItems = function (items) {
     this.items = items;
 };
 
+ShopTrade.prototype.setLastUpdateDate = function (updateDate) {
+    var last_update_date = new Date(updateDate);
+    if (last_update_date.toString() !== "Invalid Date") {
+        this.last_update_date = updateDate;
+    }
+};
+
+ShopTrade.prototype.getLastUpdateDate = function () {
+    return this.last_update_date;
+};
+
 ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
     if (!this.shop.sections[section].itemExist(idToCheck)) {
         this.response = this.ajaxResponses.itemNotFound;
@@ -208,9 +230,11 @@ ShopTradeAsset.prototype.getPlateFormatted = function () {
     return {
         id: this.item.id,
         name: this.item.name,
-        section: this.getShopType(),
+        level: this.item.level,
+        quality: this.item.quality,
         defindex: this.item.defindex,
-        scrapPrice: this.item.getPrice().toScrap()
+        scrapPrice: this.item.getPrice().toScrap(),
+        section: this.getShopType()
     };
 };
 
