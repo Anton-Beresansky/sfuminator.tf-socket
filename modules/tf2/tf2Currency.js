@@ -18,6 +18,9 @@ TF2Currency.prototype.update = function (callback) {
     var self = this;
     this.log.debug("Updading...");
     this.fetch(function (currency) {
+        for (var prop in currency) {
+            self[prop] = currency[prop];
+        }
         self._currency = currency;
         if (typeof callback === "function") {
             callback(self.get());
