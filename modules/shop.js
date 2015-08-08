@@ -5,7 +5,7 @@ var TF2Price = require("./tf2/tf2Price.js");
 var TF2Currency = require("./tf2/tf2Currency.js");
 var ShopRatio = require("./shop/shopRatio.js");
 var ShopInventory = require("./shop/shopInventory.js");
-var ItemVersioning = require("./shop/itemVersioning.js");
+var ItemVersioning = require("../lib/dataVersioning.js");
 var Reservations = require("./shop/shopReservations.js");
 
 //When updating internal item list and versioning items are patched
@@ -20,7 +20,7 @@ function Shop(sfuminator) {
     this.ratio = new ShopRatio(this.db);
     this.tf2Currency = TF2Currency;
     this.tf2Currency.setCloud(this.cloud);
-    this.bots = ["76561198145778912"];
+    this.bots = ["76561198189662807"];
     this.inventory = new ShopInventory(this, this.bots);
     this.reservations = new Reservations(this.db);
     this.instanceID = new Date().getTime();
@@ -44,7 +44,6 @@ Shop.prototype.init = function () {
             self.reservations.load(function () {
                 self.log.debug("Loading up inventory...");
                 self.inventory.update(function () {
-                    self.getActivePartners()
                     self.emit("ready");
                 });
             });

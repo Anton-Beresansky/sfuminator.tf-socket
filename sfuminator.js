@@ -5,6 +5,7 @@ var Users = require('./modules/users.js');
 var Shop = require('./modules/shop.js');
 var AjaxResponses = require('./modules/ajaxResponses.js');
 var Interrupts = require('./lib/interrupts.js');
+var BotPorting = require('./steambot/v3_bot_porting.js');
 
 var Valve = require("./valve.js");
 
@@ -21,7 +22,8 @@ function Sfuminator(cloud, db) {
     this.responses = new AjaxResponses();
     this.users = new Users(this, this.db, cloud);
     this.shop = new Shop(this);
-    this.tradesDatabase = new TradesDb(this.db);
+
+    this.botPorting = new BotPorting(this);
 
     this.scannedProfiles = 0;
     events.EventEmitter.call(this);
@@ -92,6 +94,12 @@ Sfuminator.prototype.onRequest = function (request, callback) {
 };
 
 Sfuminator.prototype.onAction = function (request, callback) {
+    /** OLD BOT PORTING **/
+    if (this.botPorting.requestAvailable(request)) {
+        this.botPorting.onRequest(request, callback);
+        return;
+    }
+    ///////////////////////
     var data = request.getData();
     var requester = request.getRequester();
     switch (request.getAction()) {
@@ -189,8 +197,10 @@ Sfuminator.prototype.requestTradeOffer = function (request, callback) {
             callback(response);
         });
         trade.verifyItems(function () {
-            callback(trade.getPlate());
             trade.setMode("offer");
+            trade.reserveItems();
+            trade.send();
+            callback(trade.getPlate());
         });
     } else {
         callback(this.responses.alreadyInTrade);

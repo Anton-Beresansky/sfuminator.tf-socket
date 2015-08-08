@@ -28,6 +28,10 @@ User.prototype.getTF2Backpack = function () {
     return this.tf2Backpack;
 };
 
+User.prototype.unsetInTrade = function () {
+    this.inTrade = false;
+};
+
 User.prototype.setInTrade = function () {
     this.inTrade = true;
 };
@@ -38,6 +42,10 @@ User.prototype.isInTrade = function () {
 
 User.prototype.getTrade = function () {
     return this.trade;
+};
+
+User.prototype.getShopTrade = function () {
+    return this.shopTrade;
 };
 
 User.prototype.makeShopTrade = function (items) {
