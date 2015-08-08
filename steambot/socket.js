@@ -129,6 +129,7 @@ sfuminatorSocket.prototype.startNormalPollingProcedure = function () {
                 }
             };
             myInterface.method.parameters.botRequest = true;
+            myInterface.method.parameters.action = "botPollingProcedure";
             devSfuminatorAPI.callAPI(myInterface, function (response) {
                 self.emit("socket", response);
                 self.emitSocketData(response);
