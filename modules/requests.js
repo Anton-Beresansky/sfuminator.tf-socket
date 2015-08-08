@@ -23,9 +23,6 @@ function SfuminatorRequest(req, body) {
                 return false;
             }
         },
-        origin: function (value) {
-            return value === 'http://sfuminator.tf' || value === "http://dev.sfuminator.tf";
-        },
         'x-requested-with': 'XMLHttpRequest'
     };
     this._parseCookies();
@@ -98,13 +95,13 @@ SfuminatorRequest.prototype.isValid = function () {
             for (var parameter in this._validHeaderParameters) {
                 if (typeof this._validHeaderParameters[parameter] === "function") {
                     if (!this._validHeaderParameters[parameter](this.req.headers[parameter])) {
-                        this.log.debug("Invalid: " + parameter);
+                        this.log.debug("Invalid " + parameter + ": " + this.req.headers[parameter]);
                         this._valid = false;
                         break;
                     }
                 } else {
                     if (this._validHeaderParameters[parameter] !== this.req.headers[parameter]) {
-                        this.log.debug("Invalid: " + parameter);
+                        this.log.debug("Invalid " + parameter + ": " + this.req.headers[parameter]);
                         this._valid = false;
                         break;
                     }

@@ -13,7 +13,7 @@ var MODERATORS = ["76561197992634049", "76561198046649970"];
 var sfr_group_gid = "6337159";
 var metals = ["refined", "reclaimed", "scrap"];
 var qualityLookup = ["", "Genuine", "", "Vintage", "", "Unusual", "", "Community", "Valve", "Self-Made", "", "Strange", "", "Haunted", "Collector's"];
-var mySteamID = "76561198145778912"; //axefish: 76561198045065602 //sfuminator: 76561198145778912
+var mySteamID = "76561198195936315"; //axefish: 76561198045065602 //sfuminator: 76561198145778912 //sfuminato1 76561198195936315
 var usersFileName = 'sfr_users_' + mySteamID + '.txt';
 api.on("error", function (msg) {
     console.log("SteamAPI: " + msg);

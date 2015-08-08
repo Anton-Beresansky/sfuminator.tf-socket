@@ -359,27 +359,31 @@ sfuminatorSocket.prototype.appendTrade = function (_trade, callback) {
  }
  });
  };*/
-//sfuminatorSocket.prototype.refreshBackpack = function (callback) {
-/*    var self = this;
- self.emit("debug", "refreshBackpack");
- var removeFromQueueInterface = {
- name: "include",
- method: {
- name: "zxcv",
- httpmethod: "GET",
- predata: "botBackpack.php",
- parameters: {
- action: "freshBackpack",
- password: self.key
- }
- }
- };
- sfuminatorAPI.callAPI(removeFromQueueInterface, function (response) {
- if (callback) {
- callback(response);
- }
- });
- };*/
+sfuminatorSocket.prototype.refreshBackpack = function (callback) {
+    console.log("Called socket.refreshBackpack() useless..");
+    if (typeof callback === "function") {
+        callback();
+    }
+    /*var self = this;
+     self.emit("debug", "refreshBackpack");
+     var removeFromQueueInterface = {
+     name: "include",
+     method: {
+     name: "zxcv",
+     httpmethod: "GET",
+     predata: "botBackpack.php",
+     parameters: {
+     action: "freshBackpack",
+     password: self.key
+     }
+     }
+     };
+     sfuminatorAPI.callAPI(removeFromQueueInterface, function (response) {
+     if (callback) {
+     callback(response);
+     }
+     });*/
+};
 //sfuminatorSocket.prototype.alertSteamStatus = function (status, callback) {
 /*    var self = this;
  self.emit("debug", "alertSteamStatus");
