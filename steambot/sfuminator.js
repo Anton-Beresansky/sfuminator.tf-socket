@@ -4,7 +4,7 @@ var sfuminatorSocket = require("./socket.js");
 var fs = require("fs");
 var tf2, steamTrade;
 var api = new SteamAPI("***REMOVED***");
-var socket = new sfuminatorSocket("aosihtnlvao935u7p09ap9wu");
+var socket = new sfuminatorSocket("***REMOVED***");
 var HOUR = 360; //Actually is 6 min
 var BACKPACKREFRESHLIMIT = 3;
 var FRIENDLIST_LIMIT = 170;
