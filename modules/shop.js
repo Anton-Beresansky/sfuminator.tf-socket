@@ -20,7 +20,7 @@ function Shop(sfuminator) {
     this.ratio = new ShopRatio(this.db);
     this.tf2Currency = TF2Currency;
     this.tf2Currency.setCloud(this.cloud);
-    this.bots = ["76561198189662807"];
+    this.bots = ["76561198195936315"];
     this.inventory = new ShopInventory(this, this.bots);
     this.reservations = new Reservations(this.db);
     this.instanceID = new Date().getTime();

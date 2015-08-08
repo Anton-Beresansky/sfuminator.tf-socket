@@ -99,10 +99,21 @@ Reservations.prototype.getClientChanges = function (last_update_date) {
                     return -1;
                 return 0;
             });
+            for (var i = 0; i < reservations.length; i += 1) {
+                reservations[i].reservation_date = reservations[i].reservation_date.getTime();
+            }
             return reservations;
         }
     }
     return false;
+};
+
+Reservations.prototype.getClientList = function () {
+    var clientList = [];
+    for (var i = 0; i < this.list.length; i += 1) {
+        clientList.push(this.list[i].valueOf());
+    }
+    return clientList;
 };
 
 Reservations.prototype.get = function (itemID) {
@@ -129,7 +140,7 @@ Reservations.prototype._loadQuery = function () {
 
 Reservations.prototype._saveChangeQuery = function (action, reservation) {
     if (action === "cancel") {
-        return "DELETE FROM `shop_reservation` WHERE `id`=" + reservation.getID();
+        return "DELETE FROM `shop_reservations` WHERE `id`=" + reservation.getID();
     } else if (action === "add") {
         return "INSERT INTO `shop_reservations` (`id`,`holder`) VALUES(" + reservation.getID() + ",'" + reservation.getHolder() + "') " +
                 "ON DUPLICATE KEY UPDATE `holder`='" + reservation.getHolder() + "'";
