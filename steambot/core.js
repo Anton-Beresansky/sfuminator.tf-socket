@@ -1,4 +1,4 @@
-var SOFTWARE_VERSION = "v3.6.2";
+var SOFTWARE_VERSION = "v4 beta";
 var SteamTrade = require('steam-trade'); // change to 'steam-trade' if not running from the same directory
 var steamTrade = new SteamTrade();
 var SteamTradeOffers = require('steam-tradeoffers');
@@ -36,12 +36,12 @@ ACCOUNTS = {
     axe_fish: {username: "axe_fish", password: "emvalerio?", steamid: "76561198045065602"},
     sfumin: {username: "sfumin", password: "Error36ismadeup", steamid: "76561198189662807"},
     sfuminator: {username: "sfuminator", password: "3-.skate.-3", steamid: "76561198145778912"},
-    sfuminator1: {username: "sfuminator1", password: "noMaybeNotYet5", steamid: "76561198195936315"},
+    sfuminator1: {username: "sfuminator1", password: "noMaybeNotYet5", steamid: "76561198195936315", steamApiKey: "EFF763E361AE251C6A3A79FE9DA23F17"},
     sfuminator2: {username: "sfuminator2", password: "wipeMyAssWithDogs1", steamid: "76561198228007284"},
     sfuminator3: {username: "sfuminator3", password: "theStadiumIsShort", steamid: "76561198195909649"},
     sfuminator4: {username: "sfuminator4", password: "fuckYourTightThumb", steamid: "76561198195946391"}
 };
-myAccount = ACCOUNTS.sfumin;
+myAccount = ACCOUNTS.sfuminator1;
 
 
 username = myAccount.username;
@@ -156,7 +156,6 @@ function botStartUp() {
         sfr.logged = true;
         checkTradeOffersChanges();
         cleanUpSentTradeOffers();
-        sfr.informSocket("preparing_next_trade");
     });
 }
 

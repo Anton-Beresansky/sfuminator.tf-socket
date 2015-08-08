@@ -198,16 +198,16 @@ Shop.prototype._getCountIndex = function (count, item) {
     return -1;
 };
 
-Shop.prototype.getActivePartners = function (callback) {
+Shop.prototype.getActiveTrades = function (callback) {
     var self = this;
-    this.log.debug("Loading active partners...");
+    this.log.debug("Loading active trades...", 3);
     this.db.connect(function (connection) {
         connection.query(self._getActivePartnersQuery(), function (result, isEmpty) {
             connection.release();
             var partners_list = [];
             if (!isEmpty) {
                 for (var i = 0; i < result.length; i += 1) {
-                    partners_list.push(result[i].steamid);
+                    partners_list.push({id: result[i].id, partnerID: result[i].steamid});
                 }
             }
             callback(partners_list);
@@ -216,7 +216,7 @@ Shop.prototype.getActivePartners = function (callback) {
 };
 
 Shop.prototype._getActivePartnersQuery = function () {
-    return "SELECT steamid FROM shop_trades WHERE status='open' OR status='sent'";
+    return "SELECT id,steamid FROM shop_trades WHERE status!='closed' OR last_update_date>='" + new Date(new Date() - 30000).toMysqlFormat() + "' ORDER BY last_update_date ASC";
 };
 
 //Section changes (add, remove) are applied only on commit

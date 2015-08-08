@@ -124,9 +124,7 @@ function Sfuminator(tf2Instance, steamTradeInstance) {
     this.initStatus = {// Init status
         users: false,
         keywords_combinations: false,
-        queue: false,
-        tradeOffers: false,
-        pendingQueueMails: false
+        tradeOffers: false
     };
     this.timeout = {}; //list of timeouts {obj, time, success}
     this.interval = {}; //list of intervals {obj, time, success}
@@ -186,9 +184,7 @@ Sfuminator.prototype.init = function (init_socket) {
         self.emit("message", "Starting polling procedures...");
         socket.startNormalPollingProcedure();
         socket.startEmergencyPollingProcedure();
-        socket.addSocketRequest("queue");
         socket.addSocketRequest("tradeOffers");
-        socket.addSocketRequest("pendingQueueMails");
         socket.addSocketPoke("keepAlive");
     } else {
         delete selfie.initStatus.tradeOffers;
@@ -1038,8 +1034,8 @@ Sfuminator.prototype.parseTradeOfferItems = function (tradeOffer) {//***********
         iNeed -= tradeOffer.items.them[x].scrapPrice;
     }
 
+    var hisMetal = [];
     if (iNeed > 0) {
-        var hisMetal = [];
         var hisBackpackMetal = selfie.backpacks[tradeOffer.steamid].metal;
         var refined_pointer = 0;
         var reclaimed_pointer = 0;

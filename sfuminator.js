@@ -68,13 +68,17 @@ Sfuminator.prototype.loadActiveTrades = function (callback) {
             callback();
         }
     };
-    this.shop.getActivePartners(function (steamid_list) {
-        tradeCount = steamid_list.length;
+    this.shop.getActiveTrades(function (active_trades) {
+        tradeCount = active_trades.length;
         if (tradeCount === 0) {
             callback();
         } else {
-            for (var i = 0; i < steamid_list.length; i += 1) {
-                self.users.get(steamid_list[i]).makeTrade().load(tryCallback);
+            for (var i = 0; i < active_trades.length; i += 1) {
+                var shopTrade = self.users.get(active_trades[i].partnerID).makeShopTrade();
+                shopTrade.setID(active_trades[i].id);
+                shopTrade.load(function () {
+                    tryCallback();
+                });
             }
         }
     });
@@ -196,11 +200,13 @@ Sfuminator.prototype.requestTradeOffer = function (request, callback) {
         trade.on("response", function (response) {
             callback(response);
         });
-        trade.verifyItems(function () {
-            trade.setMode("offer");
-            trade.reserveItems();
-            trade.send();
-            callback(trade.getPlate());
+        trade.verifyItems(function (success) {
+            if (success) {
+                trade.setMode("offer");
+                trade.reserveItems();
+                trade.send();
+                callback(trade.getPlate());
+            }
         });
     } else {
         callback(this.responses.alreadyInTrade);
