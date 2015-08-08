@@ -1,9 +1,8 @@
 module.exports = ShopTrade;
 
 var events = require("events");
-var Logs = require("../lib/logs.js");
-var TF2Price = require("./tf2/tf2Price.js");
-var TradeDb = require("./trade/tradeDb.js");
+var Logs = require("../../lib/logs.js");
+var TF2Price = require("../tf2/tf2Price.js");
 
 function ShopTrade(sfuminator, partner) {
     this.shop = sfuminator.shop;
@@ -17,11 +16,10 @@ function ShopTrade(sfuminator, partner) {
     events.EventEmitter.call(this);
 }
 
-require("util").inherits(Trade, events.EventEmitter);
+require("util").inherits(ShopTrade, events.EventEmitter);
 
 ShopTrade.prototype.send = function () {
     if (this.getMode()) {
-        //Metal reservation???
         this.setStatus("open");
         this.setStatusInfo("open");
         this.database.save();
@@ -93,6 +91,24 @@ ShopTrade.prototype.verifyItems = function (callback) {
     }
 };
 
+ShopTrade.prototype.reserveItems = function () {
+    for (var i = 0; i < this.assets.length; i += 1) {
+        var item = this.assets[i];
+        if (item.getOwner() !== this.partner.getSteamid()) {
+            this.shop.reservations.add(this.partner.getSteamid(), item.id);
+        }
+    }
+};
+
+ShopTrade.prototype.dereserveItems = function () {
+    for (var i = 0; i < this.assets.length; i += 1) {
+        var item = this.assets[i];
+        if (item.getOwner() !== this.partner.getSteamid()) {
+            this.shop.reservations.cancel(item.id);
+        }
+    }
+};
+
 ShopTrade.prototype.getPlate = function () {
     var plate = {me: [], them: []};
     for (var i = 0; i < this.assets.length; i += 1) {
@@ -161,6 +177,10 @@ ShopTrade.prototype.setLastUpdateDate = function (updateDate) {
 
 ShopTrade.prototype.getLastUpdateDate = function () {
     return this.last_update_date;
+};
+
+ShopTrade.prototype.commit = function (callback) {
+    this.database.update(callback);
 };
 
 ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
@@ -282,6 +302,24 @@ TradeDb.prototype.save = function () {
             });
         });
     });
+};
+
+TradeDb.prototype.update = function (callback) {
+    var self = this;
+    this.db.connect(function (connection) {
+        connection.query(self._getUpdateQuery(), function () {
+            connection.release();
+            if (typeof callback === "function") {
+                callback();
+            }
+        });
+    });
+};
+
+TradeDb.prototype._getUpdateQuery = function () {
+    return "UPDATE `shop_trades` SET "
+            + "status='" + this.trade.getStatus() + "',"
+            + "status_info='" + this.trade.getStatusInfo() + "' WHERE id=" + this.trade.getID();
 };
 
 TradeDb.prototype._getLoadQuery = function () {

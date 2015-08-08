@@ -994,52 +994,51 @@ Sfuminator.prototype.tradeOfferStep = function (tradeOffer, status) {
     }
 }; //***********************
 Sfuminator.prototype.verifyTradeOfferItems = function (tradeOffer, opponentInventory) {
-    var mode = tradeOffer.mode;
     var response = {result: "fail"};
-    switch (mode) {
-        case "hatShopBuy":
-            var hisScrapCount = metal_convertToScraps(opponentInventory.metal.getRefinedCount(), opponentInventory.metal.getReclaimedCount(), opponentInventory.metal.getScrapCount());
-            var myItems = tradeOffer.items;
-            var iNeed = 0;
-            for (var x in myItems) {
-                iNeed += myItems[x].scrapPrice;
-            }
-            if (hisScrapCount < iNeed) {
-                response.result = "insufficent_hisMetal";
-            } else {
-                response.result = "success";
-            }
-            break;
-        case "hatShopSell":
-            var myMetal = selfie.backpack.metal;
-            var myScrapCount = metal_convertToScraps(myMetal.getRefinedCount(), myMetal.getReclaimedCount(), myMetal.getScrapCount());
-            var hisItems = tradeOffer.items;
-            var heNeeds = 0;
-            for (var x in myItems) {
-                heNeeds += hisItems[x].scrapPrice;
-            }
-            if (myScrapCount < heNeeds) {
-                response.result = "insufficent_myMetal";
-            }
-            for (var x in hisItems) {
-                if (!opponentInventory.items.hasOwnProperty(hisItems[x].id)) {
-                    response.result = "inexistent_hisItem";
-                }
-            }
-            if (response.result === "fail") { //if inalterated resposne
-                response.result = "success";
-            }
-            break;
+    var myMetal = selfie.backpack.metal;
+
+    var hisScrapCount = metal_convertToScraps(opponentInventory.metal.getRefinedCount(), opponentInventory.metal.getReclaimedCount(), opponentInventory.metal.getScrapCount());
+    var myScrapCount = metal_convertToScraps(myMetal.getRefinedCount(), myMetal.getReclaimedCount(), myMetal.getScrapCount());
+
+    var iNeed = 0;
+    for (var x in tradeOffer.items.me) {
+        iNeed += tradeOffer.items.me[x].scrapPrice;
     }
+    for (var x in tradeOffer.items.them) {
+        iNeed -= tradeOffer.items.them[x].scrapPrice;
+    }
+    if (hisScrapCount < iNeed) {
+        response.result = "insufficent_hisMetal";
+    } else {
+        response.result = "success";
+    }
+
+    if (myScrapCount < (-iNeed)) {
+        response.result = "insufficent_myMetal";
+    }
+    for (var x in tradeOffer.items.them) {
+        if (!opponentInventory.items.hasOwnProperty(tradeOffer.items.them[x].id)) {
+            response.result = "inexistent_hisItem";
+        }
+    }
+    if (response.result === "fail") { //if inalterated resposne
+        response.result = "success";
+    }
+
     return response;
-}; //***********************
+}; //***********PORTED************
 Sfuminator.prototype.parseTradeOfferItems = function (tradeOffer) {//***********************
     var tradeOfferItems = {};
-    if (tradeOffer.mode === "hatShopBuy") {
-        var iNeed = 0;
-        for (var x in tradeOffer.items) {
-            iNeed += tradeOffer.items[x].scrapPrice;
-        }
+
+    var iNeed = 0;
+    for (var x in tradeOffer.items.me) {
+        iNeed += tradeOffer.items.me[x].scrapPrice;
+    }
+    for (var x in tradeOffer.items.them) {
+        iNeed -= tradeOffer.items.them[x].scrapPrice;
+    }
+
+    if (iNeed > 0) {
         var hisMetal = [];
         var hisBackpackMetal = selfie.backpacks[tradeOffer.steamid].metal;
         var refined_pointer = 0;
@@ -1083,41 +1082,33 @@ Sfuminator.prototype.parseTradeOfferItems = function (tradeOffer) {//***********
             iNeed -= 1;
             addedScrap += 1;
         }
-        if (iNeed > 0) {
-            if (refined_pointer > 0) {
-                hisMetal.push(refined_pointer);
-                iNeed -= 9;
-            }
-            if (reclaimed_pointer > 0) {
-                hisMetal.push(reclaimed_pointer);
-                iNeed -= 3;
-            }
-        }
-        if (iNeed > 0) {
-            return null;
-        }
-        tradeOfferItems.myItems = {
-            items: tradeOffer.items,
-            currency: {metal: {quantity: -iNeed}}
-        };
-        tradeOfferItems.hisItems = {
-            items: hisMetal
-        };
     }
-    if (tradeOffer.mode === "hatShopSell") {
-        var heNeed = 0;
-        for (var x in tradeOffer.items) {
-            heNeed += tradeOffer.items[x].scrapPrice;
+    if (iNeed > 0) {
+        if (refined_pointer > 0) {
+            hisMetal.push(refined_pointer);
+            iNeed -= 9;
         }
-        tradeOfferItems.myItems = {
-            currency: {metal: {quantity: heNeed}}
-        };
-        tradeOfferItems.hisItems = {
-            items: tradeOffer.items
-        };
+        if (reclaimed_pointer > 0) {
+            hisMetal.push(reclaimed_pointer);
+            iNeed -= 3;
+        }
     }
+
+    var heNeed = 0;
+    if (iNeed < 0) {
+        heNeed = -iNeed;
+    }
+
+    tradeOfferItems.myItems = {
+        items: tradeOffer.items.me,
+        currency: {metal: {quantity: heNeed}}
+    };
+    tradeOfferItems.hisItems = {
+        items: hisMetal.concat(tradeOffer.items.them)
+    };
+
     return tradeOfferItems;
-}; //***********************
+}; //***********PORTED************
 Sfuminator.prototype.getAppendableTrade = function (steamid) {
     var tradeOffer = selfie.tradeOffers[steamid];
     var finalTradeOffer = {partnerID: steamid};

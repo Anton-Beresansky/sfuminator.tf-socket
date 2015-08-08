@@ -3,7 +3,7 @@ module.exports = ShopInventory;
 var events = require("events");
 var Logs = require("../../lib/logs.js");
 var TF2Price = require("../tf2/tf2Price.js");
-var ItemVersioning = require("./itemVersioning.js");
+var ItemVersioning = require("../../lib/dataVersioning.js");
 
 function ShopInventory(shop, inventoryBots) {
     this.shop = shop;

@@ -41,11 +41,12 @@ ACCOUNTS = {
     sfuminator3: {username: "sfuminator3", password: "theStadiumIsShort", steamid: "76561198195909649"},
     sfuminator4: {username: "sfuminator4", password: "fuckYourTightThumb", steamid: "76561198195946391"}
 };
-myAccount = ACCOUNTS.sfuminator1;
+myAccount = ACCOUNTS.sfumin;
+
+
 username = myAccount.username;
 password = myAccount.password;
 myself = myAccount.steamid;
-
 steamguard = "";
 moderators = {
     "76561198046649970": {
@@ -1672,23 +1673,3 @@ function updateOutpostKeyPrice(keyPrice, callback) {
         console.log(JSON.stringify(result));
     });
 }
-
-var zmqSocket = require('./zmqSocket.js');
-var tradeHistorySocket = new zmqSocket({
-    connect_address: "107.170.135.170",
-    connect_port: 3589,
-    listen_address: "0.0.0.0",
-    listen_port: 3588,
-    key: "comxz8yoisyc98calxiu48yxdulh4",
-    application: "botTradeHistory",
-    startOption: "p2p"
-});
-
-tradeHistorySocket.onMessage(function (message, answer) {
-    if (message.hasOwnProperty("action") && message.action === "getPage") {
-        debugmsg("Loading history page: " + message.page);
-        browser.loadPage("steamcommunity.com/profiles/" + myself + "/inventoryhistory/?p=" + message.page, function (body) {
-            answer(body);
-        });
-    }
-});
