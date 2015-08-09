@@ -60,28 +60,26 @@ Sfuminator.prototype.bindInterrupts = function () {
 
 Sfuminator.prototype.loadActiveTrades = function (callback) {
     var self = this;
+    var tryCallbackCount = 0;
     var tradeCount = 0;
+    var tryCallback = function () {
+        tryCallbackCount += 1;
+        if (tradeCount === tryCallbackCount) {
+            callback();
+        }
+    };
     this.shop.getActiveTrades(function (active_trades) {
         tradeCount = active_trades.length;
         if (tradeCount === 0) {
             callback();
         } else {
-            var i = 0;
-            var loadNextTrade = function (partnerID, tradeid) {
-                var shopTrade = self.users.get(partnerID).makeShopTrade();
-                shopTrade.setID(tradeid);
+            for (var i = 0; i < active_trades.length; i += 1) {
+                var shopTrade = self.users.get(active_trades[i].partnerID).makeShopTrade();
+                shopTrade.setID(active_trades[i].id);
                 shopTrade.load(function () {
-                    i += 1;
-                    if (i === tradeCount) {
-                        callback();
-                    } else {
-                        setTimeout(function () {
-                            loadNextTrade(active_trades[i].partnerID, active_trades[i].id);
-                        }, 0);
-                    }
+                    tryCallback();
                 });
-            };
-            loadNextTrade(active_trades[i].partnerID, active_trades[i].id);
+            }
         }
     });
 };

@@ -100,7 +100,7 @@ Reservations.prototype.getClientChanges = function (last_update_date) {
                 return 0;
             });
             for (var i = 0; i < reservations.length; i += 1) {
-                reservations[i].reservation_date = reservations[i].reservation_date.getTime();
+                reservations[i].date = reservations[i].date.getTime();
             }
             return reservations;
         }
