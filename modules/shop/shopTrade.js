@@ -57,8 +57,10 @@ ShopTrade.prototype.load = function (callback) {
             }
         }
         self.setItems(items);
-        self.verifyItems(function () {
-            self.log.debug("Loaded trade " + self.getID());
+        self.log.debug("Loaded items: " + JSON.stringify(items), 3);
+        self.verifyItems(function (success) {
+            self.log.debug("Loaded trade " + self.getID() + ", verification success: " + ((success) ? success : JSON.stringify(self.response)));
+            self.logAssets();
             if (typeof callback === "function") {
                 callback(self);
             }
@@ -97,6 +99,8 @@ ShopTrade.prototype.verifyItems = function (callback) {
 };
 
 ShopTrade.prototype.reserveItems = function () {
+    this.log.debug("Reserving items", 3);
+    this.logAssets(3);
     for (var i = 0; i < this.assets.length; i += 1) {
         var item = this.assets[i].getItem();
         if (item.getOwner() !== this.partner.getSteamid()) {
@@ -106,6 +110,8 @@ ShopTrade.prototype.reserveItems = function () {
 };
 
 ShopTrade.prototype.dereserveItems = function () {
+    this.log.debug("Dereserving items", 3);
+    this.logAssets(3);
     for (var i = 0; i < this.assets.length; i += 1) {
         var item = this.assets[i].getItem();
         if (item.getOwner() !== this.partner.getSteamid()) {
@@ -118,9 +124,9 @@ ShopTrade.prototype.getPlate = function () {
     var plate = {me: [], them: []};
     for (var i = 0; i < this.assets.length; i += 1) {
         if (this.partner.getSteamid() === this.assets[i].getItem().getOwner()) {
-            plate.them.push(this.assets[i].getPlateFormatted());
+            plate.them.push(this.assets[i].valueOf());
         } else {
-            plate.me.push(this.assets[i].getPlateFormatted());
+            plate.me.push(this.assets[i].valueOf());
         }
     }
     return plate;
@@ -198,7 +204,7 @@ ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
         this.emit("response", this.response);
         return false;
     }
-    if (this.shop.reservations.exist(idToCheck)) {
+    if (this.shop.reservations.exist(idToCheck) && this.shop.reservations.get(idToCheck).getHolder() !== this.partner.getSteamid()) {
         this.response = this.ajaxResponses.itemIsAlreadyReserved;
         this.emit("response", this.response);
         return false;
@@ -248,6 +254,17 @@ ShopTrade.prototype.getAsset = function (item) {
     return new ShopTradeAsset(item, itemPrice);
 };
 
+ShopTrade.prototype.logAssets = function (level) {
+    var self = this;
+    this.log.debug("Assets: " + (function () {
+        var result = "";
+        for (var i = 0; i < self.assets.length; i += 1) {
+            result += JSON.stringify(self.assets[i].valueOf()) + "\n";
+        }
+        return result;
+    }()), level);
+};
+
 function ShopTradeAsset(item, itemPrice) {
     this.item = item;
     this.price = itemPrice;
@@ -257,7 +274,7 @@ function ShopTradeAsset(item, itemPrice) {
     };
 }
 
-ShopTradeAsset.prototype.getPlateFormatted = function () {
+ShopTradeAsset.prototype.valueOf = function () {
     return {
         id: this.item.id,
         name: this.item.name,

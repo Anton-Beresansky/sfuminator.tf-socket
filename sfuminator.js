@@ -157,7 +157,7 @@ Sfuminator.prototype.fetchShopInventory = function (request, callback) {
             break;
         default:
             if (this.shop.sectionExist(data.type)) {
-                callback(this.shop.sections[data.type].getItems());
+                callback(this.shop.getClientBackpack(data.type));
             } else {
                 callback(this.responses.sectionNotFound);
             }
@@ -173,7 +173,7 @@ Sfuminator.prototype.getUpdates = function (request) {
         if (itemChanges !== false) {
             response.methods.updateItemsVersioning = itemChanges;
         } else {
-            response.methods.freshBackpack = this.shop.sections[data.section.type].getItems();
+            response.methods.freshBackpack = this.shop.getClientBackpack(data.section.type);
         }
     }
     if (data.hasOwnProperty("last_reservation_date")) { //Reservations
