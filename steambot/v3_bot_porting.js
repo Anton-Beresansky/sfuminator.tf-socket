@@ -96,21 +96,31 @@ BotPorting.prototype.cancelAllTradeOffers = function (callback) {
 BotPorting.prototype.getTradeOffers = function (callback) {
     var self = this;
     var result = {};
+    if (this.fetching_active_trades) {
+        this.log.error("Still fetching active trades can't proceed");
+        callback();
+    }
+    this.fetching_active_trades = true;
     this.shop.getActiveTrades(function (active_trades) {
         for (var i = 0; i < active_trades.length; i += 1) {
-            var trade = self.users.get(active_trades[i].partnerID).getShopTrade().get();
-            trade.additional = trade.status_info;
-            trade.steamid = trade.partnerID;
-            for (var i = 0; i < trade.items.me.length; i += 1) {
-                trade.items.me[i].id = trade.items.me[i].id.toString();
-            }
-            for (var i = 0; i < trade.items.them.length; i += 1) {
-                trade.items.them[i].id = trade.items.them[i].id.toString();
-            }
-            result[trade.steamid] = trade;
+            result[active_trades[i].partnerID] = self.getPortedTradeOffer(active_trades[i].partnerID);
         }
         callback(result);
+        self.fetching_active_trades = false;
     });
+};
+
+BotPorting.prototype.getPortedTradeOffer = function (partnerID) {
+    var trade = this.users.get(partnerID).getShopTrade().get();
+    trade.additional = trade.status_info;
+    trade.steamid = trade.partnerID;
+    for (var i = 0; i < trade.items.me.length; i += 1) {
+        trade.items.me[i].id = trade.items.me[i].id.toString();
+    }
+    for (var i = 0; i < trade.items.them.length; i += 1) {
+        trade.items.them[i].id = trade.items.them[i].id.toString();
+    }
+    return trade;
 };
 
 BotPorting.prototype.getCurrency = function (callback) {
