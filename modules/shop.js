@@ -76,6 +76,14 @@ Shop.prototype.sectionExist = function (section) {
     return this.sections.hasOwnProperty(section);
 };
 
+Shop.prototype.getClientBackpack = function (type) {
+    var items = this.sections[type].getItems();
+    for (var i = 0; i < items.length; i += 1) {
+        items[i].reserved_to = this.reservations.get(items[i].id).getHolder();
+    }
+    return items;
+};
+
 Shop.prototype.getMine = function (backpack) {
     if (!backpack.hasErrored()) {
         return this.filterMineItems(backpack.items);
@@ -94,7 +102,9 @@ Shop.prototype.filterMineItems = function (items) {
     for (var i = 0; i < items.length; i += 1) {
         var item = items[i];
         if (this.canBeSold(item)) {
-            filteredItems.push(this.patchItem(item));
+            var patchedItem = this.patchItem(item);
+            patchedItem.reserved_to = "";
+            filteredItems.push(patchedItem);
         }
     }
     return filteredItems;
@@ -145,7 +155,6 @@ Shop.prototype.patchItem = function (item) {
         relative_price = this.adjustMinePrice(item).toMetal();
         shopType = "mine";
     }
-    var reservation = this.reservations.get(item.id);
     return {
         id: item.id,
         defindex: item.defindex,
@@ -157,7 +166,6 @@ Shop.prototype.patchItem = function (item) {
         used_by_classes: item.used_by_classes,
         relative_price: relative_price,
         currency: item.currency,
-        reserved_to: reservation.getHolder(),
         shop: shopType
     };
 };

@@ -6,29 +6,34 @@ var ReservationsVersioning = require("../../lib/dataVersioning.js");
 function Reservations(db) {
     this.db = db;
     this.log = new Logs("Reservations");
-    this.versioning = new ReservationsVersioning(50);
+    this.versioning = new ReservationsVersioning(50, "Reservations");
     this.list = [];
 }
 
 Reservations.prototype.add = function (steamid, itemID) {
     if (!this.exist(itemID)) {
-        var myReservation = new Reservation(steamid, itemID);
-        this.list.push(myReservation);
-        this.versioning.add([myReservation.valueOf()], []);
+        var myReservation = this.localAdd(steamid, itemID);
         this.saveChange("add", myReservation);
     } else {
         this.log.warning("Couldn't reserve item (" + itemID + ") for " + steamid + ", reservation already exist for " + this.get(itemID).getHolder());
     }
+    return myReservation;
+};
+
+Reservations.prototype.localAdd = function (steamid, itemID) {
+    var myReservation = new Reservation(steamid, itemID);
+    this.list.push(myReservation);
+    this.versioning.add([myReservation], []);
+    return myReservation;
 };
 
 Reservations.prototype.cancel = function (itemID, callback) {
     var self = this;
     if (this.exist(itemID)) {
-        var myReservationIndex = this.getIndex(itemID);
         var myReservation = this.get(itemID);
         this.saveChange("cancel", myReservation, function () {
-            self.versioning.add([], [myReservation.valueOf()]);
-            self.list.splice(myReservationIndex, 1);
+            self.versioning.add([], [myReservation]);
+            self.list.splice(self.getIndex(itemID), 1);
             if (typeof callback === "function") {
                 callback();
             }
@@ -51,10 +56,10 @@ Reservations.prototype.load = function (callback) {
                         var localReservation = self.get(dbReservation.id);
                         if (localReservation.getDate() < dbReservation.reservation_date) {
                             self.log.warning("Found reservation conflict (" + dbReservation.id + "), updating with most recent date");
-                            self.add(dbReservation.steamid, dbReservation.id);
+                            self.add(dbReservation.holder, dbReservation.id);
                         }
                     } else {
-                        self.add(dbReservation.steamid, dbReservation.id);
+                        self.localAdd(dbReservation.holder, dbReservation.id);
                     }
                 }
             }
@@ -83,26 +88,26 @@ Reservations.prototype.exist = function (itemID) {
 Reservations.prototype.getClientChanges = function (last_update_date) {
     last_update_date = new Date(last_update_date);
     if (last_update_date.toString() !== "Invalid Date") {
-        this.log.debug("Getting changes: " + last_update_date, 3);
         var reservationChanges = this.versioning.get(last_update_date);
         if (reservationChanges) {
             var reservations = [];
             reservations = reservations.concat(reservationChanges.toAdd);
             for (var i = 0; i < reservationChanges.toRemove.length; i += 1) {
-                reservationChanges.toRemove[i].reserved_to = "";
-                reservations.push(reservationChanges.toRemove[i]);
+                reservations.push(new Reservation("", reservationChanges.toRemove[i].getID()));
             }
-            reservations.sort(function (a, b) {
+            var clientList = [];
+            for (var i = 0; i < reservations.length; i += 1) {
+                clientList.push(reservations[i].valueOf());
+            }
+            clientList.sort(function (a, b) {
                 if (a.date > b.date)
                     return 1;
                 if (a.date < b.date)
                     return -1;
                 return 0;
             });
-            for (var i = 0; i < reservations.length; i += 1) {
-                reservations[i].date = reservations[i].date.getTime();
-            }
-            return reservations;
+            this.log.debug("Getting changes: " + last_update_date + " (" + reservations.length + ")", 3);
+            return clientList;
         }
     }
     return false;
