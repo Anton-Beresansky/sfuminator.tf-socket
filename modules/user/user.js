@@ -12,7 +12,7 @@ function User(steamid, sfuminator) {
     this.db = this.sfuminator.db;
     this.cloud = this.sfuminator.cloud;
     this.tf2Backpack = new Backpack(steamid, 440, this.cloud);
-    this.log = new Logs("User " + steamid);
+    this.log = new Logs("User " + JSON.stringify(steamid));
     this.decayTime = 1000 * 60 * 60 * 8; // 8hrs
     this.last_use_date = new Date();
     events.EventEmitter.call(this);
@@ -28,20 +28,16 @@ User.prototype.getTF2Backpack = function () {
     return this.tf2Backpack;
 };
 
-User.prototype.unsetInTrade = function () {
-    this.inTrade = false;
-};
-
-User.prototype.setInTrade = function () {
-    this.inTrade = true;
-};
-
-User.prototype.isInTrade = function () {
-    return this.inTrade === true;
-};
-
 User.prototype.getTrade = function () {
     return this.trade;
+};
+
+User.prototype.hasShopTrade = function () {
+    return this.shopTrade instanceof ShopTrade;
+};
+
+User.prototype.hasActiveShopTrade = function () {
+    return this.hasShopTrade() && this.shopTrade.isActive();
 };
 
 User.prototype.getShopTrade = function () {

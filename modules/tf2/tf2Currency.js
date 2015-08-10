@@ -10,8 +10,12 @@ TF2Currency.prototype.setCloud = function (cloud) {
     this.cloud = cloud;
 };
 
-TF2Currency.prototype.get = function () {
+TF2Currency.prototype.valueOf = function () {
     return this._currency;
+};
+
+TF2Currency.prototype.get = function () {
+    return this;
 };
 
 TF2Currency.prototype.update = function (callback) {
@@ -23,7 +27,7 @@ TF2Currency.prototype.update = function (callback) {
         }
         self._currency = currency;
         if (typeof callback === "function") {
-            callback(self.get());
+            callback(self.valueOf());
         }
     });
 };
