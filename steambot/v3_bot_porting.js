@@ -82,9 +82,6 @@ BotPorting.prototype.setTradeOfferStatus = function (steamid, status, status_inf
         if (status !== "accepted") {
             shopTrade.dereserveItems();
         }
-        setTimeout(function () {
-            user.unsetInTrade();
-        }, 10000);
     }
     callback({result: "success", steamid: steamid, status: status});
 };
@@ -111,7 +108,7 @@ BotPorting.prototype.getTradeOffers = function (callback) {
 };
 
 BotPorting.prototype.getPortedTradeOffer = function (partnerID) {
-    var trade = this.users.get(partnerID).getShopTrade().get();
+    var trade = this.users.get(partnerID).getShopTrade().valueOf();
     trade.additional = trade.status_info;
     trade.steamid = trade.partnerID;
     for (var i = 0; i < trade.items.me.length; i += 1) {
@@ -124,7 +121,7 @@ BotPorting.prototype.getPortedTradeOffer = function (partnerID) {
 };
 
 BotPorting.prototype.getCurrency = function (callback) {
-    var currency = this.shop.tf2Currency.get();
+    var currency = this.shop.tf2Currency.valueOf();
     var patchedCurrency = {};
     for (var prop1 in currency) {
         for (var prop2 in currency[prop1]) {

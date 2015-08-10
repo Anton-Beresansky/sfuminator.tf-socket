@@ -19,9 +19,10 @@ function Sfuminator(cloud, db) {
         {name: "updateScannedProfiles", delay: ***REMOVED***0, tag: "global"},
         {name: "updateShopInventory", delay: 2000, tag: "internal"}
     ]);
-    this.responses = new AjaxResponses();
+    this.responses = new AjaxResponses(this);
     this.users = new Users(this, this.db, cloud);
     this.shop = new Shop(this);
+    this.shopTrade_decay = 15000;
 
     this.botPorting = new BotPorting(this);
 
@@ -126,6 +127,13 @@ Sfuminator.prototype.onAction = function (request, callback) {
                 callback(this.responses.notLogged);
             }
             break;
+        case "cancelTrade":
+            if (requester.privilege === "user") {
+                this.cancelTrade(request, callback);
+            } else {
+                callback(this.responses.notLogged);
+            }
+            break;
         case "storeAllBackpacks":
             this.allBackpackFetch();
             callback("ok");
@@ -140,7 +148,7 @@ Sfuminator.prototype.onAction = function (request, callback) {
             justForValve.process(callback);
             break;
         default:
-            callback("Action not recognised");
+            callback(this.responses.methodNotRecognised);
     }
 };
 
@@ -167,7 +175,16 @@ Sfuminator.prototype.fetchShopInventory = function (request, callback) {
 
 Sfuminator.prototype.getUpdates = function (request) {
     var data = request.getData();
-    var response = this.responses.make({in_trade: false, update: true, methods: {}});
+    var response = this.responses.make({update: true, methods: {}});
+    var user = this.users.get(request.getRequesterSteamid());
+    if (user.hasActiveShopTrade()) {
+        var trade = user.getShopTrade();
+        if (data.hasOwnProperty("trade") && data.trade === "aquired") {
+            response.methods.updateTrade = trade.getClientChanges(data.last_update_date);
+        } else if (!trade.isClosed()) {
+            response.methods.startTrade = trade.valueOf();
+        }
+    }
     if (data.hasOwnProperty("section") && data.section && this.shop.sectionExist(data.section.type)) { //Items
         var itemChanges = this.shop.sections[data.section.type].getClientChanges(data.section.last_update_date);
         if (itemChanges !== false) {
@@ -189,13 +206,14 @@ Sfuminator.prototype.getUpdates = function (request) {
 };
 
 Sfuminator.prototype.requestTradeOffer = function (request, callback) {
+    var self = this;
     var data = request.getData();
-    if (!data.hasOwnProperty("items")) {
+    if (!data.hasOwnProperty("items") || (typeof data.items !== "object") || this.responses.make().isObjectEmpty(data.items) || !data.items) {
         callback(this.responses.noItems);
         return;
     }
     var user = this.users.get(request.getRequesterSteamid());
-    if (!user.isInTrade()) {
+    if (!user.hasActiveShopTrade()) {
         var trade = user.makeShopTrade(data.items);
         trade.on("response", function (response) {
             callback(response);
@@ -205,15 +223,27 @@ Sfuminator.prototype.requestTradeOffer = function (request, callback) {
                 trade.setMode("offer");
                 trade.reserveItems();
                 trade.send();
-                callback(trade.getPlate());
+                callback(self.responses.tradeRequestSuccess(trade));
             }
         });
     } else {
-        callback(this.responses.alreadyInTrade);
+        if (user.getShopTrade().isClosed()) {
+            callback(this.responses.shopTradeCooldown(user.getShopTrade().getLastUpdateDate()));
+        } else {
+            callback(this.responses.alreadyInTrade);
+        }
     }
 };
 
-
+Sfuminator.prototype.cancelTrade = function (request, callback) {
+    var user = this.users.get(request.getRequesterSteamid());
+    if (user.hasShopTrade() && !user.getShopTrade().isClosed()) {
+        user.getShopTrade().cancel();
+        callback(this.responses.tradeCancelled);
+    } else {
+        callback(this.responses.notInTrade);
+    }
+};
 
 
 

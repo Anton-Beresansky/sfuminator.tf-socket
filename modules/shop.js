@@ -224,7 +224,7 @@ Shop.prototype.getActiveTrades = function (callback) {
 };
 
 Shop.prototype._getActivePartnersQuery = function () {
-    return "SELECT id,steamid FROM shop_trades WHERE status!='closed' OR last_update_date>='" + new Date(new Date() - ***REMOVED***0).toMysqlFormat() + "' ORDER BY last_update_date ASC";
+    return "SELECT id,steamid FROM shop_trades WHERE status!='closed' OR last_update_date>='" + new Date(new Date() - this.sfuminator.shopTrade_decay).toMysqlFormat() + "' ORDER BY last_update_date ASC";
 };
 
 //Section changes (add, remove) are applied only on commit

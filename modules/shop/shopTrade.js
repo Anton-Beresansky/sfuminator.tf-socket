@@ -6,6 +6,7 @@ var TF2Price = require("../tf2/tf2Price.js");
 
 function ShopTrade(sfuminator, partner) {
     this.partner = partner;
+    this.sfuminator = sfuminator;
     this.shop = sfuminator.shop;
     this.ajaxResponses = sfuminator.responses;
     this.response = this.ajaxResponses.error;
@@ -13,10 +14,19 @@ function ShopTrade(sfuminator, partner) {
     this.log = new Logs("Trade offer " + this.partner.getSteamid());
     this.assets = [];
     this._available_modes = ["offer"];
+    this.last_update_date = new Date();
     events.EventEmitter.call(this);
 }
 
 require("util").inherits(ShopTrade, events.EventEmitter);
+
+ShopTrade.prototype.isActive = function () {
+    return this.status !== "closed" || (this.getLastUpdateDate() > new Date(new Date() - this.sfuminator.shopTrade_decay));
+};
+
+ShopTrade.prototype.isClosed = function () {
+    return this.status === "closed";
+};
 
 ShopTrade.prototype.send = function () {
     if (this.getMode()) {
@@ -28,13 +38,31 @@ ShopTrade.prototype.send = function () {
     }
 };
 
-ShopTrade.prototype.get = function () {
+ShopTrade.prototype.cancel = function () {
+    this.dereserveItems();
+    this.setStatus("closed");
+    this.setStatusInfo("cancelled");
+    this.commit();
+    this.log.debug("Trade " + this.getID() + " has been cancelled");
+};
+
+ShopTrade.prototype.getClientChanges = function (last_update_date) {
+    last_update_date = new Date(last_update_date);
+    if (last_update_date.toString() !== "Invalid Date") {
+        if (this.getLastUpdateDate() > last_update_date) {
+            return {status: this.getStatus(), statusInfo: this.getStatusInfo(), last_update_date: this.getLastUpdateDate().getTime()};
+        }
+    }
+    return false;
+};
+
+ShopTrade.prototype.valueOf = function () {
     return {
         partnerID: this.partner.getSteamid(),
         mode: this.getMode(),
         status: this.getStatus(),
-        status_info: this.getStatusInfo(),
-        last_update_date: this.getLastUpdateDate(),
+        statusInfo: this.getStatusInfo(),
+        last_update_date: this.getLastUpdateDate().getTime(),
         items: this.getPlate()
     };
 };
@@ -154,10 +182,12 @@ ShopTrade.prototype.setID = function (id) {
 
 ShopTrade.prototype.setStatus = function (status) {
     this.status = status;
+    this.setLastUpdateDate(new Date());
 };
 
 ShopTrade.prototype.setStatusInfo = function (status_info) {
     this.status_info = status_info;
+    this.setLastUpdateDate(new Date());
 };
 
 ShopTrade.prototype.setMode = function (mode) {
@@ -180,8 +210,8 @@ ShopTrade.prototype.setItems = function (items) {
 };
 
 ShopTrade.prototype.setLastUpdateDate = function (updateDate) {
-    var last_update_date = new Date(updateDate);
-    if (last_update_date.toString() !== "Invalid Date") {
+    updateDate = new Date(updateDate);
+    if (updateDate.toString() !== "Invalid Date") {
         this.last_update_date = updateDate;
     }
 };
@@ -377,7 +407,7 @@ TradeDb.prototype._getSaveItemsQuery = function () {
             var asset = assets[i];
             query += "(" + this.trade.getID() + "," + asset.getItem().id + ",'" + asset.getShopType() + "'," + asset.getItem().getPrice().toScrap() + "), ";
         }
-        return query.slice(0, query.length - 2) + " ON DUPLICATE KEY UPDATE trade_id=trade_id";
+        return query.slice(0, query.length - 2) + " ON DUPLICATE KEY UPDATE item_id=item_id";
     } else {
         this.log.error("Can't save trade items on database, missing trade_id");
     }
