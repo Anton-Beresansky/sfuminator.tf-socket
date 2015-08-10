@@ -10,7 +10,7 @@ function Backpack(steamid, game, cloud) {
     this.game = game;
     this.owner = steamid;
     this.decayTime = 90000; // 90sec
-    this.last_update_date = 0;
+    this.last_update_date = new Date(0);
     events.EventEmitter.call(this);
     var self = this;
     this.on("expired", function () {
@@ -19,6 +19,10 @@ function Backpack(steamid, game, cloud) {
 }
 
 require("util").inherits(Backpack, events.EventEmitter);
+
+Backpack.prototype.getLastUpdateDate = function () {
+    return this.last_update_date;
+};
 
 Backpack.prototype.getOwner = function () {
     return this.owner;
@@ -53,14 +57,14 @@ Backpack.prototype.get = function (callback) {
         self.last_update_date = new Date();
         self._encodeFetchingError(result);
         self.renewExpiration();
-        
+
         var error_code = self.getErrorCode();
         if (error_code === "#database_backpack") {
             self.log.debug("Fetching has errored: " + error_code, 1);
         } else if (error_code) {
             self.log.warning("Fetching has errored: " + error_code);
         }
-        
+
         if (typeof callback === "function") {
             callback(self);
         }

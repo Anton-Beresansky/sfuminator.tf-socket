@@ -271,7 +271,7 @@ sfr.on("sendTradeOffer", function (offer) {
             }
             if (offer.makeAttempts > 4) {
                 sfr.endTradeOfferSession(offer.partnerSteamId);
-                steam.sendMessage(offer.partnerSteamId, "There was an error when making the offer, cancelling you trade... if this is your first attempt maybe you can try again, if not retry later or use manual trade");
+                steam.sendMessage(offer.partnerSteamId, "There was an error when making the offer, cancelling you trade... if this is your first attempt maybe you can try again, if not retry later");
             } else {
                 if (offer.makeAttempts === 2) {
                     webRelog(function () {
