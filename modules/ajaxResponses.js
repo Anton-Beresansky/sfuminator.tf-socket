@@ -1,5 +1,4 @@
 module.exports = AjaxResponses;
-
 function AjaxResponses(sfuminator) {
     this.sfuminator = sfuminator;
     this.error = {result: "error", message: "Error"};
@@ -19,12 +18,17 @@ function AjaxResponses(sfuminator) {
         return {result: "success", trade: trade.valueOf()};
     };
     this.tradeCancelled = {result: "success", message: "Trade has been cancelled"};
+    this.shopAssetsLimit = function (limit) {
+        return {result: "error", message: "Sorry, you can buy only " + limit + " items per trade in this Beta"};
+    };
+    this.partnerAssetsLimit = function (limit) {
+        return {result: "error", message: "Sorry, you can sell only " + limit + " items per trade in this Beta"};
+    };
 }
 
 AjaxResponses.prototype.make = function (data) {
     return new Response(data);
 };
-
 function Response(data) {
     for (var property in data) {
         this[property] = data[property];
@@ -58,7 +62,6 @@ Response.prototype.compactUserUpdate = function () {
         this.update = false;
     }
 };
-
 Response.prototype.isObjectEmpty = function (obj) {
     var is_empty = true;
     for (var i in obj) {

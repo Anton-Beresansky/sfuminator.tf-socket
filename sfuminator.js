@@ -193,6 +193,11 @@ Sfuminator.prototype.getUpdates = function (request) {
             response.methods.freshBackpack = this.shop.getClientBackpack(data.section.type);
         }
     }
+    if (data.hasOwnProperty("section") && data.section.type === "mine" && !isNaN(data.section.last_update_date)) {
+        if (user.getTF2Backpack().getLastUpdateDate() > new Date(data.section.last_update_date)) {
+            response.methods.freshBackpack = this.shop.getMine(user.getTF2Backpack());
+        }
+    }
     if (data.hasOwnProperty("last_reservation_date")) { //Reservations
         var reservationsChanges = this.shop.reservations.getClientChanges(data.last_reservation_date);
         if (reservationsChanges !== false) {
@@ -219,6 +224,7 @@ Sfuminator.prototype.requestTradeOffer = function (request, callback) {
             callback(response);
         });
         trade.verifyItems(function (success) {
+            self.log.debug("Request Trade Offer item verification, success: " + success);
             if (success) {
                 trade.setMode("offer");
                 trade.reserveItems();

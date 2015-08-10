@@ -15,13 +15,18 @@ function ShopTrade(sfuminator, partner) {
     this.assets = [];
     this._available_modes = ["offer"];
     this.last_update_date = new Date();
+    this.assets_limit = {partner: 5, shop: 2};
     events.EventEmitter.call(this);
 }
 
 require("util").inherits(ShopTrade, events.EventEmitter);
 
+ShopTrade.prototype.hasBeenAccepted = function () {
+    return this.getStatusInfo() === "accepted";
+};
+
 ShopTrade.prototype.isActive = function () {
-    return this.status !== "closed" || (this.getLastUpdateDate() > new Date(new Date() - this.sfuminator.shopTrade_decay));
+    return this.status && (this.status !== "closed" || (this.getLastUpdateDate() > new Date(new Date() - this.sfuminator.shopTrade_decay)));
 };
 
 ShopTrade.prototype.isClosed = function () {
@@ -33,6 +38,7 @@ ShopTrade.prototype.send = function () {
         this.setStatus("active");
         this.setStatusInfo("open");
         this.database.save();
+        this.log.debug("Sent trade: " + JSON.stringify(this.valueOf()));
     } else {
         this.log.error("No trade mode set, can't send trade");
     }
@@ -117,6 +123,12 @@ ShopTrade.prototype.verifyItems = function (callback) {
             return;
         }
     }
+    if (this.getShopItemCount() > this.assets_limit.shop) {
+        this.response = this.ajaxResponses.shopAssetsLimit(this.assets_limit.shop);
+        this.emit("response", this.response);
+        callback(false);
+        return;
+    }
     if (this.items.hasOwnProperty("mine") && this.items.mine instanceof Array) {
         this.verifyMineItems(callback, function (item) {
             self.assets.push(self.getAsset(item));
@@ -124,6 +136,20 @@ ShopTrade.prototype.verifyItems = function (callback) {
     } else {
         callback(true);
     }
+};
+
+ShopTrade.prototype.getPartnerItemCount = function () {
+    var count = 0;
+    for (var i = 0; i < this.assets.length; i += 1) {
+        if (this.assets[i].getItem().getOwner() === this.partner.getSteamid()) {
+            count += 1;
+        }
+    }
+    return count;
+};
+
+ShopTrade.prototype.getShopItemCount = function () {
+    return this.assets.length - this.getPartnerItemCount();
 };
 
 ShopTrade.prototype.reserveItems = function () {
@@ -213,6 +239,12 @@ ShopTrade.prototype.setLastUpdateDate = function (updateDate) {
     updateDate = new Date(updateDate);
     if (updateDate.toString() !== "Invalid Date") {
         this.last_update_date = updateDate;
+        if (this.hasBeenAccepted()) { //Force refresh user backpack if trade has been accepted
+            var self = this;
+            setTimeout(function () {
+                self.partner.getTF2Backpack().get();
+            }, 10000);
+        }
     }
 };
 
@@ -262,6 +294,12 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
                 onAcceptedItem(item);
             }
         }
+        if (self.getPartnerItemCount() > self.assets_limit.partner) {
+            self.response = self.ajaxResponses.partnerAssetsLimit(self.assets_limit.partner);
+            self.emit("response", self.response);
+            callback(false);
+            return;
+        }
         callback(true);
     });
 };
@@ -298,10 +336,6 @@ ShopTrade.prototype.logAssets = function (level) {
 function ShopTradeAsset(item, itemPrice) {
     this.item = item;
     this.price = itemPrice;
-    var self = this;
-    this.item.getPrice = function () {
-        return self.price;
-    };
 }
 
 ShopTradeAsset.prototype.valueOf = function () {
@@ -311,7 +345,7 @@ ShopTradeAsset.prototype.valueOf = function () {
         level: this.item.level,
         quality: this.item.quality,
         defindex: this.item.defindex,
-        scrapPrice: this.item.getPrice().toScrap(),
+        scrapPrice: this.getPrice().toScrap(),
         section: this.getShopType()
     };
 };
@@ -326,6 +360,10 @@ ShopTradeAsset.prototype.getShopType = function () {
     } else {
         return "mine";
     }
+};
+
+ShopTradeAsset.prototype.getPrice = function () {
+    return this.price;
 };
 
 function TradeDb(trade, db) {
@@ -405,7 +443,7 @@ TradeDb.prototype._getSaveItemsQuery = function () {
         var assets = this.trade.getAssets();
         for (var i = 0; i < assets.length; i += 1) {
             var asset = assets[i];
-            query += "(" + this.trade.getID() + "," + asset.getItem().id + ",'" + asset.getShopType() + "'," + asset.getItem().getPrice().toScrap() + "), ";
+            query += "(" + this.trade.getID() + "," + asset.getItem().id + ",'" + asset.getShopType() + "'," + asset.getPrice().toScrap() + "), ";
         }
         return query.slice(0, query.length - 2) + " ON DUPLICATE KEY UPDATE item_id=item_id";
     } else {
