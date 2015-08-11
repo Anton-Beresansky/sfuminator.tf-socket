@@ -79,7 +79,7 @@ BotPorting.prototype.setTradeOfferStatus = function (steamid, status, status_inf
     shopTrade.setStatusInfo(status_info);
     shopTrade.commit();
     if (shopTrade.isClosed()) {
-        if (shopTrade.hasBeenAccepted()) {
+        if (!shopTrade.hasBeenAccepted()) {
             shopTrade.dereserveItems();
         }
     }
