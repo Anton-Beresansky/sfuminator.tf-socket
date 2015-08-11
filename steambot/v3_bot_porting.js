@@ -108,9 +108,10 @@ BotPorting.prototype.getTradeOffers = function (callback) {
 };
 
 BotPorting.prototype.getPortedTradeOffer = function (partnerID) {
-    var trade = this.users.get(partnerID).getShopTrade().valueOf();
-    trade.additional = trade.status_info;
-    trade.steamid = trade.partnerID;
+    var shopTrade = this.users.get(partnerID).getShopTrade();
+    var trade = shopTrade.valueOf();
+    trade.additional = shopTrade.getStatusInfo();
+    trade.steamid = shopTrade.partner.getSteamid();
     for (var i = 0; i < trade.items.me.length; i += 1) {
         trade.items.me[i].id = trade.items.me[i].id.toString();
     }

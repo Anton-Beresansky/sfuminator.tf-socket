@@ -4,6 +4,8 @@ var events = require("events");
 var Logs = require("../../lib/logs.js");
 var TF2Price = require("../tf2/tf2Price.js");
 
+//Shop Trade Status: hold -> (noFriend) -> active -> sent -> closed/accepted/declined
+
 function ShopTrade(sfuminator, partner) {
     this.partner = partner;
     this.sfuminator = sfuminator;
@@ -35,7 +37,7 @@ ShopTrade.prototype.isClosed = function () {
 
 ShopTrade.prototype.send = function () {
     if (this.getMode()) {
-        this.setStatus("active");
+        this.setStatus("hold");
         this.setStatusInfo("open");
         this.database.save();
         this.log.debug("Sent trade: " + JSON.stringify(this.valueOf()));
