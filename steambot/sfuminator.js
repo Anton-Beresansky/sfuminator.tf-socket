@@ -891,6 +891,7 @@ Sfuminator.prototype._parseCraft = function (descriptions) {
 };
 //////////////////////////////////////////////////////////////////////////////// TRADE OFFERS
 Sfuminator.prototype.tradeOfferStep = function (tradeOffer, status) {
+    console.log("Trade offer step: " + status + " - " + tradeOffer.additional);
     selfie.trackEvent(tradeOffer.steamid);
     var steps = {
         "hold": function (tradeOffer) {
