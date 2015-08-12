@@ -1,9 +1,8 @@
 module.exports = ShopTrade;
-
 var events = require("events");
 var Logs = require("../../lib/logs.js");
 var TF2Price = require("../tf2/tf2Price.js");
-
+var ItemCount = require("./shopItemCount.js");
 //Shop Trade Status: hold -> (noFriend) -> active -> sent -> closed/accepted/declined
 
 function ShopTrade(sfuminator, partner) {
@@ -22,19 +21,15 @@ function ShopTrade(sfuminator, partner) {
 }
 
 require("util").inherits(ShopTrade, events.EventEmitter);
-
 ShopTrade.prototype.hasBeenAccepted = function () {
     return this.getStatusInfo() === "accepted";
 };
-
 ShopTrade.prototype.isActive = function () {
     return this.status && (this.status !== "closed" || (this.getLastUpdateDate() > new Date(new Date() - this.sfuminator.shopTrade_decay)));
 };
-
 ShopTrade.prototype.isClosed = function () {
     return this.status === "closed";
 };
-
 ShopTrade.prototype.send = function () {
     if (this.getMode()) {
         this.setStatus("hold");
@@ -45,7 +40,6 @@ ShopTrade.prototype.send = function () {
         this.log.error("No trade mode set, can't send trade");
     }
 };
-
 ShopTrade.prototype.cancel = function () {
     this.dereserveItems();
     this.setStatus("closed");
@@ -53,7 +47,6 @@ ShopTrade.prototype.cancel = function () {
     this.commit();
     this.log.debug("Trade " + this.getID() + " has been cancelled");
 };
-
 ShopTrade.prototype.getClientChanges = function (last_update_date) {
     last_update_date = new Date(last_update_date);
     if (last_update_date.toString() !== "Invalid Date") {
@@ -63,7 +56,6 @@ ShopTrade.prototype.getClientChanges = function (last_update_date) {
     }
     return false;
 };
-
 ShopTrade.prototype.valueOf = function () {
     return {
         partnerID: this.partner.getSteamid(),
@@ -74,7 +66,6 @@ ShopTrade.prototype.valueOf = function () {
         items: this.getPlate()
     };
 };
-
 ShopTrade.prototype.load = function (callback) {
     var self = this;
     this.database.load(function (rows) {
@@ -103,7 +94,6 @@ ShopTrade.prototype.load = function (callback) {
         });
     });
 };
-
 ShopTrade.prototype.verifyItems = function (callback) {
     var self = this;
     this.emptyAssets();
@@ -139,7 +129,6 @@ ShopTrade.prototype.verifyItems = function (callback) {
         callback(true);
     }
 };
-
 ShopTrade.prototype.getPartnerItemCount = function () {
     var count = 0;
     for (var i = 0; i < this.assets.length; i += 1) {
@@ -149,11 +138,9 @@ ShopTrade.prototype.getPartnerItemCount = function () {
     }
     return count;
 };
-
 ShopTrade.prototype.getShopItemCount = function () {
     return this.assets.length - this.getPartnerItemCount();
 };
-
 ShopTrade.prototype.reserveItems = function () {
     this.log.debug("Reserving items", 3);
     this.logAssets(3);
@@ -164,7 +151,6 @@ ShopTrade.prototype.reserveItems = function () {
         }
     }
 };
-
 ShopTrade.prototype.dereserveItems = function () {
     this.log.debug("Dereserving items", 3);
     this.logAssets(3);
@@ -175,7 +161,6 @@ ShopTrade.prototype.dereserveItems = function () {
         }
     }
 };
-
 ShopTrade.prototype.getPlate = function () {
     var plate = {me: [], them: []};
     for (var i = 0; i < this.assets.length; i += 1) {
@@ -187,43 +172,34 @@ ShopTrade.prototype.getPlate = function () {
     }
     return plate;
 };
-
 ShopTrade.prototype.getID = function () {
     return this.id;
 };
-
 ShopTrade.prototype.getStatus = function () {
     return this.status;
 };
-
 ShopTrade.prototype.getStatusInfo = function () {
     return this.status_info;
 };
-
 ShopTrade.prototype.getMode = function () {
     return this.mode;
 };
-
 ShopTrade.prototype.setID = function (id) {
     this.id = id;
 };
-
 ShopTrade.prototype.setStatus = function (status) {
     this.status = status;
     this.setLastUpdateDate(new Date());
 };
-
 ShopTrade.prototype.setStatusInfo = function (status_info) {
     this.status_info = status_info;
     this.setLastUpdateDate(new Date());
 };
-
 ShopTrade.prototype.setMode = function (mode) {
     if (this.modeExist(mode)) {
         this.mode = mode;
     }
 };
-
 ShopTrade.prototype.modeExist = function (mode) {
     for (var i = 0; i < this._available_modes.length; i += 1) {
         if (this._available_modes[i] === mode) {
@@ -232,11 +208,9 @@ ShopTrade.prototype.modeExist = function (mode) {
     }
     return false;
 };
-
 ShopTrade.prototype.setItems = function (items) {
     this.items = items;
 };
-
 ShopTrade.prototype.setLastUpdateDate = function (updateDate) {
     updateDate = new Date(updateDate);
     if (updateDate.toString() !== "Invalid Date") {
@@ -249,11 +223,9 @@ ShopTrade.prototype.setLastUpdateDate = function (updateDate) {
         }
     }
 };
-
 ShopTrade.prototype.getLastUpdateDate = function () {
     return this.last_update_date;
 };
-
 ShopTrade.prototype.commit = function (callback) {
     if (!isNaN(this.getID())) {
         this.database.update(callback);
@@ -261,7 +233,6 @@ ShopTrade.prototype.commit = function (callback) {
         this.log.error("Can't commit trade changes, no trade id associated");
     }
 };
-
 ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
     if (!this.shop.sections[section].itemExist(idToCheck)) {
         this.response = this.ajaxResponses.itemNotFound;
@@ -275,9 +246,9 @@ ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
     }
     return true;
 };
-
 ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
     var self = this;
+    var itemCount = new ItemCount();
     this.partner.tf2Backpack.getCached(function (backpack) {
         for (var i = 0; i < self.items.mine.length; i += 1) {
             var itemID = self.items.mine[i];
@@ -294,6 +265,14 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
                 return;
             } else {
                 onAcceptedItem(item);
+                itemCount.add(item);
+                var netCount = (itemCount.get(item) + self.shop.count.get(item)) - self.shop.countLimit;
+                if (netCount > 0) {
+                    self.response = self.ajaxResponses.itemExceedCount(item, netCount);
+                    self.emit("response", self.response);
+                    callback(false);
+                    return;
+                }
             }
         }
         if (self.getPartnerItemCount() > self.assets_limit.partner) {
@@ -305,15 +284,12 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
         callback(true);
     });
 };
-
 ShopTrade.prototype.emptyAssets = function () {
     this.assets = [];
 };
-
 ShopTrade.prototype.getAssets = function () {
     return this.assets;
 };
-
 ShopTrade.prototype.getAsset = function (item) {
     var itemPrice;
     if (this.shop.isBot(item.getOwner())) {
@@ -323,7 +299,6 @@ ShopTrade.prototype.getAsset = function (item) {
     }
     return new ShopTradeAsset(item, itemPrice);
 };
-
 ShopTrade.prototype.logAssets = function (level) {
     var self = this;
     this.log.debug("Assets: " + (function () {
@@ -334,7 +309,6 @@ ShopTrade.prototype.logAssets = function (level) {
         return result;
     }()), level);
 };
-
 function ShopTradeAsset(item, itemPrice) {
     this.item = item;
     this.price = itemPrice;
@@ -351,11 +325,9 @@ ShopTradeAsset.prototype.valueOf = function () {
         section: this.getShopType()
     };
 };
-
 ShopTradeAsset.prototype.getItem = function () {
     return this.item;
 };
-
 ShopTradeAsset.prototype.getShopType = function () {
     if (this.item.hasOwnProperty("shopType") && this.item.shopType) {
         return this.item.shopType;
@@ -363,11 +335,9 @@ ShopTradeAsset.prototype.getShopType = function () {
         return "mine";
     }
 };
-
 ShopTradeAsset.prototype.getPrice = function () {
     return this.price;
 };
-
 function TradeDb(trade, db) {
     this.trade = trade;
     this.db = db;
@@ -386,7 +356,6 @@ TradeDb.prototype.load = function (callback) {
         });
     });
 };
-
 TradeDb.prototype.save = function () {
     var self = this;
     this.db.connect(function (connection) {
@@ -401,7 +370,6 @@ TradeDb.prototype.save = function () {
         });
     });
 };
-
 TradeDb.prototype.update = function (callback) {
     var self = this;
     this.db.connect(function (connection) {
@@ -413,13 +381,11 @@ TradeDb.prototype.update = function (callback) {
         });
     });
 };
-
 TradeDb.prototype._getUpdateQuery = function () {
     return "UPDATE `shop_trades` SET "
             + "status='" + this.trade.getStatus() + "',"
             + "status_info='" + this.trade.getStatusInfo() + "' WHERE id=" + this.trade.getID();
 };
-
 TradeDb.prototype._getLoadQuery = function () {
     var additionalIdentifier = "";
     if (!isNaN(this.trade.getID())) {
@@ -429,7 +395,6 @@ TradeDb.prototype._getLoadQuery = function () {
             + "(SELECT `id`,`steamid`,`mode`,`status`,`status_info`,`last_update_date` FROM shop_trades WHERE steamid='" + this.trade.partner.getSteamid() + "' " + additionalIdentifier + " ORDER BY last_update_date DESC LIMIT 1) as myTrade "
             + "JOIN shop_trade_items ON myTrade.id=shop_trade_items.trade_id ";
 };
-
 TradeDb.prototype._getSaveQuery = function () {
     return "INSERT INTO `shop_trades` (`steamid`,`mode`,`status`,`status_info`) VALUES ("
             + "'" + this.trade.partner.getSteamid() + "',"
@@ -438,7 +403,6 @@ TradeDb.prototype._getSaveQuery = function () {
             + "'" + this.trade.getStatusInfo() + "'"
             + ");";
 };
-
 TradeDb.prototype._getSaveItemsQuery = function () {
     if (!isNaN(this.trade.getID())) {
         var query = "INSERT INTO `shop_trade_items` (`trade_id`,`item_id`,`shop_type`,`scrapPrice`) VALUES ";

@@ -90,7 +90,7 @@ ShopInventory.prototype.getItem = function (itemID) {
     return false;
 };
 
-ShopInventory.prototype.parseShopType = function (item) {
+ShopInventory.prototype.getShopType = function (item) {
     if (item.isPriced() && item.isTradable()) {
         if (item.isHat() && item.isCraftable()) {
             if (item.getPrice().toMetal() <= this.shop.ratio.hats.weSell.maximum) {
@@ -129,7 +129,7 @@ ShopInventory.prototype._parseItemsToAdd = function (newItems) {
             }
         }
         if (!found) {
-            newItems[j].shopType = this.parseShopType(newItems[j]);
+            newItems[j].shopType = this.getShopType(newItems[j]);
             itemsToAdd.push(newItems[j]);
         }
     }

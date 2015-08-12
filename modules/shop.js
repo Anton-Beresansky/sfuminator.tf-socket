@@ -7,6 +7,7 @@ var ShopRatio = require("./shop/shopRatio.js");
 var ShopInventory = require("./shop/shopInventory.js");
 var ItemVersioning = require("../lib/dataVersioning.js");
 var Reservations = require("./shop/shopReservations.js");
+var ItemCount = require("./shop/shopItemCount.js");
 
 //When updating internal item list and versioning items are patched
 //Shop contains formatted items ready to use on client side
@@ -24,7 +25,8 @@ function Shop(sfuminator) {
     this.inventory = new ShopInventory(this, this.bots);
     this.reservations = new Reservations(this.db);
     this.instanceID = new Date().getTime();
-    this.count = [];
+    this.countLimit = 3;
+    this.count = new ItemCount();
     this.sections = {}; //{type: Section()}
 
     events.EventEmitter.call(this);
@@ -69,7 +71,7 @@ Shop.prototype.update = function (_changes) {
     for (var type in this.sections) {
         this.sections[type].commit();
     }
-    this.updateCount();
+    this.count.update(changes.add, changes.remove);
 };
 
 Shop.prototype.sectionExist = function (section) {
@@ -85,6 +87,7 @@ Shop.prototype.getClientBackpack = function (type) {
 };
 
 Shop.prototype.getMine = function (backpack) {
+    this.log.debug("Getting mine items, bp: " + backpack.getOwner());
     if (!backpack.hasErrored()) {
         return this.filterMineItems(backpack.items);
     } else {
@@ -111,7 +114,14 @@ Shop.prototype.filterMineItems = function (items) {
 };
 
 Shop.prototype.canBeSold = function (item) {
-    return item.isHat() && item.isCraftable() && item.isTradable() && item.isPriced() && this.verifyMineItemPriceRange(item);
+    return (
+            item.isHat() &&
+            item.isCraftable() &&
+            item.isTradable() &&
+            item.isPriced() &&
+            this.verifyMineItemPriceRange(item) &&
+            this.count.get(item) < this.countLimit
+            );
 };
 
 Shop.prototype.adjustMinePrice = function (item) {
@@ -177,33 +187,6 @@ Shop.prototype.isBot = function (steamid) {
         }
     }
     return false;
-};
-
-Shop.prototype.updateCount = function () {
-    this.log.debug("Updating item count");
-    var newCount = [];
-    for (var i = 0; i < this.inventory.items.length; i += 1) {
-        var thisItem = this.inventory.items[i];
-        if (thisItem.shopType !== "") {
-            var index = this._getCountIndex(newCount, thisItem);
-            if (index >= 0) {
-                newCount[index].count += 1;
-            } else {
-                newCount.push({defindex: thisItem.defindex, quality: thisItem.quality, craftable: thisItem.isCraftable(), count: 1});
-            }
-        }
-    }
-    this.count = newCount;
-};
-
-Shop.prototype._getCountIndex = function (count, item) {
-    for (var i = 0; i < count.length; i += 1) {
-        var thisCount = count[i];
-        if (thisCount.defindex === item.defindex && thisCount === item.quality && thisCount.craftable === item.isCraftable()) {
-            return i;
-        }
-    }
-    return -1;
 };
 
 Shop.prototype.getActiveTrades = function (callback) {

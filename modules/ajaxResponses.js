@@ -24,6 +24,9 @@ function AjaxResponses(sfuminator) {
     this.partnerAssetsLimit = function (limit) {
         return {result: "error", message: "Sorry, you can sell only " + limit + " items per trade in this Beta"};
     };
+    this.itemExceedCount = function (item, excess) {
+        return {result: "error", message: "Sorry, you have to remove " + ((excess > 1) ? (" " + excess) : "") + "'" + item.name + "', there are too many in the shop right now"};
+    };
 }
 
 AjaxResponses.prototype.make = function (data) {
