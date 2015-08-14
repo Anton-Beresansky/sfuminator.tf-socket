@@ -3,6 +3,7 @@ var zmqSocket = require('./lib/zmqSocket.js');
 var Cloud = require('./modules/cloud.js');
 var SfuminatorRequest = require('./modules/requests.js');
 var Sfuminator = require('./sfuminator.js');
+var MaxRequestsHandler = require('./maxRequestsHandler.js');
 
 var httpListenPort = 3191; //dev 3191 | main 3190
 var socketPorts = {connect: 3002, listen: 3003}; //dev 3002,3003 | main 3000,3001
@@ -18,6 +19,7 @@ var socket = new zmqSocket({
     startOption: "p2p"
 });
 var cloud = new Cloud(socket);
+var reqHandler = new MaxRequestsHandler();
 
 cloud.on("cloud_connected", function () {
     console.log("Cloud connected");
@@ -32,13 +34,13 @@ cloud.on("cloud_connected", function () {
             });
             req.on('end', function () {
                 var request = new SfuminatorRequest(req, body);
-                if (request.isReadable()) {
+                if (reqHandler.allowRequest(request) && request.isReadable()) {
                     sfuminator.onRequest(request, function (result) {
                         res.end(JSON.stringify(result));
                         request = null;
                     });
                 } else {
-                    res.end();
+                    res.end("");
                 }
             });
         }).listen(httpListenPort, "127.0.0.1");

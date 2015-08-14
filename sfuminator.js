@@ -134,6 +134,10 @@ Sfuminator.prototype.onAction = function (request, callback) {
                 callback(this.responses.notLogged);
             }
             break;
+        case "searchItem":
+            this.shop.search.saveRequest(request);
+            callback(this.shop.search.find(request.getData().text));
+            break;
         case "storeAllBackpacks":
             this.allBackpackFetch();
             callback("ok");

@@ -1,6 +1,12 @@
 module.exports = TF2Item;
 
 var TF2Price = require("./tf2Price.js");
+var Qualities = [
+    "Normal", "Genuine", "rarity2", "Vintage", "rarity3",
+    "Unusual", "Unique", "Community", "Valve", "Self-Made",
+    "Customized", "Strange", "Completed", "Haunted",
+    "Collector's", "Decorated Weapon"
+];
 
 function TF2Item(item, owner) {
     for (var property in item) {
@@ -11,8 +17,28 @@ function TF2Item(item, owner) {
     this.owner = owner;
 }
 
+TF2Item.prototype.getFullName = function () {
+    if (!this.full_name) {
+        var qualityName = this.getQualityName();
+        this.full_name = ((qualityName === "Unique") ? "" : (qualityName + " ")) + this.getName();
+    }
+    return this.full_name;
+};
+
 TF2Item.prototype.getOwner = function () {
     return this.owner;
+};
+
+TF2Item.prototype.getName = function () {
+    return this.name;
+};
+
+TF2Item.prototype.getQualityName = function () {
+    return Qualities[this.getQuality()];
+};
+
+TF2Item.prototype.getQuality = function () {
+    return this.quality;
 };
 
 TF2Item.prototype.isHat = function () {

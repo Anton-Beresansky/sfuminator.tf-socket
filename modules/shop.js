@@ -8,6 +8,7 @@ var ShopInventory = require("./shop/shopInventory.js");
 var ItemVersioning = require("../lib/dataVersioning.js");
 var Reservations = require("./shop/shopReservations.js");
 var ItemCount = require("./shop/shopItemCount.js");
+var Search = require('./shop/shopSearch.js');
 
 //When updating internal item list and versioning items are patched
 //Shop contains formatted items ready to use on client side
@@ -27,6 +28,7 @@ function Shop(sfuminator) {
     this.instanceID = new Date().getTime();
     this.countLimit = 3;
     this.count = new ItemCount();
+    this.search = new Search(this, this.sfuminator.responses);
     this.sections = {}; //{type: Section()}
 
     events.EventEmitter.call(this);
@@ -170,7 +172,7 @@ Shop.prototype.patchItem = function (item) {
         defindex: item.defindex,
         level: item.level,
         quality: item.quality,
-        name: item.name,
+        name: item.getFullName(),
         image_url: item.image_url,
         image_url_large: item.image_url_large,
         used_by_classes: item.used_by_classes,
