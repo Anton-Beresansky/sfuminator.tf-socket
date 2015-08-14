@@ -235,7 +235,7 @@ ShopTrade.prototype.commit = function (callback) {
 };
 ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
     if (!this.shop.sections[section].itemExist(idToCheck)) {
-        this.response = this.ajaxResponses.itemNotFound;
+        this.response = this.ajaxResponses.itemsSelectedNotFound;
         this.emit("response", this.response);
         return false;
     }

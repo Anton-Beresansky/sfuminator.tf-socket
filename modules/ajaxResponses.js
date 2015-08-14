@@ -5,7 +5,7 @@ function AjaxResponses(sfuminator) {
     this.methodNotRecognised = {result: "error", message: "Method not recognised"};
     this.notLogged = {result: "error", message: "You are not logged in"};
     this.noItems = {result: "error", message: "No items selected"};
-    this.itemNotFound = {result: "error", message: "One or more selected items were not found"};
+    this.itemsSelectedNotFound = {result: "error", message: "One or more selected items were not found"};
     this.itemIsAlreadyReserved = {result: "error", message: "One or more selected items have been already reserved"};
     this.sectionNotFound = {result: "error", message: "Shop section not found"};
     this.itemCantBeSold = {result: "error", message: "Selected item can't be sold"};
@@ -27,6 +27,7 @@ function AjaxResponses(sfuminator) {
     this.itemExceedCount = function (item, excess) {
         return {result: "error", message: "Sorry, you have to remove " + ((excess > 1) ? (" " + excess) : "") + "'" + item.name + "', there are too many in the shop right now"};
     };
+    this.itemNotFound = {result: "error", message: "No item found in the shop"};
 }
 
 AjaxResponses.prototype.make = function (data) {

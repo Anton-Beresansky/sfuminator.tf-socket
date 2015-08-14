@@ -73,7 +73,7 @@ SfuminatorRequest.prototype.getData = function () {
 };
 
 SfuminatorRequest.prototype.getToken = function () {
-    return this._cookies.token;
+    return this.getCookie("token");
 };
 
 SfuminatorRequest.prototype.getAction = function () {
@@ -84,6 +84,10 @@ SfuminatorRequest.prototype.getAction = function () {
     } else {
         return false;
     }
+};
+
+SfuminatorRequest.prototype.getIP = function () {
+    return this.req.headers["x-forwarded-for"];
 };
 
 SfuminatorRequest.prototype.isValid = function () {
@@ -138,6 +142,10 @@ SfuminatorRequest.prototype.isReadable = function () {
 
 SfuminatorRequest.prototype.hasRootKey = function () {
     return this.data.hasOwnProperty("rootKey") && this.data.rootKey === this._rootKey;
+};
+
+SfuminatorRequest.prototype.getCookie = function (cname) {
+    return this._cookies[cname];
 };
 
 SfuminatorRequest.prototype._parseCookies = function () {
