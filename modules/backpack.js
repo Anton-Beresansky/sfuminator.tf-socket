@@ -9,7 +9,7 @@ function Backpack(steamid, game, cloud) {
     this.log = new Logs("Backpack " + steamid);
     this.game = game;
     this.owner = steamid;
-    this.decayTime = 90000; // 90sec
+    this.decayTime = 120000; // 2min
     this.last_update_date = new Date(0);
     events.EventEmitter.call(this);
     var self = this;
