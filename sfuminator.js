@@ -138,7 +138,7 @@ Sfuminator.prototype.onAction = function (request, callback) {
             this.shop.search.saveRequest(request);
             callback(this.shop.search.find(request.getData().text));
             break;
-        case "shopMonoSelection":
+        case "getShopItem":
             callback(this.shop.getItem(parseInt(data.id)));
             break;
         case "storeAllBackpacks":
