@@ -166,7 +166,7 @@ ShopTrade.prototype.getPlate = function () {
     for (var i = 0; i < this.assets.length; i += 1) {
         if (this.partner.getSteamid() === this.assets[i].getItem().getOwner()) {
             plate.them.push(this.assets[i].valueOf());
-            plate.full_list.push(this.shop.filterMineItems([this.assets[i].getItem()]));
+            plate.full_list.push(this.shop.filterMineItems([this.assets[i].getItem()])[0]);
         } else {
             plate.me.push(this.assets[i].valueOf());
             plate.full_list.push(this.shop.getItem(this.assets[i].getItem().id));
