@@ -162,14 +162,14 @@ ShopTrade.prototype.dereserveItems = function () {
     }
 };
 ShopTrade.prototype.getPlate = function () {
-    var plate = {me: [], them: [], item_full_list: []};
+    var plate = {me: [], them: [], full_list: []};
     for (var i = 0; i < this.assets.length; i += 1) {
         if (this.partner.getSteamid() === this.assets[i].getItem().getOwner()) {
             plate.them.push(this.assets[i].valueOf());
-            plate.item_full_list.push(this.shop.filterMineItems([this.assets[i].getItem()]));
+            plate.full_list.push(this.shop.filterMineItems([this.assets[i].getItem()]));
         } else {
             plate.me.push(this.assets[i].valueOf());
-            plate.item_full_list.push(this.shop.getItem(this.assets[i].getItem().id));
+            plate.full_list.push(this.shop.getItem(this.assets[i].getItem().id));
         }
     }
     return plate;
