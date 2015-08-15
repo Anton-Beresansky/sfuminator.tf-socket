@@ -76,6 +76,17 @@ Shop.prototype.update = function (_changes) {
     this.count.update(changes.add, changes.remove);
 };
 
+Shop.prototype.getItem = function (id) {
+    for (var section in this.sections) {
+        for (var i = 0; i < this.sections[section].items.length; i += 1) {
+            if (id === this.sections[section].items[i].id) {
+                return this.sections[section].items[i];
+            }
+        }
+    }
+    return false;
+};
+
 Shop.prototype.sectionExist = function (section) {
     return this.sections.hasOwnProperty(section);
 };
