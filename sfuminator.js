@@ -109,9 +109,7 @@ Sfuminator.prototype.onAction = function (request, callback) {
     var requester = request.getRequester();
     switch (request.getAction()) {
         case "fetchShopInventory": //Ajax request fired from shop
-            if (requester.privilege === "user") {
-                this.fetchShopInventory(request, callback);
-            }
+            this.fetchShopInventory(request, callback);
             break;
         case "updateShop":
             if (requester.privilege === "user") {
@@ -164,11 +162,15 @@ Sfuminator.prototype.fetchShopInventory = function (request, callback) {
     var self = this;
     switch (data.type) {
         case "mine":
-            var steamid = request.getRequester().id;
-            var user = this.users.get(steamid);
-            user.tf2Backpack.getCached(function (backpack) {
-                callback(self.shop.getMine(backpack));
-            });
+            if (request.getRequester().privilege === "user") {
+                var steamid = request.getRequester().id;
+                var user = this.users.get(steamid);
+                user.tf2Backpack.getCached(function (backpack) {
+                    callback(self.shop.getMine(backpack));
+                });
+            } else {
+                callback(this.responses.notLogged);
+            }
             break;
         default:
             if (this.shop.sectionExist(data.type)) {
