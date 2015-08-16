@@ -11,7 +11,7 @@ function MaxRequestsHandler() {
     this.banned = {};
     this.ban_window_mls = 120000;
     this.requests_window_seconds = 10;
-    this.max_requests_per_second = 3;
+    this.max_requests_per_second = 5;
     var self = this;
     setInterval(function () {
         self.cleanOldRequests();

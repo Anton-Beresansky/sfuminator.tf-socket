@@ -24,7 +24,7 @@ Search.prototype.find = function (text) {
                     }
                 }
                 if (found > -1) {
-                    result.push({item: shopItem, index: found});
+                    result.push({item: this.shop.getItem(shopItem.id), index: found});
                 }
             }
         }
