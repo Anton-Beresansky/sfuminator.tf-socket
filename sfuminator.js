@@ -4,6 +4,7 @@ var Logs = require('./lib/logs.js');
 var Users = require('./modules/users.js');
 var Shop = require('./modules/shop.js');
 var AjaxResponses = require('./modules/ajaxResponses.js');
+var Stats = require('./modules/stats.js');
 var Interrupts = require('./lib/interrupts.js');
 var BotPorting = require('./steambot/v3_bot_porting.js');
 
@@ -16,17 +17,18 @@ function Sfuminator(cloud, db) {
     this.log.setLevel(0);
     this.interrupts = new Interrupts([
         {name: "updateCurrency", delay: 60000, tag: "internal"},
-        {name: "updateScannedProfiles", delay: ***REMOVED***0, tag: "global"},
+        {name: "updateStats", delay: 1000, tag: "global"},
         {name: "updateShopInventory", delay: 2000, tag: "internal"}
     ]);
     this.responses = new AjaxResponses(this);
     this.users = new Users(this, this.db, cloud);
     this.shop = new Shop(this);
+    this.stats = new Stats(this);
+
     this.shopTrade_decay = 15000;
 
     this.botPorting = new BotPorting(this);
 
-    this.scannedProfiles = 0;
     events.EventEmitter.call(this);
     this.init();
 }
@@ -37,10 +39,11 @@ Sfuminator.prototype.init = function () {
     var self = this;
     this.shop.on("ready", function () {
         self.interrupts.startInternals();
-        //self.interrupts.startGlobals();
+        self.interrupts.startGlobals();
         self.bindInterrupts();
         self.loadActiveTrades(function () {
             self.log.debug("-- Sfuminator socket is ready --", 0);
+            self.stats.load();
             self.emit("ready");
         });
     });
@@ -51,8 +54,8 @@ Sfuminator.prototype.bindInterrupts = function () {
     this.interrupts.on("updateCurrency", function () {
         self.shop.tf2Currency.update();
     });
-    this.interrupts.on("updateScannedProfiles", function () {
-        self.updateScannedProfiles();
+    this.interrupts.on("updateStats", function () {
+        self.stats.update();
     });
     this.interrupts.on("updateShopInventory", function () {
         self.shop.inventory.update();
@@ -138,6 +141,9 @@ Sfuminator.prototype.onAction = function (request, callback) {
             break;
         case "getShopItem":
             callback(this.shop.getItem(parseInt(data.id)));
+            break;
+        case "getStats":
+            callback(this.stats.get());
             break;
         case "storeAllBackpacks":
             this.allBackpackFetch();
@@ -305,19 +311,6 @@ Sfuminator.prototype.getUpdateUserQuery = function (connection, user) {
     return "UPDATE `users` SET `name`=" + (connection.c.escape(user.personaname.toString())) + ", `avatar`='" + user.avatarfull.toString() + "' WHERE steam_id='" + user.steamid + "' LIMIT 1";
 };
 
-Sfuminator.prototype.updateScannedProfiles = function () {
-    var self = this;
-    this.cloud.send("query", "SELECT COUNT(*) as bp_count FROM backpacks", function (result) {
-        var count = result[0].bp_count;
-        if (count && (self.scannedProfiles !== count)) {
-            self.db.connect(function (connection) {
-                connection.query("INSERT INTO tasks (of,version) VALUES('scanned_profiles'," + count + ") ON DUPLICATE KEY UPDATE version=" + count, function () {
-                    connection.release();
-                });
-            });
-        }
-    });
-};
 Sfuminator.prototype.allBackpackFetch = function () {
     var self = this;
     var i = 0;
