@@ -20,7 +20,11 @@ require("util").inherits(Users, events.EventEmitter);
 Users.prototype.getFromToken = function (token, callback) {
     var self = this;
     this.getSteamidFromToken(token, function (steamid) {
-        callback(self.get(steamid));
+        if (steamid) {
+            callback(self.get(steamid));
+        } else {
+            callback(null);
+        }
     });
 };
 
@@ -53,6 +57,7 @@ Users.prototype.getSteamidFromToken = function (token, callback) {
                 callback(steamid);
             } else {
                 self.log.warning("Specified token has no users associated (" + token + ")");
+                callback("");
             }
         });
     }

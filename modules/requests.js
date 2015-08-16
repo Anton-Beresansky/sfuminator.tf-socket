@@ -53,8 +53,12 @@ SfuminatorRequest.prototype.parseRequester = function (users, callback) {
         callback();
     } else if (this.getToken()) {
         users.getFromToken(this.getToken(), function (user) {
-            self.requester.privilege = "user";
-            self.requester.id = user.steamid;
+            if (user) {
+                self.requester.privilege = "user";
+                self.requester.id = user.steamid;
+            } else {
+                self.requester.privilege = "guest";
+            }
             callback();
         });
     } else {
