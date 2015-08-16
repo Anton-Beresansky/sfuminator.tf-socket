@@ -79,8 +79,10 @@ Shop.prototype.update = function (_changes) {
 Shop.prototype.getItem = function (id) {
     for (var section in this.sections) {
         for (var i = 0; i < this.sections[section].items.length; i += 1) {
-            if (id === this.sections[section].items[i].id) {
-                return this.sections[section].items[i];
+            var item = this.sections[section].items[i];
+            if (id === item.id) {
+                item.reserved_to = this.reservations.get(item.id).getHolder();
+                return item;
             }
         }
     }
@@ -230,7 +232,7 @@ function Section(type) {
     this.items = [];
     this.toAdd = [];
     this.toRemove = [];
-    this.versioning = new ItemVersioning(10, "section " + type);
+    this.versioning = new ItemVersioning(40, "section " + type);
     this.log = new Logs("Section " + type);
 }
 
