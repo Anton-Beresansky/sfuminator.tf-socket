@@ -66,7 +66,6 @@ IncomingOffers.prototype.onOfferChange = function (offer) {
                         "Thank you, your offer has been accepted, "
                         + "remember to have a look to our site! Where you can "
                         + "get automated trade offers and where you can buy and sell many other hats: http://sfuminator.tf/");
-                self.refreshBackpack();
                 for (var i = 0; i < self.incomingOffers.length; i += 1) {
                     if (self.incomingOffers[i].tradeofferid === offer.tradeofferid) {
                         self.incomingOffers.splice(i, 1);
@@ -138,21 +137,13 @@ IncomingOffers.prototype.countMetal = function (items) {
 
 IncomingOffers.prototype.alertIncomingOffer = function (partnerID, myItem, callback) {
     var realItem = {defindex: myItem.defindex, quality: myItem.quality, id: myItem.id, original_id: myItem.original_id};
-    this.post({action: "checkIncomingOffer", steamid: partnerID, myItem: JSON.stringify(realItem)}, function (result) {
+    this.post({action: "checkIncomingOffer", steamid: partnerID, myItem: realItem}, function (result) {
         callback(result);
     });
 };
 
 IncomingOffers.prototype.dereserveItem = function (partnerID, id, callback) {
     this.post({action: "dereserveItem", steamid: partnerID, myitemid: id}, function (result) {
-        if (typeof callback === "function") {
-            callback(result);
-        }
-    });
-};
-
-IncomingOffers.prototype.refreshBackpack = function (callback) {
-    this.post({action: "refreshBackpack"}, function (result) {
         if (typeof callback === "function") {
             callback(result);
         }
@@ -205,14 +196,14 @@ IncomingOffers.prototype._associateAssets = function (backpack, assets, partnerI
 };
 
 IncomingOffers.prototype.post = function (data, callback) {
-    data.key = "aosihtnlvao935u7p09ap9wu";
+    data.rootKey = "***REMOVED***";
+    data.botRequest = true;
     var myInterface = {
         name: "include",
         method: {
+            name: "socket",
             httpmethod: "POST",
-            name: "zxcv",
-            predata: "incomingOffers.php",
-            parameters: data
+            parameters: JSON.stringify(data)
         }
     };
     sfuminatorAPI.callAPI(myInterface, function (result) {

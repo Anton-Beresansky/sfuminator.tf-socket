@@ -1,12 +1,15 @@
 module.exports = BotPorting;
 
 var Logs = require("../lib/logs.js");
+var API = require("../lib/api.js");
 
 function BotPorting(sfuminator) {
     this.sfuminator = sfuminator;
     this.shop = this.sfuminator.shop;
     this.users = this.sfuminator.users;
     this.log = new Logs("v3 Bot Porting");
+    this.site_api = new API("dev.sfuminator.tf");
+    this.site_key = "***REMOVED***";
 }
 
 BotPorting.prototype.requestAvailable = function (request) {
@@ -29,6 +32,12 @@ BotPorting.prototype.onRequest = function (request, callback) {
                 break;
             case "fetchCurrency":
                 this.getCurrency(callback);
+                break;
+            case "checkIncomingOffer":
+                this.checkIncomingOffer(data, callback);
+                break;
+            case "dereserveItem":
+                this.dereserveItem(data, callback);
                 break;
         }
     } else {
@@ -149,4 +158,66 @@ BotPorting.prototype._getCompatibleCurrencyKey = function (key) {
 
 BotPorting.prototype.keepAlive = function () {
 
+};
+
+BotPorting.prototype.checkIncomingOffer = function (data, callback) {
+    this.log.debug("Checking incoming offer for steamid: " + data.steamid);
+    var self = this;
+    var user = this.users.get(data.steamid);
+    this.isScammer(data.steamid, function (scammer) {
+        if (!scammer) {
+            var itemID = parseInt(data.myItem.id);
+            var shopItem = self.shop.getItem(itemID);
+            if (shopItem) {
+                if (self.shop.reservations.get(itemID).getHolder() === "") {
+                    self.shop.reservations.add(user.getSteamid(), itemID);
+                    self.log.debug("Success, allowing trade for item " + shopItem.name + " (" + itemID + ") scrapPrice: " + shopItem.scrapPrice);
+                    callback({result: "success", scrapPrice: shopItem.scrapPrice});
+                } else {
+                    self.log.debug("Rejecting, item is already reserved");
+                    callback({result: "error", error: "item_reserved"});
+                }
+            } else {
+                self.log.debug("Rejecting, item is not in the shop");
+                callback({result: "error", error: "not_in_shop"});
+            }
+        } else {
+            self.log.debug("Rejecting, user is a scammer");
+            callback({result: "error", error: "scammer"});
+        }
+    });
+};
+
+BotPorting.prototype.isScammer = function (steamid, callback) {
+    this.ajax({action: "steamrep", steamid: steamid}, function (result) {
+        callback(result.hasOwnProperty("scammer") && result.scammer);
+    });
+};
+
+BotPorting.prototype.ajax = function (data, callback) {
+    data.key = this.site_key;
+    data.predata = "v3_bot_porting.php";
+    var myInterface = {
+        name: "include",
+        method: {
+            name: "zxcv",
+            httpmethod: "POST",
+            parameters: data
+        }
+    };
+    this.site_api.callAPI(myInterface, function (response) {
+        if (callback) {
+            callback(response);
+        }
+    });
+};
+
+BotPorting.prototype.dereserveItem = function (data, callback) {
+    var itemID = data.myitemid;
+    if (this.shop.reservations.get(itemID).getHolder() === data.steamid) {
+        this.shop.reservations.cancel(itemID);
+        callback({result: "success"});
+    } else {
+        callback({result: "error"});
+    }
 };
