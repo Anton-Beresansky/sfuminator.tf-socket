@@ -3,7 +3,16 @@ module.exports = TradeStatus;
 function TradeStatus(db) {
     this.db = db;
     this.update();
+    this.steam_status_table = {
+        0: "steam_down",
+        10: "steam_down",
+        11: "maintenance"
+    };
 }
+
+TradeStatus.prototype.get = function () {
+    return this.steam_status_table[this.steam_status.version];
+};
 
 TradeStatus.prototype.canTrade = function () {
     return this.steam_status.version === 0 || this.steam_status.version === 10;

@@ -225,7 +225,7 @@ Sfuminator.prototype.requestTradeOffer = function (request, callback) {
     var self = this;
     var data = request.getData();
     if (!this.status.canTrade()) {
-        callback(this.responses.steamDown);
+        callback(this.responses.cannotTrade(this.status.get()));
         return;
     }
     if (!data.hasOwnProperty("items") || (typeof data.items !== "object") || this.responses.make().isObjectEmpty(data.items) || !data.items) {

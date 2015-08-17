@@ -28,7 +28,15 @@ function AjaxResponses(sfuminator) {
         return {result: "error", message: "Sorry, you have to remove " + ((excess > 1) ? (" " + excess) : "") + "'" + item.name + "', there are too many in the shop right now"};
     };
     this.itemNotFound = {result: "error", message: "No item found in the shop"};
-    this.steamDown = {result: "error", message: "Sorry, steam is not working properly at the moment, come back in a few minutes."}
+    this.cannotTrade = function (steam_status) {
+        if (steam_status === "steam_down") {
+            return {result: "error", message: "Sorry, steam is not working properly at the moment, come back in a few minutes."};
+        } else if (steam_status === "maintenance") {
+            return {result: "error", message: "Sorry, bots are down for maintenance at the moment, come back in a few minutes."};
+        } else {
+            return {result: "error", message: "Sorry, trading is disabled, come back in a few minutes."};
+        }
+    };
 }
 
 AjaxResponses.prototype.make = function (data) {
