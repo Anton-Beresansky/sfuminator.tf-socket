@@ -41,7 +41,7 @@ ACCOUNTS = {
     sfuminator3: {username: "sfuminator3", password: "theStadiumIsShort", steamid: "76561198195909649"},
     sfuminator4: {username: "sfuminator4", password: "fuckYourTightThumb", steamid: "76561198195946391"}
 };
-myAccount = ACCOUNTS.sfuminator1;
+myAccount = ACCOUNTS.sfuminator;
 
 
 username = myAccount.username;
