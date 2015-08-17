@@ -117,12 +117,14 @@ Shop.prototype.getMine = function (backpack) {
 
 Shop.prototype.filterMineItems = function (items) {
     var filteredItems = [];
-    for (var i = 0; i < items.length; i += 1) {
-        var item = items[i];
-        if (this.canBeSold(item)) {
-            var patchedItem = this.patchItem(item);
-            patchedItem.reserved_to = "";
-            filteredItems.push(patchedItem);
+    if (items) {
+        for (var i = 0; i < items.length; i += 1) {
+            var item = items[i];
+            if (this.canBeSold(item)) {
+                var patchedItem = this.patchItem(item);
+                patchedItem.reserved_to = "";
+                filteredItems.push(patchedItem);
+            }
         }
     }
     return filteredItems;
