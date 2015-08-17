@@ -16,7 +16,7 @@ function ShopTrade(sfuminator, partner) {
     this.assets = [];
     this._available_modes = ["offer"];
     this.last_update_date = new Date();
-    this.assets_limit = {partner: 5, shop: 2};
+    this.assets_limit = {partner: 20, shop: 20};
     events.EventEmitter.call(this);
 }
 
