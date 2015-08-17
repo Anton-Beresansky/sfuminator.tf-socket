@@ -16,6 +16,7 @@ function Sfuminator(cloud, db) {
     this.db = db;
     this.log = new Logs("Sfuminator");
     this.log.setLevel(0);
+    this.admin = ["76561197992634049"];
     this.interrupts = new Interrupts([
         {name: "updateCurrency", delay: 60000, tag: "internal"},
         {name: "updateShopInventory", delay: 2000, tag: "internal"},
@@ -224,7 +225,7 @@ Sfuminator.prototype.getUpdates = function (request) {
 Sfuminator.prototype.requestTradeOffer = function (request, callback) {
     var self = this;
     var data = request.getData();
-    if (!this.status.canTrade()) {
+    if (!this.status.canTrade() && !this.isAdmin(request.getRequesterSteamid())) {
         callback(this.responses.cannotTrade(this.status.get()));
         return;
     }
@@ -264,4 +265,13 @@ Sfuminator.prototype.cancelTrade = function (request, callback) {
     } else {
         callback(this.responses.notInTrade);
     }
+};
+
+Sfuminator.prototype.isAdmin = function (steamid) {
+    for (var i = 0; i < this.admin.length; i += 1) {
+        if (this.admin[i] === steamid) {
+            return true;
+        }
+    }
+    return false;
 };
