@@ -22,7 +22,7 @@ BotPorting.prototype.onRequest = function (request, callback) {
     if (data.action !== "botPollingProcedure") {
         switch (data.action) {
             case "appendTrade":
-                this.increaseHatTradeCount(callback);
+                callback({result: "success"});
                 break;
             case "setTradeOfferStatus":
                 this.setTradeOfferStatus(data.steamid, data.status, data.additional, callback);
@@ -77,8 +77,44 @@ BotPorting.prototype.onRequest = function (request, callback) {
     }
 };
 
-BotPorting.prototype.increaseHatTradeCount = function (callback) {
+BotPorting.prototype.increaseHatTradeCount = function (steamid) {
+    this.log.debug("Appending trade for " + steamid);
+    var trade = this.users.get(steamid).getShopTrade();
+    var assets = trade.getAssets();
+    var compatible_trades = [];
+    var now = parseInt(new Date().getTime() / 1000);
+    for (var i = 0; i < assets.length; i += 1) {
+        var item = assets[i].getItem();
+        if (item.getOwner() === steamid) {
+            compatible_trades.push({steamid: steamid, my_defindex: 5002, his_defindex: item.defindex, date: now});
+        } else {
+            compatible_trades.push({steamid: steamid, my_defindex: item.defindex, his_defindex: 5002, date: now});
+        }
+    }
+    this.insertTradeCompatible(compatible_trades);
+};
 
+BotPorting.prototype.insertTradeCompatible = function (trades) {
+    var self = this;
+    this.sfuminator.db.connect(function (connection) {
+        connection.query(self._getTradeCompatibleQuery(trades), function () {
+            connection.release();
+        });
+    });
+};
+
+BotPorting.prototype._getTradeCompatibleQuery = function (trades) {
+    var query = "INSERT INTO `trades` (`with`,`my_defindex`,`his_defindex`,`when`) VALUES ";
+    for (var i = 0; i < trades.length; i += 1) {
+        var trade = trades[i];
+        query += "('" + trade.steamid + "'," + trade.my_defindex + "," + trade.his_defindex + "," + trade.date + "), ";
+    }
+    query = query.slice(0, query.length - 2);
+    return query + " ON DUPLICATE KEY UPDATE "
+            + " `with`=VALUES(`with`),"
+            + " `my_defindex`=VALUES(`my_defindex`),"
+            + " `his_defindex`=VALUES(`his_defindex`),"
+            + " `when`=VALUES(`when`)";
 };
 
 BotPorting.prototype.setTradeOfferStatus = function (steamid, status, status_info, callback) {
@@ -90,6 +126,8 @@ BotPorting.prototype.setTradeOfferStatus = function (steamid, status, status_inf
     if (shopTrade.isClosed()) {
         if (!shopTrade.hasBeenAccepted()) {
             shopTrade.dereserveItems();
+        } else {
+            this.increaseHatTradeCount(steamid);
         }
     }
     callback({result: "success", steamid: steamid, status: status});

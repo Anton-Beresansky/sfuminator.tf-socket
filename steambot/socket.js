@@ -210,79 +210,16 @@ sfuminatorSocket.prototype.appendTrade = function (_trade, callback) {
     var trade = JSON.parse(JSON.stringify(_trade));
     var self = this;
     self.emit("debug", "appendTrade, partner:" + trade.partnerID);
-    var hisItems = [];
-    var myItems = [];
-    var tradesExtended = [];
-    if (trade.tradeMode === "hatShop" && trade.tradeModePlus === "hatShop") {
-        for (var x in trade.myItems) {
-            var hdef = trade.myItems[x].defindex;
-            if ((hdef !== 5002) && (hdef !== 5001) && (hdef !== 5000)) {
-                var hisItems = [];
-                var myItems = {defindex: trade.myItems[x].defindex, quality: trade.myItems[x].quality};
-                var scrapPrice = trade.myItems[x].scrapPrice;
-                var refineds = parseInt(scrapPrice / 9);
-                var reclaimeds = parseInt((scrapPrice - (refineds * 9)) / 3);
-                var scraps = scrapPrice - (refineds * 9) - (reclaimeds * 3);
-                for (var x = 0; x < refineds; x += 1) {
-                    hisItems.push({defindex: 5002, quality: 6});
-                }
-                for (var x = 0; x < reclaimeds; x += 1) {
-                    hisItems.push({defindex: 5001, quality: 6});
-                }
-                for (var x = 0; x < scraps; x += 1) {
-                    hisItems.push({defindex: 5000, quality: 6});
-                }
-                tradesExtended.push({myItems: myItems, hisItems: hisItems});
-            }
-        }
-    }
-    if (trade.tradeMode === "metal_mine" && trade.tradeModePlus === "hatShop") {
-        for (var x in trade.iNeed) {
-            var hdef = trade.iNeed[x].defindex;
-            if ((hdef !== 5002) && (hdef !== 5001) && (hdef !== 5000)) {
-                var myItems = [];
-                var scrapPrice = trade.iNeed[x].scrapPrice;
-                var hisItems = {defindex: trade.iNeed[x].defindex, quality: trade.iNeed[x].quality};
-                var refineds = parseInt(scrapPrice / 9);
-                var reclaimeds = parseInt((scrapPrice - (refineds * 9)) / 3);
-                var scraps = scrapPrice - (refineds * 9) - (reclaimeds * 3);
-                for (var x = 0; x < refineds; x += 1) {
-                    myItems.push({defindex: 5002, quality: 6});
-                }
-                for (var x = 0; x < reclaimeds; x += 1) {
-                    myItems.push({defindex: 5001, quality: 6});
-                }
-                for (var x = 0; x < scraps; x += 1) {
-                    myItems.push({defindex: 5000, quality: 6});
-                }
-                tradesExtended.push({myItems: myItems, hisItems: hisItems});
-            }
-        }
-    }
-    if (trade.tradeMode === "hatExchange" && trade.tradeModePlus === "hatExchange") {
-        for (var x in trade.myItems) {
-            var hdef = trade.myItems[x].defindex;
-            if ((hdef !== 5002) && (hdef !== 5001) && (hdef !== 5000)) {
-                myItems.push({defindex: trade.myItems[x].defindex, quality: trade.myItems[x].quality});
-            }
-        }
-        for (var x in myItems) {
-            tradesExtended.push({myItems: trade.myItems[x], hisItems: [trade.hisItems.craftableHats[x], {defindex: 5000, quality: 6}]});
-        }
-    }
     var appendTradeInterface = {
         name: "include",
         method: {
-            name: "zxcv",
+            name: "socket",
             httpmethod: "POST",
-            predata: "botSocket.php",
             parameters: {
                 action: "appendTrade",
                 partnerID: trade.partnerID,
-                tradesExtended: JSON.stringify(tradesExtended),
-                tradeMode: trade.tradeMode,
-                tradeModePlus: trade.tradeModePlus,
-                key: self.key
+                rootKey: self.key,
+                botRequest: true
             }
         }
     };
