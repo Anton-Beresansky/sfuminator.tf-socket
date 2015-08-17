@@ -130,5 +130,5 @@ Stats.prototype._getTradeCountQuery = function () {
 };
 
 Stats.prototype._getOldTradeCountQuery = function () {
-    return "SELECT COUNT(*) as trade_count FROM `trades`";
+    return "SELECT COUNT(*) as trade_count FROM `trades` WHERE `when`<1439827244";
 };
