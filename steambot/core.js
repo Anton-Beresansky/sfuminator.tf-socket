@@ -48,6 +48,7 @@ username = myAccount.username;
 password = myAccount.password;
 myself = myAccount.steamid;
 steamguard = "";
+admin = "***REMOVED***";
 moderators = {
     "76561198046649970": {
         steamid: "76561198046649970",
