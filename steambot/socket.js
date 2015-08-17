@@ -130,7 +130,7 @@ sfuminatorSocket.prototype.startNormalPollingProcedure = function () {
             };
             myInterface.method.parameters.botRequest = true;
             myInterface.method.parameters.action = "botPollingProcedure";
-            devSfuminatorAPI.callAPI(myInterface, function (response) {
+            sfuminatorAPI.callAPI(myInterface, function (response) {
                 self.emit("socket", response);
                 self.emitSocketData(response);
                 self.timeout.normalPollingProcedure.success();
@@ -367,7 +367,7 @@ sfuminatorSocket.prototype.setTradeOfferStatus = function (steamid, _status, cal
             }
         }
     };
-    devSfuminatorAPI.callAPI(setTradeOfferStatusInterface, function (response) {
+    sfuminatorAPI.callAPI(setTradeOfferStatusInterface, function (response) {
         if (callback) {
             callback(response);
         }
