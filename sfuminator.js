@@ -5,6 +5,7 @@ var Users = require('./modules/users.js');
 var Shop = require('./modules/shop.js');
 var AjaxResponses = require('./modules/ajaxResponses.js');
 var Stats = require('./modules/stats.js');
+var TradeStatus = require('./modules/trade/status.js');
 var Interrupts = require('./lib/interrupts.js');
 var BotPorting = require('./steambot/v3_bot_porting.js');
 
@@ -17,13 +18,15 @@ function Sfuminator(cloud, db) {
     this.log.setLevel(0);
     this.interrupts = new Interrupts([
         {name: "updateCurrency", delay: 60000, tag: "internal"},
+        {name: "updateShopInventory", delay: 2000, tag: "internal"},
         {name: "updateStats", delay: 1000, tag: "global"},
-        {name: "updateShopInventory", delay: 2000, tag: "internal"}
+        {name: "updateTradeStatus", delay: 1000, tag: "global"}
     ]);
     this.responses = new AjaxResponses(this);
     this.users = new Users(this, this.db, cloud);
     this.shop = new Shop(this);
     this.stats = new Stats(this);
+    this.status = new TradeStatus(this.db);
 
     this.shopTrade_decay = 15000;
 
@@ -43,7 +46,6 @@ Sfuminator.prototype.init = function () {
         self.bindInterrupts();
         self.loadActiveTrades(function () {
             self.log.debug("-- Sfuminator socket is ready --", 0);
-            self.stats.load();
             self.emit("ready");
         });
     });
@@ -59,6 +61,9 @@ Sfuminator.prototype.bindInterrupts = function () {
     });
     this.interrupts.on("updateShopInventory", function () {
         self.shop.inventory.update();
+    });
+    this.interrupts.on("updateTradeStatus", function () {
+        self.status.update();
     });
 };
 
@@ -145,15 +150,6 @@ Sfuminator.prototype.onAction = function (request, callback) {
         case "getStats":
             callback(this.stats.get(parseInt(data.last_update_date)));
             break;
-        case "storeAllBackpacks":
-            this.allBackpackFetch();
-            callback("ok");
-            break;
-        case "updateUser":
-            this.getBackpackCached(data.steamid);
-            this.updateUser(data.steamid);
-            callback("ok");
-            break;
         case "i_ve_been_here":
             var justForValve = new Valve(request);
             justForValve.process(callback);
@@ -228,6 +224,10 @@ Sfuminator.prototype.getUpdates = function (request) {
 Sfuminator.prototype.requestTradeOffer = function (request, callback) {
     var self = this;
     var data = request.getData();
+    if (!this.status.canTrade()) {
+        callback(this.responses.steamDown);
+        return;
+    }
     if (!data.hasOwnProperty("items") || (typeof data.items !== "object") || this.responses.make().isObjectEmpty(data.items) || !data.items) {
         callback(this.responses.noItems);
         return;

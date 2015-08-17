@@ -17,6 +17,7 @@ function Stats(sfuminator) {
     this.stats = {};
     this.max_new_items = 10;
     this.log = new Logs("Stats");
+    this.load();
 }
 
 Stats.prototype.get = function (last_update_date) {
