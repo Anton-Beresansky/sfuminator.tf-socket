@@ -3030,7 +3030,8 @@ var answer_keywords = {
         want: "wanted,wnat",
         wassap: "wasap,wassup",
         what: "wat,wich,whitch,witch,which",
-        who: "whos,wo,whos"
+        who: "whos,wo,whos",
+        hug: "hugs,hugging"
     },
     list: [
         {
@@ -3112,6 +3113,10 @@ var answer_keywords = {
             type: "help",
             keywords: ["i,need,help", "help"],
             priority: ["help"]
+        },
+        {
+            type: "hug",
+            keywords: ["i,hug,you", "hug,me"]
         }
     ]
 };
@@ -3150,6 +3155,12 @@ var message_senteces = {
             "^^ you make me blush",
             "I love you too!",
             "010010010010000001101100011011110111011001100101001000000111100101101111011101010010000001110100011011110110111100100001"
+        ]
+    },
+    hug: {
+        message: [
+            "Well, I'm a bit cold to hug but okay",
+            ":)"
         ]
     },
     you_sell: {
@@ -3473,30 +3484,20 @@ var message_senteces = {
                 number_of_trades = user.behavior.number_of_trades;
             }
             number_of_trades -= 1; //Needed to be compatible with array index
-            var message = [
-                [
-                    "Thanks for testing our beta, remember you can make suggestions, report bugs or just leave a quick feedback here: http://steamcommunity.com/groups/tf2sfuminator/discussions/0/541907867789706878/ we would appreciate a lot :) \nHope to see you again!"
-                ],
-                [
-                    "Thanks for testing our beta, remember you can make suggestions, report bugs or just leave a quick feedback here: http://steamcommunity.com/groups/tf2sfuminator/discussions/0/541907867789706878/ we would appreciate a lot :) \nHope to see you again!"
-                ],
-                [
-                    "Thanks for testing our beta, remember you can make suggestions, report bugs or just leave a quick feedback here: http://steamcommunity.com/groups/tf2sfuminator/discussions/0/541907867789706878/ we would appreciate a lot :) \nHope to see you again!"
-                ]
-            ];/*[[
-             "Yay! Thanks a lot! Hope that all went nice and easy also for you.",
-             "Thanks a lot! Everything went well? I hope so!",
-             "Thank you! If you didn't already, you can join our group to keep in touch with the community and get notified for the incoming events http://steamcommunity.com/groups/tf2sfuminator"
-             ], [
-             "Thanks a lot! It has been a pleasure to trade with you, if you want, remember that you can join our group! http://steamcommunity.com/groups/tf2sfuminator",
-             "Thank you very much! Hope to trade with you again, meanwhile if you didn't already, you might want to join our group!  http://steamcommunity.com/groups/tf2sfuminator",
-             "Thanks a lot!! Hope to trade with you again",
-             "Thank you! Enjoy your new items!"
-             ], [
-             "Thanks!",
-             "Thank you!",
-             "Thanks a lot!"
-             ]];*/
+            var message = [[
+                    "Yay! Thanks a lot! Hope that all went nice and easy also for you.",
+                    "Thanks a lot! Everything went well? I hope so!",
+                    "Thank you! If you didn't already, you can join our group to keep in touch with the community and get notified for the incoming events http://steamcommunity.com/groups/tf2sfuminator"
+                ], [
+                    "Thanks a lot! It has been a pleasure to trade with you, if you want, remember that you can join our group! http://steamcommunity.com/groups/tf2sfuminator",
+                    "Thank you very much! Hope to trade with you again, meanwhile if you didn't already, you might want to join our group!  http://steamcommunity.com/groups/tf2sfuminator",
+                    "Thanks a lot!! Hope to trade with you again",
+                    "Thank you! Enjoy your new items!"
+                ], [
+                    "Thanks!",
+                    "Thank you!",
+                    "Thanks a lot!"
+                ]];
             if (number_of_trades > 0 && number_of_trades < 10) {
                 number_of_trades = 1;
             }
