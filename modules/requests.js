@@ -8,6 +8,7 @@ function SfuminatorRequest(req, body) {
     this.log = new Logs("Sfuminator Request");
     this.log.setLevel(0);
     this.log.debug("Got new request", 3);
+    this.log.debug(body);
     this.req = req;
     this.body = body;
     this.requester = {privilege: "", id: ""};
