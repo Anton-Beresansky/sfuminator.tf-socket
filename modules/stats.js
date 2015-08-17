@@ -118,7 +118,7 @@ Stats.prototype.fetchTradeCount = function () {
                 if (!errored) {
                     count += result[0].trade_count;
                 }
-                connection.commitRelease();
+                connection.release();
                 self.stats.trade_count = count;
             });
         });

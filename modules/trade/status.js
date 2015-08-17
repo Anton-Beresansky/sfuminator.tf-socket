@@ -22,7 +22,7 @@ TradeStatus.prototype.update = function () {
     var self = this;
     this.db.connect(function (connection) {
         connection.query(self._getUpdateQuery(), function (result, errored) {
-            connection.commitRelease();
+            connection.release();
             if (!errored) {
                 for (var i = 0; i < result.length; i += 1) {
                     self[result[i].of] = result[i];
