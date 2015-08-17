@@ -28,6 +28,7 @@ function AjaxResponses(sfuminator) {
         return {result: "error", message: "Sorry, you have to remove " + ((excess > 1) ? (" " + excess) : "") + "'" + item.name + "', there are too many in the shop right now"};
     };
     this.itemNotFound = {result: "error", message: "No item found in the shop"};
+    this.steamDown = {result: "error", message: "Sorry, steam is not working properly at the moment, come back in a few minutes."}
 }
 
 AjaxResponses.prototype.make = function (data) {
