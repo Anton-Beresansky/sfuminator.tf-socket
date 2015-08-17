@@ -15,6 +15,8 @@ function User(steamid, sfuminator) {
     this.log = new Logs("User " + JSON.stringify(steamid));
     this.decayTime = 1000 * 60 * 60 * 8; // 8hrs
     this.last_use_date = new Date();
+    this.update();
+    this.tf2Backpack.getCached();
     events.EventEmitter.call(this);
 }
 
@@ -70,4 +72,43 @@ User.prototype._startDecay = function () {
     this._decayTimeout = setTimeout(function () {
         self.emit("expired", self.steamid);
     }, this.decayTime);
+};
+
+User.prototype.update = function () {
+    var self = this;
+    this.fetchInfo(function (_info) {
+        for (var i = 0; i < _info.length; i += 1) {
+            var info = _info[i];
+            if (info && info.hasOwnProperty("personaname") && info.hasOwnProperty("avatarfull") && info.hasOwnProperty("steamid")) {
+                self.log.debug("Updating: " + info.personaname);
+                for (var property in info) {
+                    self[property] = info[property];
+                }
+                self.updateDatabase();
+            }
+        }
+    });
+};
+
+User.prototype.fetchInfo = function (callback) {
+    this.cloud.send("getPlayerSummaries", {steamid: this.steamid}, function (result) {
+        if (result && result.hasOwnProperty("players") && result.players.length > 0) {
+            callback(result.players);
+        } else {
+            callback([]);
+        }
+    });
+};
+
+User.prototype.updateDatabase = function () {
+    var self = this;
+    this.db.connect(function (connection) {
+        connection.query(self.getUpdateUserQuery(connection), function () {
+            connection.release();
+        });
+    });
+};
+
+User.prototype.getUpdateUserQuery = function (connection) {
+    return "UPDATE `users` SET `name`=" + (connection.c.escape(this.personaname.toString())) + ", `avatar`='" + this.avatarfull.toString() + "' WHERE steam_id='" + this.steamid + "' LIMIT 1";
 };
