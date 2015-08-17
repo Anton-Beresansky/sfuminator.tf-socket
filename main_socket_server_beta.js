@@ -5,7 +5,7 @@ var SfuminatorRequest = require('./modules/requests.js');
 var Sfuminator = require('./sfuminator.js');
 var MaxRequestsHandler = require('./maxRequestsHandler.js');
 
-var httpListenPort = 3191; //dev 3191 | main 3190
+var httpListenPort = 3190; //dev 3191 | main 3190
 var socketPorts = {connect: 3002, listen: 3003}; //dev 3002,3003 | main 3000,3001
 
 var db = new Database({user: "root", password: "1bonnica2", database: "my_sfuminator"});
