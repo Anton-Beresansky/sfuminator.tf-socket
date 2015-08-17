@@ -26,7 +26,7 @@ function Shop(sfuminator) {
     this.inventory = new ShopInventory(this, this.bots);
     this.reservations = new Reservations(this.db);
     this.instanceID = new Date().getTime();
-    this.countLimit = 3;
+    this.countLimit = 5;
     this.count = new ItemCount();
     this.search = new Search(this, this.sfuminator.responses);
     this.sections = {}; //{type: Section()}
