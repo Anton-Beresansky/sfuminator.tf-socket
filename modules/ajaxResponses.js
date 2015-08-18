@@ -37,6 +37,7 @@ function AjaxResponses(sfuminator) {
             return {result: "error", message: "Sorry, trading is disabled, come back in a few minutes."};
         }
     };
+    this.manualMultiItems = {result: "error", message: "Sorry, in manual trade you can only sell or only buy items"};
 }
 
 AjaxResponses.prototype.make = function (data) {

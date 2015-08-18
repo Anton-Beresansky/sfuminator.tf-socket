@@ -13,8 +13,8 @@ var MODERATORS = ["76561197992634049", "76561198046649970"];
 var sfr_group_gid = "6337159";
 var metals = ["refined", "reclaimed", "scrap"];
 var qualityLookup = ["", "Genuine", "", "Vintage", "", "Unusual", "", "Community", "Valve", "Self-Made", "", "Strange", "", "Haunted", "Collector's"];
-var mySteamID = "76561198145778912"; //axefish: 76561198045065602 //sfuminator: 76561198145778912 //sfuminato1 76561198195936315
-var usersFileName = 'sfr_users_' + mySteamID + '.txt';
+var mySteamID = ""; //axefish: 76561198045065602 //sfuminator: 76561198145778912 //sfuminato1 76561198195936315
+var usersFileName = "";
 api.on("error", function (msg) {
     console.log("SteamAPI: " + msg);
 });
@@ -82,7 +82,10 @@ module.exports = Sfuminator;
 //  }
 // }
 
-function Sfuminator(tf2Instance, steamTradeInstance) {
+function Sfuminator(steamid, tf2Instance, steamTradeInstance) {
+    mySteamID = steamid;
+    usersFileName = 'sfr_users_' + mySteamID + '.txt';
+    socket.setBot(mySteamID);
     this.busy = false;
     this.in_trade = false;
     this.logging = false;
@@ -1430,10 +1433,9 @@ Sfuminator.prototype.reserveMetal = function (holderID, total_refineds, total_re
     selfie.users[holderID].reserving = true;
     self.emit("debug", "reserveMetal: got reservation request");
     if (selfie.users[holderID].metal_reservation) {
-        self.emit("error", "User " + holderID + " has already a metal reservation, can't reserve", 19);
-        if (callback) {
-            callback(false);
-        }
+        self.emit("error", "User " + holderID + " has already a metal reservation, can't reserve, will retry", 19);
+        self.tradeMetalReserve(null, holderID);
+        self.reserveMetal(holderID, total_refineds, total_reclaimeds, total_scraps, forced, callback);
         return;
     }
     if (selfie.reserving) {

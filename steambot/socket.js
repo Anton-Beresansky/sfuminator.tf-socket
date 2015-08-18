@@ -2,8 +2,13 @@ module.exports = sfuminatorSocket;
 var debug = true;
 var events = require("events");
 var API = require("../lib/api.js");
+//var sfuminatorAPI = new API("sfuminator.tf");
+var CFG = JSON.parse(require("fs").readFileSync("../socket_config.json"));
 var sfuminatorAPI = new API("sfuminator.tf");
-var devSfuminatorAPI = new API("dev.sfuminator.tf");
+if (CFG.application === "dev") {
+    sfuminatorAPI = new API("dev.sfuminator.tf");
+}
+
 sfuminatorAPI.on("error", function (msg) {
     var time = getDateTime();
     console.log(time + " ERROR @socket_API:" + msg);
@@ -11,9 +16,8 @@ sfuminatorAPI.on("error", function (msg) {
 
 function sfuminatorSocket(socket_key) {
     this.key = socket_key;
-    this.socketInterface = {
-        rootKey: socket_key
-    }; //socket interfaces and methods for the data on apicall {methods, ...etc})
+    this.defaultParameters = {};
+    this.socketInterface = this.defaultParameters; //socket interfaces and methods for the data on apicall {methods, ...etc})
     this.getSocketMethods = function () { //returns the list of methods requested by the socketInterface
         if (this.socketInterface.methods) {
             var tempstrmtd = this.socketInterface.methods;
@@ -61,6 +65,17 @@ function sfuminatorSocket(socket_key) {
 //Socket response is emitted as "socket_" + requestName
 
 require("util").inherits(sfuminatorSocket, events.EventEmitter);
+
+sfuminatorSocket.prototype.setBot = function (steamid) {
+    this.defaultParameters = {
+        rootKey: this.key,
+        botRequest: true,
+        botSteamid: steamid
+    };
+    for (var property in this.defaultParameters) {
+        this.socketInterface[property] = this.defaultParameters[property];
+    }
+};
 
 sfuminatorSocket.prototype.addSocketRequest = function (myRequest) {
     var self = this;
@@ -120,16 +135,16 @@ sfuminatorSocket.prototype.startNormalPollingProcedure = function () {
     var self = this;
     var normalPollingProcedure_method = function () {
         self.timeout.normalPollingProcedure.obj = setTimeout(function () {
+            var parameters = self.socketInterface;
+            parameters.action = "botPollingProcedure";
             var myInterface = {
                 name: "include",
                 method: {
                     name: "socket",
                     httpmethod: "POST",
-                    parameters: self.socketInterface
+                    parameters: parameters
                 }
             };
-            myInterface.method.parameters.botRequest = true;
-            myInterface.method.parameters.action = "botPollingProcedure";
             sfuminatorAPI.callAPI(myInterface, function (response) {
                 self.emit("socket", response);
                 self.emitSocketData(response);
@@ -161,43 +176,17 @@ sfuminatorSocket.prototype.emitSocketData = function (jsonData) {
 };
 ////////////////////////////////////////////////////////////////////////////////
 
-//sfuminatorSocket.prototype.getItem = function (defindex, quality, flag_cannot_craft, callback) {
-/*    var self = this;
- self.emit("debug", "getItem - defindex:" + defindex + ", quality:" + quality + ", flag_cannot_craft:" + flag_cannot_craft);
- var getItemInterface = {
- name: "include",
- method: {
- name: "zxcv",
- httpmethod: "GET",
- predata: "botBackpack.php",
- parameters: {
- action: "getItem",
- defindex: defindex,
- quality: quality,
- flag_cannot_craft: flag_cannot_craft,
- password: self.key
- }
- }
- };
- sfuminatorAPI.callAPI(getItemInterface, function (response) {
- if (callback) {
- callback(response);
- }
- });
- };*/
 sfuminatorSocket.prototype.getCurrency = function (callback) {
     var self = this;
     self.emit("debug", "getCurrency");
+    var parameters = this.defaultParameters;
+    parameters.action = "fetchCurrency";
     var getCurrencyInterface = {
         name: "include",
         method: {
             name: "socket",
             httpmethod: "POST",
-            parameters: {
-                action: "fetchCurrency",
-                rootKey: self.key,
-                botRequest: true
-            }
+            parameters: parameters
         }
     };
     sfuminatorAPI.callAPI(getCurrencyInterface, function (response) {
@@ -210,17 +199,15 @@ sfuminatorSocket.prototype.appendTrade = function (_trade, callback) {
     var trade = JSON.parse(JSON.stringify(_trade));
     var self = this;
     self.emit("debug", "appendTrade, partner:" + trade.partnerID);
+    var parameters = this.defaultParameters;
+    parameters.action = "appendTrade";
+    parameters.partnerID = trade.partnerID;
     var appendTradeInterface = {
         name: "include",
         method: {
             name: "socket",
             httpmethod: "POST",
-            parameters: {
-                action: "appendTrade",
-                partnerID: trade.partnerID,
-                rootKey: self.key,
-                botRequest: true
-            }
+            parameters: parameters
         }
     };
     sfuminatorAPI.callAPI(appendTradeInterface, function (response) {
@@ -301,48 +288,7 @@ sfuminatorSocket.prototype.refreshBackpack = function (callback) {
     if (typeof callback === "function") {
         callback();
     }
-    /*var self = this;
-     self.emit("debug", "refreshBackpack");
-     var removeFromQueueInterface = {
-     name: "include",
-     method: {
-     name: "zxcv",
-     httpmethod: "GET",
-     predata: "botBackpack.php",
-     parameters: {
-     action: "freshBackpack",
-     password: self.key
-     }
-     }
-     };
-     sfuminatorAPI.callAPI(removeFromQueueInterface, function (response) {
-     if (callback) {
-     callback(response);
-     }
-     });*/
 };
-//sfuminatorSocket.prototype.alertSteamStatus = function (status, callback) {
-/*    var self = this;
- self.emit("debug", "alertSteamStatus");
- var alertSteamDownInterface = {
- name: "include",
- method: {
- name: "zxcv",
- httpmethod: "POST",
- predata: "botSocket.php",
- parameters: {
- action: "alertSteamStatus",
- status: status,
- key: self.key
- }
- }
- };
- sfuminatorAPI.callAPI(alertSteamDownInterface, function (response) {
- if (callback) {
- callback(response);
- }
- });
- };*/
 sfuminatorSocket.prototype.setTradeOfferStatus = function (steamid, _status, callback) {
     var self = this;
     self.emit("debug", "setTradeOfferStatus: " + steamid + " " + _status);
@@ -352,19 +298,17 @@ sfuminatorSocket.prototype.setTradeOfferStatus = function (steamid, _status, cal
     if (keyWords.length > 1) {
         additional = keyWords[1];
     }
+    var parameters = this.defaultParameters;
+    parameters.action = "setTradeOfferStatus";
+    parameters.steamid = steamid;
+    parameters.status = status;
+    parameters.additional = additional;
     var setTradeOfferStatusInterface = {
         name: "include",
         method: {
             name: "socket",
             httpmethod: "POST",
-            parameters: {
-                action: "setTradeOfferStatus",
-                steamid: steamid,
-                status: status,
-                additional: additional,
-                rootKey: self.key,
-                botRequest: true
-            }
+            parameters: parameters
         }
     };
     sfuminatorAPI.callAPI(setTradeOfferStatusInterface, function (response) {
@@ -376,16 +320,14 @@ sfuminatorSocket.prototype.setTradeOfferStatus = function (steamid, _status, cal
 sfuminatorSocket.prototype.cancelAllTradeOffers = function (callback) {
     var self = this;
     self.emit("debug", "Cancelling all trade offers");
+    var parameters = this.defaultParameters;
+    parameters.action = "cancelAllTradeOffers";
     var cancelAllTradeOffersInterface = {
         name: "include",
         method: {
             name: "socket",
             httpmethod: "POST",
-            parameters: {
-                action: "cancelAllTradeOffers",
-                rootKey: self.key,
-                botRequest: true
-            }
+            parameters: parameters
         }
     };
     sfuminatorAPI.callAPI(cancelAllTradeOffersInterface, function (response) {

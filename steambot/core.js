@@ -1,3 +1,18 @@
+///////////////////////////////////////////////////////////////////////////////
+STEAMBOT_DIRECTORY = './'; // windows directory
+ACCOUNTS = {
+    "76561198045065602": {username: "axe_fish", password: "emvalerio?", steamid: "76561198045065602"},
+    "76561198189662807": {username: "sfumin", password: "Error36ismadeup", steamid: "76561198189662807"},
+    "76561198145778912": {username: "sfuminator", password: "3-.skate.-3", steamid: "76561198145778912"},
+    "76561198195936315": {username: "sfuminator1", password: "noMaybeNotYet5", steamid: "76561198195936315", steamApiKey: "EFF763E361AE251C6A3A79FE9DA23F17"},
+    "76561198228007284": {username: "sfuminator2", password: "wipeMyAssWithDogs1", steamid: "76561198228007284"},
+    "76561198195909649": {username: "sfuminator3", password: "theStadiumIsShort", steamid: "76561198195909649"},
+    "76561198195946391": {username: "sfuminator4", password: "fuckYourTightThumb", steamid: "76561198195946391"}
+};
+var CFG = JSON.parse(require("fs").readFileSync("../socket_config.json"));
+myAccount = ACCOUNTS[CFG.sfuminator.trade_bots[0]];
+console.log("My account: " + JSON.stringify(myAccount));
+
 var SOFTWARE_VERSION = "v4 beta";
 var SteamTrade = require('steam-trade'); // change to 'steam-trade' if not running from the same directory
 var steamTrade = new SteamTrade();
@@ -9,7 +24,7 @@ var steam = new Steam.SteamClient();
 var TeamFortress2 = require('./teamFortress.js');
 var tf2 = new TeamFortress2(steam);
 var Sfuminator = require("./sfuminator.js");
-var sfr = new Sfuminator(tf2, steamTrade);
+var sfr = new Sfuminator(myAccount.steamid, tf2, steamTrade);
 var api = require("../lib/api.js");
 var browser = new api("steamcommunity.com");
 var outpost = new api("www.tf2outpost.com");
@@ -30,19 +45,6 @@ sfr.on('error', function (e, error_code) {
     debugmsg(console_text);
     sfr.addToLogs(console_text, "errors");
 });
-///////////////////////////////////////////////////////////////////////////////
-STEAMBOT_DIRECTORY = './'; // windows directory
-ACCOUNTS = {
-    axe_fish: {username: "axe_fish", password: "emvalerio?", steamid: "76561198045065602"},
-    sfumin: {username: "sfumin", password: "Error36ismadeup", steamid: "76561198189662807"},
-    sfuminator: {username: "sfuminator", password: "3-.skate.-3", steamid: "76561198145778912"},
-    sfuminator1: {username: "sfuminator1", password: "noMaybeNotYet5", steamid: "76561198195936315", steamApiKey: "EFF763E361AE251C6A3A79FE9DA23F17"},
-    sfuminator2: {username: "sfuminator2", password: "wipeMyAssWithDogs1", steamid: "76561198228007284"},
-    sfuminator3: {username: "sfuminator3", password: "theStadiumIsShort", steamid: "76561198195909649"},
-    sfuminator4: {username: "sfuminator4", password: "fuckYourTightThumb", steamid: "76561198195946391"}
-};
-myAccount = ACCOUNTS.sfuminator;
-
 
 username = myAccount.username;
 password = myAccount.password;
@@ -61,6 +63,12 @@ moderators = {
 };
 firstLogin = true;
 webTradeEligibilityCookie = "webTradeEligibility=%7B%22allowed%22%3A0%2C%22reason%22%3A2048%2C%22allowed_at_time%22%3A1428933009%2C%22steamguard_required_days%22%3A15%2C%22sales_this_year%22%3A0%2C%22max_sales_per_year%22%3A200%2C%22forms_requested%22%3A0%2C%22new_device_cooldown_days%22%3A7%7D";
+
+cookie900 = "steamMachineAuth76561198195936315=F68CF95F90BAB60AEC3E21680F32CA6A4F2321B3";
+cookie901 = "sessionid=bd7c9e29ca7678ddd10a2714";
+cookie902 = "steamLogin=76561198195936315%7C%7CDB4BA8094C1C393D189B3584D4C896BAEF5A6E08";
+cookie903 = "steamLoginSecure=76561198195936315%7C%7C1AD0EC6C3F97C8DEE74E3CFC8AFD3A5193C55DCD";
+cookie904 = "webTradeEligibility=%7B%22allowed%22%3A0%2C%22reason%22%3A32%2C%22allowed_at_time%22%3A1441658160%2C%22steamguard_required_days%22%3A15%2C%22sales_this_year%22%3A0%2C%22max_sales_per_year%22%3A200%2C%22forms_requested%22%3A0%2C%22new_device_cooldown_days%22%3A7%7D";
 ///////////////////////////////////////////////////////////////////////////////
 // if we've saved a server list, use it
 if (fs.existsSync('servers')) {
@@ -260,7 +268,10 @@ sfr.on("steamMessage", function (obj) {
 });
 sfr.on("sendTradeOffer", function (offer) {
     debugmsg("Making trade offer to " + offer.partnerSteamId);
+    console.log(JSON.stringify(offer));
     tradeOffers.makeOffer(offer, function (error, result) {
+        console.log(error);
+        console.log(result);
         if (typeof result !== "undefined") {
             sfr.appendTradeOffer(offer.partnerSteamId, result.tradeofferid);
         } else {
@@ -270,9 +281,9 @@ sfr.on("sendTradeOffer", function (offer) {
             } else {
                 offer.makeAttempts = 1;
             }
-            if (offer.makeAttempts > 4) {
+            if (offer.makeAttempts > 5) {
                 sfr.endTradeOfferSession(offer.partnerSteamId);
-                steam.sendMessage(offer.partnerSteamId, "There was an error when making the offer, cancelling you trade... if this is your first attempt maybe you can try again, if not retry later");
+                steam.sendMessage(offer.partnerSteamId, "Oh no, there was an error :( steam returned the following message:\n" + error + "\n I'm cancelling this trade, but you can retry again if you want.");
             } else {
                 if (offer.makeAttempts === 2) {
                     webRelog(function () {
