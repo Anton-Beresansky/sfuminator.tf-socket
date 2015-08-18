@@ -1,7 +1,7 @@
 module.exports = BotPorting;
 
-var Logs = require("../lib/logs.js");
-var API = require("../lib/api.js");
+var Logs = require("./lib/logs.js");
+var API = require("./lib/api.js");
 
 function BotPorting(sfuminator) {
     this.sfuminator = sfuminator;
@@ -19,6 +19,11 @@ BotPorting.prototype.requestAvailable = function (request) {
 
 BotPorting.prototype.onRequest = function (request, callback) {
     var data = request.getData();
+    if (!data.hasOwnProperty("botSteamid") || !this.sfuminator.shop.isBot(data.botSteamid)) {
+        this.log.debug("Got request from not bot: " + data.botSteamid);
+        callback({result: "error", success: false, message: "You are not a bot, lol"});
+        return;
+    }
     if (data.action !== "botPollingProcedure") {
         switch (data.action) {
             case "appendTrade":
@@ -147,6 +152,7 @@ BotPorting.prototype.getTradeOffers = function (callback) {
     this.fetching_active_trades = true;
     this.shop.getActiveTrades(function (active_trades) {
         for (var i = 0; i < active_trades.length; i += 1) {
+            var partner = active_trades[i].partnerID;
             result[active_trades[i].partnerID] = self.getPortedTradeOffer(active_trades[i].partnerID);
         }
         callback(result);

@@ -14,7 +14,7 @@ function ShopTrade(sfuminator, partner) {
     this.database = new TradeDb(this, sfuminator.db);
     this.log = new Logs("Trade offer " + this.partner.getSteamid());
     this.assets = [];
-    this._available_modes = ["offer"];
+    this._available_modes = ["offer", "manual"];
     this.last_update_date = new Date();
     this.assets_limit = {partner: 20, shop: 20};
     events.EventEmitter.call(this);
@@ -31,13 +31,15 @@ ShopTrade.prototype.isClosed = function () {
     return this.status === "closed";
 };
 ShopTrade.prototype.send = function () {
-    if (this.getMode()) {
+    if (!this.getMode()) {
+        this.log.error("No trade mode set, can't send trade");
+    } else if (!this.shop.isBot(this.getBotSteamid())) {
+        this.log.error("No bot steamid set, can't send trade");
+    } else {
         this.setStatus("hold");
         this.setStatusInfo("open");
         this.database.save();
         this.log.debug("Sent trade: " + JSON.stringify(this.valueOf()));
-    } else {
-        this.log.error("No trade mode set, can't send trade");
     }
 };
 ShopTrade.prototype.cancel = function () {
@@ -46,6 +48,13 @@ ShopTrade.prototype.cancel = function () {
     this.setStatusInfo("cancelled");
     this.commit();
     this.log.debug("Trade " + this.getID() + " has been cancelled");
+};
+ShopTrade.prototype.commit = function (callback) {
+    if (isNaN(this.getID())) {
+        this.log.error("Can't commit trade changes, no trade id associated");
+    } else {
+        this.database.update(callback);
+    }
 };
 ShopTrade.prototype.getClientChanges = function (last_update_date) {
     last_update_date = new Date(last_update_date);
@@ -58,6 +67,7 @@ ShopTrade.prototype.getClientChanges = function (last_update_date) {
 };
 ShopTrade.prototype.valueOf = function () {
     return {
+        botSteamid: this.getBotSteamid(),
         partnerID: this.partner.getSteamid(),
         mode: this.getMode(),
         status: this.getStatus(),
@@ -174,6 +184,12 @@ ShopTrade.prototype.getPlate = function () {
     }
     return plate;
 };
+ShopTrade.prototype.setBotSteamid = function (steamid) {
+    this.botSteamid = steamid;
+};
+ShopTrade.prototype.getBotSteamid = function () {
+    return this.botSteamid;
+};
 ShopTrade.prototype.getID = function () {
     return this.id;
 };
@@ -227,13 +243,6 @@ ShopTrade.prototype.setLastUpdateDate = function (updateDate) {
 };
 ShopTrade.prototype.getLastUpdateDate = function () {
     return this.last_update_date;
-};
-ShopTrade.prototype.commit = function (callback) {
-    if (!isNaN(this.getID())) {
-        this.database.update(callback);
-    } else {
-        this.log.error("Can't commit trade changes, no trade id associated");
-    }
 };
 ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
     if (!this.shop.sections[section].itemExist(idToCheck)) {
@@ -393,16 +402,17 @@ TradeDb.prototype._getLoadQuery = function () {
     if (!isNaN(this.trade.getID())) {
         additionalIdentifier = "AND id=" + this.trade.getID();
     }
-    return "SELECT `id`,`steamid`,`mode`,`status`,`status_info`, `item_id`, `shop_type`, `scrapPrice`, `last_update_date` FROM "
+    return "SELECT `id`,`steamid`,`bot_steamid`,`mode`,`status`,`status_info`, `item_id`, `shop_type`, `scrapPrice`, `last_update_date` FROM "
             + "(SELECT `id`,`steamid`,`mode`,`status`,`status_info`,`last_update_date` FROM shop_trades WHERE steamid='" + this.trade.partner.getSteamid() + "' " + additionalIdentifier + " ORDER BY last_update_date DESC LIMIT 1) as myTrade "
             + "JOIN shop_trade_items ON myTrade.id=shop_trade_items.trade_id ";
 };
 TradeDb.prototype._getSaveQuery = function () {
-    return "INSERT INTO `shop_trades` (`steamid`,`mode`,`status`,`status_info`) VALUES ("
+    return "INSERT INTO `shop_trades` (`steamid`,`mode`,`status`,`status_info`,`bot_steamid`) VALUES ("
             + "'" + this.trade.partner.getSteamid() + "',"
             + "'" + this.trade.getMode() + "',"
             + "'" + this.trade.getStatus() + "',"
-            + "'" + this.trade.getStatusInfo() + "'"
+            + "'" + this.trade.getStatusInfo() + "',"
+            + "'" + this.trade.getBotSteamid() + "'"
             + ");";
 };
 TradeDb.prototype._getSaveItemsQuery = function () {

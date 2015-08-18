@@ -7,16 +7,17 @@ var AjaxResponses = require('./modules/ajaxResponses.js');
 var Stats = require('./modules/stats.js');
 var TradeStatus = require('./modules/trade/status.js');
 var Interrupts = require('./lib/interrupts.js');
-var BotPorting = require('./steambot/v3_bot_porting.js');
+var BotPorting = require('./v3_bot_porting.js');
 
 var Valve = require("./valve.js");
 
-function Sfuminator(cloud, db) {
+function Sfuminator(config, cloud, db) {
+    this.config = config;
     this.cloud = cloud;
     this.db = db;
     this.log = new Logs("Sfuminator");
     this.log.setLevel(0);
-    this.admin = ["***REMOVED***"];
+    this.admin = config.admins;
     this.interrupts = new Interrupts([
         {name: "updateCurrency", delay: 60000, tag: "internal"},
         {name: "updateShopInventory", delay: 2000, tag: "internal"},
@@ -128,8 +129,9 @@ Sfuminator.prototype.onAction = function (request, callback) {
             }
             break;
         case "requestTradeOffer":
+        case "requestManualTrade":
             if (requester.privilege === "user") {
-                this.requestTradeOffer(request, callback);
+                this.requestTrade(request, ((request.getAction() === "requestTradeOffer") ? "offer" : "manual"), callback);
             } else {
                 callback(this.responses.notLogged);
             }
@@ -222,7 +224,7 @@ Sfuminator.prototype.getUpdates = function (request) {
     return response;
 };
 
-Sfuminator.prototype.requestTradeOffer = function (request, callback) {
+Sfuminator.prototype.requestTrade = function (request, mode, callback) {
     var self = this;
     var data = request.getData();
     if (!this.status.canTrade() && !this.isAdmin(request.getRequesterSteamid())) {
@@ -242,10 +244,21 @@ Sfuminator.prototype.requestTradeOffer = function (request, callback) {
         trade.verifyItems(function (success) {
             self.log.debug("Request Trade Offer item verification, success: " + success);
             if (success) {
-                trade.setMode("offer");
-                trade.reserveItems();
-                trade.send();
-                callback(self.responses.tradeRequestSuccess(trade));
+                trade.setMode(mode);
+                trade.setBotSteamid(self.shop.bots[0]);
+                if (mode === "offer") {
+                    trade.reserveItems();
+                    trade.send();
+                    callback(self.responses.tradeRequestSuccess(trade));
+                } else if (mode === "manual") {
+                    var plate = trade.getPlate();
+                    if (plate.me.length === 0 || plate.them.length === 0) {
+                        trade.reserveItems();
+                        trade.send();
+                    } else {
+                        callback(self.responses.tradeManualItems);
+                    }
+                }
             }
         });
     } else {

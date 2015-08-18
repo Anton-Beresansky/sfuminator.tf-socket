@@ -22,7 +22,7 @@ function Shop(sfuminator) {
     this.ratio = new ShopRatio(this.db);
     this.tf2Currency = TF2Currency;
     this.tf2Currency.setCloud(this.cloud);
-    this.bots = ["76561198145778912"];
+    this.bots = sfuminator.config.trade_bots;
     this.inventory = new ShopInventory(this, this.bots);
     this.reservations = new Reservations(this.db);
     this.instanceID = new Date().getTime();
@@ -224,7 +224,14 @@ Shop.prototype.getActiveTrades = function (callback) {
 };
 
 Shop.prototype._getActivePartnersQuery = function () {
-    return "SELECT id,steamid FROM shop_trades WHERE status!='closed' OR last_update_date>='" + new Date(new Date() - this.sfuminator.shopTrade_decay).toMysqlFormat() + "' ORDER BY last_update_date ASC";
+    return "SELECT id,steamid FROM shop_trades WHERE (status!='closed' OR last_update_date>='" + new Date(new Date() - this.sfuminator.shopTrade_decay).toMysqlFormat() + "') " + this._getActivePartnersBotComponentQuery() + " ORDER BY last_update_date ASC";
+};
+Shop.prototype._getActivePartnersBotComponentQuery = function () {
+    var query = "AND `bot_steamid` IN (";
+    for (var i = 0; i < this.bots.length; i += 1) {
+        query += "'" + this.bots[i] + "'";
+    }
+    return query + ")";
 };
 
 //Section changes (add, remove) are applied only on commit
