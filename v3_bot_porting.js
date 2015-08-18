@@ -152,7 +152,7 @@ BotPorting.prototype.getTradeOffers = function (callback) {
     this.fetching_active_trades = true;
     this.shop.getActiveTrades(function (active_trades) {
         for (var i = 0; i < active_trades.length; i += 1) {
-            var shopTrade = this.users.get(active_trades[i].partnerID).getShopTrade();
+            var shopTrade = self.users.get(active_trades[i].partnerID).getShopTrade();
             if (shopTrade.getMode() === "offer") {
                 result[active_trades[i].partnerID] = self.getPortedTradeOffer(shopTrade);
             }
