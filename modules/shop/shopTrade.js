@@ -403,7 +403,7 @@ TradeDb.prototype._getLoadQuery = function () {
         additionalIdentifier = "AND id=" + this.trade.getID();
     }
     return "SELECT `id`,`steamid`,`bot_steamid`,`mode`,`status`,`status_info`, `item_id`, `shop_type`, `scrapPrice`, `last_update_date` FROM "
-            + "(SELECT `id`,`steamid`,`mode`,`status`,`status_info`,`last_update_date` FROM shop_trades WHERE steamid='" + this.trade.partner.getSteamid() + "' " + additionalIdentifier + " ORDER BY last_update_date DESC LIMIT 1) as myTrade "
+            + "(SELECT `id`,`steamid`,`mode`,`status`,`status_info`,`last_update_date`,`bot_steamid` FROM shop_trades WHERE steamid='" + this.trade.partner.getSteamid() + "' " + additionalIdentifier + " ORDER BY last_update_date DESC LIMIT 1) as myTrade "
             + "JOIN shop_trade_items ON myTrade.id=shop_trade_items.trade_id ";
 };
 TradeDb.prototype._getSaveQuery = function () {

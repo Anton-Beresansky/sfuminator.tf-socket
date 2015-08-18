@@ -152,16 +152,17 @@ BotPorting.prototype.getTradeOffers = function (callback) {
     this.fetching_active_trades = true;
     this.shop.getActiveTrades(function (active_trades) {
         for (var i = 0; i < active_trades.length; i += 1) {
-            var partner = active_trades[i].partnerID;
-            result[active_trades[i].partnerID] = self.getPortedTradeOffer(active_trades[i].partnerID);
+            var shopTrade = this.users.get(active_trades[i].partnerID).getShopTrade();
+            if (shopTrade.getMode() === "offer") {
+                result[active_trades[i].partnerID] = self.getPortedTradeOffer(shopTrade);
+            }
         }
         callback(result);
         self.fetching_active_trades = false;
     });
 };
 
-BotPorting.prototype.getPortedTradeOffer = function (partnerID) {
-    var shopTrade = this.users.get(partnerID).getShopTrade();
+BotPorting.prototype.getPortedTradeOffer = function (shopTrade) {
     var trade = shopTrade.valueOf();
     trade.additional = shopTrade.getStatusInfo();
     trade.steamid = shopTrade.partner.getSteamid();
