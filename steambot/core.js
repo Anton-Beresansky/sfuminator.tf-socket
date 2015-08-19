@@ -284,7 +284,7 @@ sfr.on("sendTradeOffer", function (offer) {
             }
             if (offer.makeAttempts > 5) {
                 sfr.endTradeOfferSession(offer.partnerSteamId);
-                steam.sendMessage(offer.partnerSteamId, "Oh no, there was an error :( steam returned the following message:\n" + error + "\n I'm cancelling this trade, but you can retry again if you want.");
+                steam.sendMessage(offer.partnerSteamId, "Oh no, there was an error :( steam returned the following message:\n" + error + "\n I'm cancelling this trade. If you want, you can also retry using manual trade");
             } else {
                 if (offer.makeAttempts === 2) {
                     if (ERROR26.check(error.toString())) {
