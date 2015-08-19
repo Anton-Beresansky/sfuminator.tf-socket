@@ -10,6 +10,14 @@ function BotPorting(sfuminator) {
     this.log = new Logs("v3 Bot Porting");
     this.site_api = new API("dev.sfuminator.tf");
     this.site_key = "***REMOVED***";
+
+    var self = this;
+    this.active_trades = [];
+    setInterval(function () {
+        self.shop.getActiveTrades(function (active_trades) {
+            self.active_trades = active_trades;
+        });
+    }, 1500);
 }
 
 BotPorting.prototype.requestAvailable = function (request) {
@@ -44,6 +52,9 @@ BotPorting.prototype.onRequest = function (request, callback) {
             case "dereserveItem":
                 this.dereserveItem(data, callback);
                 break;
+            case "queueHoldTrade":
+                this.queueHoldTrade(data.steamid, callback);
+                break;
         }
     } else {
         var found = false;
@@ -55,14 +66,44 @@ BotPorting.prototype.onRequest = function (request, callback) {
         if (data.hasOwnProperty("pokes")) {
             var pokes = data.pokes.split(",");
         }
+
+        var found = 0;
+        var returnaCounter = 0;
+        var result = {};
+        for (var i = 0; i < methods.length; i += 1) {
+            var m = methods[i];
+            if (m === "tradeOffers" || m === "queue") {
+                found += 1;
+            }
+        }
+        var returna = function (add) {
+            returnaCounter += 1;
+            for (var prop in add) {
+                result[prop] = add[prop];
+            }
+            if (returnaCounter === found) {
+                callback(result);
+            }
+        };
         for (var i = 0; i < methods.length; i += 1) {
             var thisMethods = methods[i];
             switch (thisMethods) {
                 case "tradeOffers":
-                    found = true;
                     this.log.debug("Getting trade offers", 1);
                     this.getTradeOffers(function (tradeOffers) {
-                        callback({tradeOffers: tradeOffers});
+                        returna({tradeOffers: tradeOffers});
+                    });
+                    break;
+                case "queue":
+                    this.log.debug("Getting queue", 1);
+                    this.getQueue(function (queue) {
+                        returna({queue: queue});
+                    });
+                    break;
+                case "pendingQueueMails":
+                    this.log.debug("Getting pending queue mail", 1);
+                    this.getPendingQueueMail(function (steamids) {
+                        returna({pendingQueueMails: steamids});
                     });
                     break;
             }
@@ -71,7 +112,6 @@ BotPorting.prototype.onRequest = function (request, callback) {
             var thisPoke = pokes[i];
             switch (thisPoke) {
                 case "keepAlive":
-                    found = true;
                     this.keepAlive();
                     break;
             }
@@ -142,26 +182,29 @@ BotPorting.prototype.cancelAllTradeOffers = function (callback) {
 
 };
 
-BotPorting.prototype.getTradeOffers = function (callback) {
-    var self = this;
-    var result = {};
-    if (this.fetching_active_trades) {
-        this.log.error("Still fetching active trades can't proceed");
-        callback();
-    }
-    this.fetching_active_trades = true;
-    this.shop.getActiveTrades(function (active_trades) {
-        for (var i = 0; i < active_trades.length; i += 1) {
-            var shopTrade = self.users.get(active_trades[i].partnerID).getShopTrade();
-            if (shopTrade.getMode() === "offer") {
-                result[active_trades[i].partnerID] = self.getPortedTradeOffer(shopTrade);
-            }
-        }
-        callback(result);
-        self.fetching_active_trades = false;
-    });
+BotPorting.prototype.queueHoldTrade = function (steamid, callback) {
+    var shopTrade = this.users.get(steamid).getShopTrade();
+    shopTrade.setStatusInfo("mail");
+    shopTrade.commit();
+    callback({result: "success", message: "Trade set in hold"});
+};
+BotPorting.prototype.removeFromQueue = function(steamid, callback){
+    var shopTrade = this.users.get(steamid).getShopTrade();
+    shopTrade.setStatus("closed");
+    shopTrade.commit();
+    callback({result: "success", message: "Person removed"});
 };
 
+BotPorting.prototype.getTradeOffers = function (callback) {
+    var result = {};
+    for (var i = 0; i < this.active_trades.length; i += 1) {
+        var shopTrade = this.users.get(this.active_trades[i].partnerID).getShopTrade();
+        if (shopTrade.getMode() === "offer") {
+            result[this.active_trades[i].partnerID] = this.getPortedTradeOffer(shopTrade);
+        }
+    }
+    callback(result);
+};
 BotPorting.prototype.getPortedTradeOffer = function (shopTrade) {
     var trade = shopTrade.valueOf();
     trade.additional = shopTrade.getStatusInfo();
@@ -173,6 +216,52 @@ BotPorting.prototype.getPortedTradeOffer = function (shopTrade) {
         trade.items.them[i].id = trade.items.them[i].id.toString();
     }
     return trade;
+};
+
+BotPorting.prototype.getPendingQueueMail = function (callback) {
+    var result = [];
+    for (var i = 0; i < this.active_trades.length; i += 1) {
+        var shopTrade = this.users.get(this.active_trades[i].partnerID).getShopTrade();
+        if (shopTrade.getMode() === "manual" && shopTrade.getStatusInfo() === "mail") {
+            result.push(shopTrade.partner.getSteamid());
+        }
+    }
+    callback(result);
+};
+BotPorting.prototype.getQueue = function (callback) {
+    var result = {};
+    for (var i = 0; i < this.active_trades.length; i += 1) {
+        var shopTrade = this.users.get(this.active_trades[i].partnerID).getShopTrade();
+        if (shopTrade.getMode() === "manual" && shopTrade.getStatusInfo() === "hold") {
+            result[this.active_trades[i].partnerID] = this.getPortedManualTrade(shopTrade);
+        }
+    }
+    callback(result);
+};
+BotPorting.prototype.getPortedManualTrade = function (shopTrade) {
+    var assets = shopTrade.getAssets();
+    var portedItems = [];
+    for (var i = 0; i < assets.legnth; i += 1) {
+        var asset = assets[i];
+        var item = asset.getItem();
+        portedItems.push({
+            name: item.getName(),
+            defindex: item.defindex,
+            level: item.level,
+            quality: item.quality,
+            id: item.id,
+            original_id: item.original_id,
+            scrapPrice: asset.getPrice().toScrap()
+        });
+    }
+    return {
+        steamid: shopTrade.partner.getSteamid(),
+        position: shopTrade.getID(),
+        tradeMode: ((shopTrade.getPlate().them.length === 0) ? "metal_mine" : "hatShop"),
+        tradeModePlus: "hatShop",
+        items: portedItems,
+        additional: "???"
+    };
 };
 
 BotPorting.prototype.getCurrency = function (callback) {
@@ -190,7 +279,6 @@ BotPorting.prototype.getCurrency = function (callback) {
     }
     callback(patchedCurrency);
 };
-
 BotPorting.prototype._getCompatibleCurrencyKey = function (key) {
     var compatibleKey = key;
     if (key === "metal") {
@@ -238,7 +326,6 @@ BotPorting.prototype.isScammer = function (steamid, callback) {
         callback(result.hasOwnProperty("scammer") && result.scammer);
     });
 };
-
 BotPorting.prototype.ajax = function (data, callback) {
     data.key = this.site_key;
     data.predata = "v3_bot_porting.php";
