@@ -64,3 +64,44 @@ TF2Item.prototype.getPrice = function () {
         return new TF2Price(0);
     }
 };
+
+TF2Item.prototype.getPaintColor = function (){
+    return this.getAttribute(142).getFloatValue().toString(16);
+};
+
+TF2Item.prototype.isPainted = function () {
+    return this.attributeExist(142);
+};
+
+TF2Item.prototype.attributeExist = function (defindex) {
+    return this.getAttribute(defindex).getDefindex() === defindex;
+};
+
+TF2Item.prototype.getAttribute = function (defindex) {
+    if (this.hasOwnProperty("attributes") && this.attributes instanceof Array) {
+        for (var i = 0; i < this.attributes.length; i += 1) {
+            if (this.attributes[i].defindex === defindex) {
+                return new TF2Attribute(this.attributes[i]);
+            }
+        }
+    }
+    return new TF2Attribute({});
+};
+
+function TF2Attribute(attribute) {
+    this.defindex = attribute.defindex;
+    this.value = attribute.value;
+    this.float_value = attribute.float_value;
+}
+
+TF2Attribute.prototype.getValue = function () {
+    return this.value;
+};
+
+TF2Attribute.prototype.getFloatValue = function () {
+    return this.float_value;
+};
+
+TF2Attribute.prototype.getDefindex = function () {
+    return this.defindex;
+};
