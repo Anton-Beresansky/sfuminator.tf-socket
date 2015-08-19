@@ -216,73 +216,66 @@ sfuminatorSocket.prototype.appendTrade = function (_trade, callback) {
         }
     });
 };
-//sfuminatorSocket.prototype.queueHoldTrade = function (steamid, callback) {
-/*    var self = this;
- self.emit("debug", "queueHoldTrade: " + steamid);
- var queueHoldTradeInterface = {
- name: "include",
- method: {
- name: "zxcv",
- httpmethod: "POST",
- predata: "botSocket.php",
- parameters: {
- action: "queueHoldTrade",
- steamid: steamid,
- key: self.key
- }
- }
- };
- sfuminatorAPI.callAPI(queueHoldTradeInterface, function (response) {
- if (callback) {
- callback(response);
- }
- });
- };*/
-//sfuminatorSocket.prototype.removeFromQueue = function (steamid, callback) {
-/*    var self = this;
- self.emit("debug", "removeFromQueue: " + steamid);
- var removeFromQueueInterface = {
- name: "include",
- method: {
- name: "zxcv",
- httpmethod: "POST",
- predata: "botSocket.php",
- parameters: {
- action: "removeFromQueue",
- steamid: steamid,
- key: self.key
- }
- }
- };
- sfuminatorAPI.callAPI(removeFromQueueInterface, function (response) {
- if (callback) {
- callback(response);
- }
- });
- };*/
-//sfuminatorSocket.prototype.setQueueStatus = function (message_object, callback) {
-/*    var self = this;
- self.emit("debug", "setQueueStatus: " + message_object.step);
- var encodedStatus = new Buffer(JSON.stringify({me: message_object.personal, all: message_object.global, additional: message_object.step})).toString("base64");
- var setQueueStatusInterface = {
- name: "include",
- method: {
- name: "zxcv",
- httpmethod: "GET",
- predata: "botBackpack.php",
- parameters: {
- action: "botStatus",
- status: encodedStatus,
- password: self.key
- }
- }
- };
- sfuminatorAPI.callAPI(setQueueStatusInterface, function (response) {
- if (callback) {
- callback(response);
- }
- });
- };*/
+sfuminatorSocket.prototype.queueHoldTrade = function (steamid, callback) {
+    var self = this;
+    self.emit("debug", "queueHoldTrade: " + steamid);
+    var parameters = this.defaultParameters;
+    parameters.action = "queueHoldTrade";
+    parameters.steamid = steamid;
+    var queueHoldTradeInterface = {
+        name: "include",
+        method: {
+            name: "socket",
+            httpmethod: "POST",
+            parameters: parameters
+        }
+    };
+    sfuminatorAPI.callAPI(queueHoldTradeInterface, function (response) {
+        if (callback) {
+            callback(response);
+        }
+    });
+};
+sfuminatorSocket.prototype.removeFromQueue = function (steamid, callback) {
+    var self = this;
+    self.emit("debug", "removeFromQueue: " + steamid);
+    var parameters = this.defaultParameters;
+    parameters.action = "removeFromQueue";
+    parameters.steamid = steamid;
+    var removeFromQueueInterface = {
+        name: "include",
+        method: {
+            name: "socket",
+            httpmethod: "POST",
+            parameters: parameters
+        }
+    };
+    sfuminatorAPI.callAPI(removeFromQueueInterface, function (response) {
+        if (callback) {
+            callback(response);
+        }
+    });
+};
+sfuminatorSocket.prototype.setQueueStatus = function (message_object, callback) {
+    var self = this;
+    self.emit("debug", "setQueueStatus: " + message_object.step);
+    var parameters = this.defaultParameters;
+    parameters.action = "botStatus";
+    parameters.status = new Buffer(JSON.stringify({me: message_object.personal, all: message_object.global, additional: message_object.step})).toString("base64");
+    var setQueueStatusInterface = {
+        name: "include",
+        method: {
+            name: "socket",
+            httpmethod: "POST",
+            parameters: parameters
+        }
+    };
+    sfuminatorAPI.callAPI(setQueueStatusInterface, function (response) {
+        if (callback) {
+            callback(response);
+        }
+    });
+};
 sfuminatorSocket.prototype.refreshBackpack = function (callback) {
     console.log("Called socket.refreshBackpack() useless..");
     if (typeof callback === "function") {
