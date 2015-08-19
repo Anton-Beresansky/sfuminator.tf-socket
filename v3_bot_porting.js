@@ -7,6 +7,7 @@ function BotPorting(sfuminator) {
     this.sfuminator = sfuminator;
     this.shop = this.sfuminator.shop;
     this.users = this.sfuminator.users;
+    this.db = this.sfuminator.db;
     this.log = new Logs("v3 Bot Porting");
     this.site_api = new API("dev.sfuminator.tf");
     this.site_key = "lolol_this_is_bot_porting";
@@ -52,12 +53,17 @@ BotPorting.prototype.onRequest = function (request, callback) {
             case "dereserveItem":
                 this.dereserveItem(data, callback);
                 break;
+            case "removeFromQueue":
+                this.removeFromQueue(data.steamid, callback);
+                break;
             case "queueHoldTrade":
                 this.queueHoldTrade(data.steamid, callback);
                 break;
+            case "botStatus":
+                this.setBotStatus(JSON.parse(new Buffer(data.status, 'base64').toString('utf8')), callback);
+                break;
         }
     } else {
-        var found = false;
         var methods = [];
         var pokes = [];
         if (data.hasOwnProperty("methods")) {
@@ -113,16 +119,14 @@ BotPorting.prototype.increaseHatTradeCount = function (steamid) {
     }
     this.insertTradeCompatible(compatible_trades);
 };
-
 BotPorting.prototype.insertTradeCompatible = function (trades) {
     var self = this;
-    this.sfuminator.db.connect(function (connection) {
+    this.db.connect(function (connection) {
         connection.query(self._getTradeCompatibleQuery(trades), function () {
             connection.release();
         });
     });
 };
-
 BotPorting.prototype._getTradeCompatibleQuery = function (trades) {
     var query = "INSERT INTO `trades` (`with`,`my_defindex`,`his_defindex`,`when`) VALUES ";
     for (var i = 0; i < trades.length; i += 1) {
@@ -136,7 +140,6 @@ BotPorting.prototype._getTradeCompatibleQuery = function (trades) {
             + " `his_defindex`=VALUES(`his_defindex`),"
             + " `when`=VALUES(`when`)";
 };
-
 BotPorting.prototype.setTradeOfferStatus = function (steamid, status, status_info, callback) {
     var user = this.users.get(steamid);
     var shopTrade = user.getShopTrade();
@@ -152,11 +155,9 @@ BotPorting.prototype.setTradeOfferStatus = function (steamid, status, status_inf
     }
     callback({result: "success", steamid: steamid, status: status});
 };
-
 BotPorting.prototype.cancelAllTradeOffers = function (callback) {
 
 };
-
 BotPorting.prototype.queueHoldTrade = function (steamid, callback) {
     var shopTrade = this.users.get(steamid).getShopTrade();
     shopTrade.setStatus("mail");
@@ -167,7 +168,16 @@ BotPorting.prototype.removeFromQueue = function (steamid, callback) {
     var shopTrade = this.users.get(steamid).getShopTrade();
     shopTrade.setStatus("closed");
     shopTrade.commit();
+    shopTrade.dereserveItems();
     callback({result: "success", message: "Person removed"});
+};
+BotPorting.prototype.setBotStatus = function (status, callback) {
+    this.db.connect(function (connection) {
+        connection.query("UPDATE `tasks` SET `additional`=" + connection.c.escape(JSON.stringify(status)) + " WHERE `of`='botStatus'", function () {
+            connection.release();
+            callback({response: "success", added_message: status});
+        });
+    });
 };
 
 BotPorting.prototype.getTradeOffers = function () {

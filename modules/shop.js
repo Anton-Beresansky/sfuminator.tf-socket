@@ -73,6 +73,11 @@ Shop.prototype.update = function (_changes) {
     for (var type in this.sections) {
         this.sections[type].commit();
     }
+    for (var i = 0; i < changes.remove.length; i += 1) {
+        if (this.reservations.exist(changes.remove[i].id)) {
+            this.reservations.cancel(changes.remove[i].id);
+        }
+    }
     this.count.update(changes.add, changes.remove);
 };
 
