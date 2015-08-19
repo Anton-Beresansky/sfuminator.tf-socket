@@ -26,6 +26,14 @@ User.prototype.getSteamid = function () {
     return this.steamid;
 };
 
+User.prototype.getName = function(){
+    return this.personaname;
+};
+
+User.prototype.getAvatar = function(){
+    return this.avatarfull;
+};
+
 User.prototype.getTF2Backpack = function () {
     return this.tf2Backpack;
 };
