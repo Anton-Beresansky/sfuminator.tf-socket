@@ -311,7 +311,7 @@ function Error26() {
     this.overflow = 2;
     this.errored = [];
     this.exceeded = function () {
-        return this.errored.length >= overflow;
+        return this.errored.length >= this.overflow;
     };
     this.add = function (steamid) {
         if (!this.exist(steamid)) {
