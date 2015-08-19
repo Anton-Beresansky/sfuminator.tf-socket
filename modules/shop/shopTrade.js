@@ -49,6 +49,12 @@ ShopTrade.prototype.cancel = function () {
     this.commit();
     this.log.debug("Trade " + this.getID() + " has been cancelled");
 };
+ShopTrade.prototype.accepted = function () {
+    this.setStatus("closed");
+    this.setStatusInfo("accepted");
+    this.commit();
+    this.log.debug("Trade " + this.getID() + " has been accepted");
+};
 ShopTrade.prototype.commit = function (callback) {
     if (isNaN(this.getID())) {
         this.log.error("Can't commit trade changes, no trade id associated");
@@ -183,6 +189,9 @@ ShopTrade.prototype.getPlate = function () {
         }
     }
     return plate;
+};
+ShopTrade.prototype.getPartner = function () {
+    return this.partner;
 };
 ShopTrade.prototype.setBotSteamid = function (steamid) {
     this.botSteamid = steamid;

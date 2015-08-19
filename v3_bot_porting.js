@@ -11,14 +11,6 @@ function BotPorting(sfuminator) {
     this.log = new Logs("v3 Bot Porting");
     this.site_api = new API("dev.sfuminator.tf");
     this.site_key = "lolol_this_is_bot_porting";
-
-    var self = this;
-    this.active_trades = [];
-    setInterval(function () {
-        self.shop.getActiveTrades(function (active_trades) {
-            self.active_trades = active_trades;
-        });
-    }, 1500);
 }
 
 BotPorting.prototype.requestAvailable = function (request) {
@@ -106,6 +98,9 @@ BotPorting.prototype.onRequest = function (request, callback) {
 BotPorting.prototype.increaseHatTradeCount = function (steamid) {
     this.log.debug("Appending trade for " + steamid);
     var trade = this.users.get(steamid).getShopTrade();
+    if (trade.getMode() === "manual") {
+        trade.accepted();
+    }
     var assets = trade.getAssets();
     var compatible_trades = [];
     var now = parseInt(new Date().getTime() / 1000);
@@ -162,6 +157,12 @@ BotPorting.prototype.queueHoldTrade = function (steamid, callback) {
     var shopTrade = this.users.get(steamid).getShopTrade();
     shopTrade.setStatus("mail");
     shopTrade.commit();
+    for (var i = 0; i < this.sfuminator.activeTrades.length; i += 1) { //Instant update active trades
+        if (shopTrade.getID() === this.sfuminator.activeTrades[i].getID()) {
+            this.sfuminator.activeTrades[i] = shopTrade;
+            break;
+        }
+    }
     callback({result: "success", message: "Trade set in hold"});
 };
 BotPorting.prototype.removeFromQueue = function (steamid, callback) {
@@ -182,10 +183,10 @@ BotPorting.prototype.setBotStatus = function (status, callback) {
 
 BotPorting.prototype.getTradeOffers = function () {
     var result = {};
-    for (var i = 0; i < this.active_trades.length; i += 1) {
-        var shopTrade = this.users.get(this.active_trades[i].partnerID).getShopTrade();
+    for (var i = 0; i < this.sfuminator.activeTrades.length; i += 1) {
+        var shopTrade = this.sfuminator.activeTrades[i];
         if (shopTrade.getMode() === "offer") {
-            result[this.active_trades[i].partnerID] = this.getPortedTradeOffer(shopTrade);
+            result[shopTrade.partner.getSteamid()] = this.getPortedTradeOffer(shopTrade);
         }
     }
     return result;
@@ -205,8 +206,8 @@ BotPorting.prototype.getPortedTradeOffer = function (shopTrade) {
 
 BotPorting.prototype.getPendingQueueMail = function () {
     var result = [];
-    for (var i = 0; i < this.active_trades.length; i += 1) {
-        var shopTrade = this.users.get(this.active_trades[i].partnerID).getShopTrade();
+    for (var i = 0; i < this.sfuminator.activeTrades.length; i += 1) {
+        var shopTrade = this.sfuminator.activeTrades[i];
         if (shopTrade.getMode() === "manual" && shopTrade.getStatus() === "mail") {
             result.push(shopTrade.partner.getSteamid());
         }
@@ -215,8 +216,8 @@ BotPorting.prototype.getPendingQueueMail = function () {
 };
 BotPorting.prototype.getQueue = function () {
     var result = [];
-    for (var i = 0; i < this.active_trades.length; i += 1) {
-        var shopTrade = this.users.get(this.active_trades[i].partnerID).getShopTrade();
+    for (var i = 0; i < this.sfuminator.activeTrades.length; i += 1) {
+        var shopTrade = this.sfuminator.activeTrades[i];
         if (shopTrade.getMode() === "manual" && shopTrade.getStatus() === "hold") {
             result.push(this.getPortedManualTrade(shopTrade));
         }

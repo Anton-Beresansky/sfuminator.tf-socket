@@ -1,7 +1,8 @@
 module.exports = TradeStatus;
 
-function TradeStatus(db) {
-    this.db = db;
+function TradeStatus(sfuminator) {
+    this.sfuminator = sfuminator;
+    this.db = this.sfuminator.db;
     this.update();
     this.steam_status_table = {
         0: "steam_down",
@@ -36,6 +37,36 @@ TradeStatus.prototype.update = function () {
 TradeStatus.prototype._getUpdateQuery = function () {
     return "SELECT `of`,`version`,`last_server_update`,`active`,`additional` FROM `tasks`";
 };
+
+TradeStatus.prototype.getQueue = function (steamid) {
+    var queueList = [];
+    for (var i = 0; i < this.sfuminator.activeTrades.length; i += 1) {
+        var shopTrade = this.sfuminator.activeTrades[i];
+        if (shopTrade.getMode() === "manual" && shopTrade.getStatus() === "hold") {
+            var user = shopTrade.getPartner();
+            queueList.push({
+                position: shopTrade.getID(),
+                steamid: user.getSteamid(),
+                name: user.getName(),
+                avatar_url: user.getAvatar()
+            });
+        }
+    }
+    var info = this.getQueueInfo();
+    var decodedInfo = info.all;
+    if (queueList.length) {
+        decodedInfo = decodedInfo.replace("#player", queueList[0].name);
+        if (queueList[0].steamid === steamid) {
+            decodedInfo = info.me;
+        }
+    }
+    return {list: queueList, botStatus: decodedInfo};
+};
+
+TradeStatus.prototype.getQueueInfo = function () {
+    return JSON.parse(this.botStatus.additional);
+};
+
 /*
  +-------------------+---------+--------------------+--------+----------------------------------------------------------------------------------------------------------------------------+
  | of                | version | last_server_update | active | additional                                                                                                                 |

@@ -816,6 +816,7 @@ function endTradeProcedure(result, thisTrade) {
 }
 function startHoldQueueProcedure(tradeInfo) {
     var steamid = tradeInfo.partnerID;
+    var hisFirstID = tradeInfo.hisItems[0].id;
     sfr.emit("steamMessage", {steamid: steamid, message: "I'll keep the items for you another minute, waiting your mail confirmation."});
     sfr.pendingMailVerifications.push(tradeInfo.partnerID);
     sfr.lockPendingMailVerificationChanges();
@@ -825,7 +826,14 @@ function startHoldQueueProcedure(tradeInfo) {
     var myItems = tradeInfo.myItems;
     var mailCheck = setInterval(function () {
         _sentOffers.forEach(function (offer) {
-            if (offer.steamid_other === steamid) {
+            var found = false;
+            for (var i = 0; i < offer.items_to_receive.length; i += 1) {
+                if (offer.items_to_receive[i].assetid === hisFirstID) {
+                    found = true;
+                    break;
+                }
+            }
+            if (offer.steamid_other === steamid && found) {
                 if (offer.trade_offer_state === 10) { //10 occurs on mail cancel
                     sfr.emit("debug", "queueHoldTrade: mail cancelled, trade with " + tradeInfo.partnerID + " has been cancelled");
                     endTradeProcedure("mailCancelled", tradeInfo);

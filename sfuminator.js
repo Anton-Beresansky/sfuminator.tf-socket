@@ -21,6 +21,7 @@ function Sfuminator(config, cloud, db) {
     this.interrupts = new Interrupts([
         {name: "updateCurrency", delay: 60000, tag: "internal"},
         {name: "updateShopInventory", delay: 2000, tag: "internal"},
+        {name: "updateActiveTrades", delay: 1500, tag: "internal"},
         {name: "updateStats", delay: 1000, tag: "global"},
         {name: "updateTradeStatus", delay: 1000, tag: "global"}
     ]);
@@ -28,8 +29,9 @@ function Sfuminator(config, cloud, db) {
     this.users = new Users(this, this.db, cloud);
     this.shop = new Shop(this);
     this.stats = new Stats(this);
-    this.status = new TradeStatus(this.db);
+    this.status = new TradeStatus(this);
 
+    this.activeTrades = [];
     this.shopTrade_decay = 15000;
 
     this.botPorting = new BotPorting(this);
@@ -67,6 +69,18 @@ Sfuminator.prototype.bindInterrupts = function () {
     this.interrupts.on("updateTradeStatus", function () {
         self.status.update();
     });
+    this.interrupts.on("updateActiveTrades", function () {
+        self.updateActiveTrades();
+    });
+};
+
+Sfuminator.prototype.isAdmin = function (steamid) {
+    for (var i = 0; i < this.admin.length; i += 1) {
+        if (this.admin[i] === steamid) {
+            return true;
+        }
+    }
+    return false;
 };
 
 Sfuminator.prototype.loadActiveTrades = function (callback) {
@@ -91,6 +105,25 @@ Sfuminator.prototype.loadActiveTrades = function (callback) {
                     tryCallback();
                 });
             }
+        }
+    });
+};
+
+Sfuminator.prototype.updateActiveTrades = function (callback) {
+    var self = this;
+    var newActiveTrades = [];
+    this.shop.getActiveTrades(function (active_trades) {
+        for (var i = 0; i < active_trades.length; i += 1) {
+            var shopTrade = self.users.get(active_trades[i].partnerID).getShopTrade();
+            if (shopTrade && shopTrade.getID() === active_trades[i].id) {
+                newActiveTrades.push(shopTrade);
+            } else {
+                self.log.error("Can't update active trade " + active_trades[i].id + ": id mismatch (" + shopTrade.getID() + ")");
+            }
+        }
+        self.activeTrades = newActiveTrades;
+        if (typeof callback === "function") {
+            callback(newActiveTrades);
         }
     });
 };
@@ -198,6 +231,9 @@ Sfuminator.prototype.getUpdates = function (request) {
         } else if (!trade.isClosed()) {
             response.methods.startTrade = trade.valueOf();
         }
+        if (trade.getMode() === "manual" && trade.getStatus() === "hold") {
+            response.methods.setQueue = this.status.getQueue(user.getSteamid());
+        }
     }
     if (data.hasOwnProperty("section") && data.section && this.shop.sectionExist(data.section.type)) { //Items
         var itemChanges = this.shop.sections[data.section.type].getClientChanges(data.section.last_update_date);
@@ -255,8 +291,9 @@ Sfuminator.prototype.requestTrade = function (request, mode, callback) {
                     if (plate.me.length === 0 || plate.them.length === 0) {
                         trade.reserveItems();
                         trade.send();
+                        callback(self.responses.tradeRequestSuccess(trade));
                     } else {
-                        callback(self.responses.tradeManualItems);
+                        callback(self.responses.manualMultiItems);
                     }
                 }
             }
@@ -278,13 +315,4 @@ Sfuminator.prototype.cancelTrade = function (request, callback) {
     } else {
         callback(this.responses.notInTrade);
     }
-};
-
-Sfuminator.prototype.isAdmin = function (steamid) {
-    for (var i = 0; i < this.admin.length; i += 1) {
-        if (this.admin[i] === steamid) {
-            return true;
-        }
-    }
-    return false;
 };

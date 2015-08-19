@@ -153,7 +153,7 @@ sfuminatorSocket.prototype.startNormalPollingProcedure = function () {
         }, self.timeout.normalPollingProcedure.time);
     };
     var mySelf = normalPollingProcedure_method;
-    self.timeout.normalPollingProcedure = {time: 3000, success: mySelf};
+    self.timeout.normalPollingProcedure = {time: 2000, success: mySelf};
     normalPollingProcedure_method();
 };
 sfuminatorSocket.prototype.startEmergencyPollingProcedure = function () {
