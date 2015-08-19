@@ -287,7 +287,7 @@ sfr.on("sendTradeOffer", function (offer) {
                 steam.sendMessage(offer.partnerSteamId, "Oh no, there was an error :( steam returned the following message:\n" + error + "\n I'm cancelling this trade, but you can retry again if you want.");
             } else {
                 if (offer.makeAttempts === 2) {
-                    if (ERROR26.check(error)) {
+                    if (ERROR26.check(error.toString())) {
                         console.log("Recognised error 26, pushing to stack");
                         ERROR26.add(offer.partnerSteamId);
                     }
