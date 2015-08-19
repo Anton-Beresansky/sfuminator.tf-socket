@@ -128,6 +128,9 @@ Shop.prototype.filterMineItems = function (items) {
             if (this.canBeSold(item)) {
                 var patchedItem = this.patchItem(item);
                 patchedItem.reserved_to = "";
+                if (item.isPainted()) {
+                    patchedItem.paint_color = item.getPaintColor();
+                }
                 filteredItems.push(patchedItem);
             }
         }
