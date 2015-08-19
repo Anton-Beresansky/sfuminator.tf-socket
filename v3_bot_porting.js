@@ -67,44 +67,21 @@ BotPorting.prototype.onRequest = function (request, callback) {
             var pokes = data.pokes.split(",");
         }
 
-        var found = 0;
-        var returnaCounter = 0;
         var result = {};
-        for (var i = 0; i < methods.length; i += 1) {
-            var m = methods[i];
-            if (m === "tradeOffers" || m === "queue") {
-                found += 1;
-            }
-        }
-        var returna = function (add) {
-            returnaCounter += 1;
-            for (var prop in add) {
-                result[prop] = add[prop];
-            }
-            if (returnaCounter === found) {
-                callback(result);
-            }
-        };
         for (var i = 0; i < methods.length; i += 1) {
             var thisMethods = methods[i];
             switch (thisMethods) {
                 case "tradeOffers":
                     this.log.debug("Getting trade offers", 1);
-                    this.getTradeOffers(function (tradeOffers) {
-                        returna({tradeOffers: tradeOffers});
-                    });
+                    result.tradeOffers = this.getTradeOffers();
                     break;
                 case "queue":
                     this.log.debug("Getting queue", 1);
-                    this.getQueue(function (queue) {
-                        returna({queue: queue});
-                    });
+                    result.queue = this.getQueue();
                     break;
                 case "pendingQueueMails":
                     this.log.debug("Getting pending queue mail", 1);
-                    this.getPendingQueueMail(function (steamids) {
-                        returna({pendingQueueMails: steamids});
-                    });
+                    result.pendingQueueMails = this.getPendingQueueMail();
                     break;
             }
         }
@@ -116,9 +93,7 @@ BotPorting.prototype.onRequest = function (request, callback) {
                     break;
             }
         }
-        if (!found) {
-            callback({});
-        }
+        callback(result);
     }
 };
 
@@ -184,18 +159,18 @@ BotPorting.prototype.cancelAllTradeOffers = function (callback) {
 
 BotPorting.prototype.queueHoldTrade = function (steamid, callback) {
     var shopTrade = this.users.get(steamid).getShopTrade();
-    shopTrade.setStatusInfo("mail");
+    shopTrade.setStatus("mail");
     shopTrade.commit();
     callback({result: "success", message: "Trade set in hold"});
 };
-BotPorting.prototype.removeFromQueue = function(steamid, callback){
+BotPorting.prototype.removeFromQueue = function (steamid, callback) {
     var shopTrade = this.users.get(steamid).getShopTrade();
     shopTrade.setStatus("closed");
     shopTrade.commit();
     callback({result: "success", message: "Person removed"});
 };
 
-BotPorting.prototype.getTradeOffers = function (callback) {
+BotPorting.prototype.getTradeOffers = function () {
     var result = {};
     for (var i = 0; i < this.active_trades.length; i += 1) {
         var shopTrade = this.users.get(this.active_trades[i].partnerID).getShopTrade();
@@ -203,7 +178,7 @@ BotPorting.prototype.getTradeOffers = function (callback) {
             result[this.active_trades[i].partnerID] = this.getPortedTradeOffer(shopTrade);
         }
     }
-    callback(result);
+    return result;
 };
 BotPorting.prototype.getPortedTradeOffer = function (shopTrade) {
     var trade = shopTrade.valueOf();
@@ -218,30 +193,30 @@ BotPorting.prototype.getPortedTradeOffer = function (shopTrade) {
     return trade;
 };
 
-BotPorting.prototype.getPendingQueueMail = function (callback) {
+BotPorting.prototype.getPendingQueueMail = function () {
     var result = [];
     for (var i = 0; i < this.active_trades.length; i += 1) {
         var shopTrade = this.users.get(this.active_trades[i].partnerID).getShopTrade();
-        if (shopTrade.getMode() === "manual" && shopTrade.getStatusInfo() === "mail") {
+        if (shopTrade.getMode() === "manual" && shopTrade.getStatus() === "mail") {
             result.push(shopTrade.partner.getSteamid());
         }
     }
-    callback(result);
+    return result;
 };
-BotPorting.prototype.getQueue = function (callback) {
-    var result = {};
+BotPorting.prototype.getQueue = function () {
+    var result = [];
     for (var i = 0; i < this.active_trades.length; i += 1) {
         var shopTrade = this.users.get(this.active_trades[i].partnerID).getShopTrade();
-        if (shopTrade.getMode() === "manual" && shopTrade.getStatusInfo() === "hold") {
-            result[this.active_trades[i].partnerID] = this.getPortedManualTrade(shopTrade);
+        if (shopTrade.getMode() === "manual" && shopTrade.getStatus() === "hold") {
+            result.push(this.getPortedManualTrade(shopTrade));
         }
     }
-    callback(result);
+    return result;
 };
 BotPorting.prototype.getPortedManualTrade = function (shopTrade) {
     var assets = shopTrade.getAssets();
     var portedItems = [];
-    for (var i = 0; i < assets.legnth; i += 1) {
+    for (var i = 0; i < assets.length; i += 1) {
         var asset = assets[i];
         var item = asset.getItem();
         portedItems.push({
@@ -257,7 +232,7 @@ BotPorting.prototype.getPortedManualTrade = function (shopTrade) {
     return {
         steamid: shopTrade.partner.getSteamid(),
         position: shopTrade.getID(),
-        tradeMode: ((shopTrade.getPlate().them.length === 0) ? "metal_mine" : "hatShop"),
+        tradeMode: ((shopTrade.getPlate().me.length === 0) ? "metal_mine" : "hatShop"),
         tradeModePlus: "hatShop",
         items: portedItems,
         additional: "???"

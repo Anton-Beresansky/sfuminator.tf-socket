@@ -127,7 +127,9 @@ function Sfuminator(steamid, tf2Instance, steamTradeInstance) {
     this.initStatus = {// Init status
         users: false,
         keywords_combinations: false,
-        tradeOffers: false
+        queue: false,
+        tradeOffers: false,
+        pendingQueueMails: false
     };
     this.timeout = {}; //list of timeouts {obj, time, success}
     this.interval = {}; //list of intervals {obj, time, success}
@@ -187,7 +189,9 @@ Sfuminator.prototype.init = function (init_socket) {
         self.emit("message", "Starting polling procedures...");
         socket.startNormalPollingProcedure();
         socket.startEmergencyPollingProcedure();
+        socket.addSocketRequest("queue");
         socket.addSocketRequest("tradeOffers");
+        socket.addSocketRequest("pendingQueueMails");
         socket.addSocketPoke("keepAlive");
     } else {
         delete selfie.initStatus.tradeOffers;
