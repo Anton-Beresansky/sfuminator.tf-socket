@@ -172,6 +172,7 @@ sfr.on("initComplete", function () {
     debugmsg("Everything successifully initialized", {level: 1});
     debugmsg(" --- SFUMINATOR BOT " + SOFTWARE_VERSION + " ---");
     debugmsg("Checking for interrupted trade offers...");
+    ERROR26 = new Error26();
     for (var x in sfr.tradeOffers) {
         var thisOffer = sfr.tradeOffers[x];
         if (thisOffer.status === "active" || thisOffer.status === "hold") {
@@ -286,9 +287,18 @@ sfr.on("sendTradeOffer", function (offer) {
                 steam.sendMessage(offer.partnerSteamId, "Oh no, there was an error :( steam returned the following message:\n" + error + "\n I'm cancelling this trade, but you can retry again if you want.");
             } else {
                 if (offer.makeAttempts === 2) {
-                    webRelog(function () {
-                        retryTradeOffer(offer);
-                    });
+                    if (ERROR26.check(error)) {
+                        console.log("Recognised error 26, pushing to stack");
+                        ERROR26.add(offer.partnerSteamId);
+                    }
+                    if (ERROR26.exceeded()) {
+                        console.log("ERROR 26 HAS EXCEEDED, RESTARTING");
+                        process.exit(1);
+                    } else {
+                        webRelog(function () {
+                            retryTradeOffer(offer);
+                        });
+                    }
                 } else {
                     retryTradeOffer(offer);
                 }
@@ -296,6 +306,41 @@ sfr.on("sendTradeOffer", function (offer) {
         }
     });
 });
+function Error26() {
+    this.time_decay = 10000;
+    this.overflow = 2;
+    this.errored = [];
+    this.exceeded = function () {
+        return this.errored.length >= overflow;
+    };
+    this.add = function (steamid) {
+        if (!this.exist(steamid)) {
+            this.errored.push(steamid);
+            this.decay(steamid);
+        }
+    };
+    this.check = function (error) {
+        return error.slice(error.length - 3, error.length - 1) === "26";
+    };
+    this.exist = function (steamid) {
+        for (var i = 0; i < this.errored.length; i += 1) {
+            if (steamid === this.errored[i]) {
+                return true;
+            }
+        }
+        return false;
+    };
+    this.decay = function (steamid) {
+        var self = this;
+        setTimeout(function () {
+            for (var i = 0; i < self.errored.length; i += 1) {
+                if (self.errored[i] === steamid) {
+                    self.errored.splice(i, 1);
+                }
+            }
+        }, this.time_decay);
+    };
+}
 sfr.on("postProfileComment", function (steamid, message) {
     if (steamTrade.hasOwnProperty("sessionID") && steamTrade.sessionID) {
         var sessionID = getSessionID();
