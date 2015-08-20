@@ -26,7 +26,7 @@ function Shop(sfuminator) {
     this.inventory = new ShopInventory(this, this.bots);
     this.reservations = new Reservations(this.db);
     this.instanceID = new Date().getTime();
-    this.countLimit = {Vintage: 3, Genuine: 3, Any: 5};
+    this.countLimit = {Vintage: 3, Genuine: 3, _any: 5, _price: {over: 6, limit: 3}};
     this.count = new ItemCount();
     this.search = new Search(this, this.sfuminator.responses);
     this.sections = {}; //{type: Section()}
@@ -107,7 +107,11 @@ Shop.prototype.getClientBackpack = function (type) {
 };
 
 Shop.prototype.getLimit = function (item) {
-    return (this.countLimit[item.getQualityName()]) ? this.countLimit[item.getQualityName()] : this.countLimit.Any;
+    if (item.getPrice().toMetal() > this.countLimit._price.over) {
+        return this.countLimit._price.limit;
+    } else {
+        return (this.countLimit[item.getQualityName()]) ? this.countLimit[item.getQualityName()] : this.countLimit._any;
+    }
 };
 
 Shop.prototype.getMine = function (backpack) {
