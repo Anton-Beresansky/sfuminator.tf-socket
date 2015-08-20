@@ -286,7 +286,7 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
             } else {
                 onAcceptedItem(item);
                 itemCount.add(item);
-                var netCount = (itemCount.get(item) + self.shop.count.get(item)) - self.shop.countLimit;
+                var netCount = (itemCount.get(item) + self.shop.count.get(item)) - self.shop.getLimit(item);
                 if (netCount > 0) {
                     self.response = self.ajaxResponses.itemExceedCount(item, netCount);
                     self.emit("response", self.response);

@@ -25,7 +25,7 @@ function AjaxResponses(sfuminator) {
         return {result: "error", message: "Sorry, you can sell only " + limit + " items per trade in this Beta"};
     };
     this.itemExceedCount = function (item, excess) {
-        return {result: "error", message: "Sorry, you have to remove " + ((excess > 1) ? (" " + excess) : "") + "'" + item.name + "', there are too many in the shop right now"};
+        return {result: "error", message: "Sorry, you have to remove " + ((excess > 1) ? (excess + " ") : "") + '"' + item.getFullName() + '", there are too many in the shop right now'};
     };
     this.itemNotFound = {result: "error", message: "No item found in the shop"};
     this.cannotTrade = function (steam_status) {
