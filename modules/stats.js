@@ -12,12 +12,12 @@ function Stats(sfuminator) {
         fetchActiveTradeCount: {every: 5, c: 0},
         fetchTradeCount: {every: 5, c: 0},
         fetchScannedProfiles: {every: 30, c: 0},
-        fetchNewItems: {every: 2, c: 0}
+        fetchNewItems: {every: 2, c: 0},
+        storePricedStock: {every: (60 * 15), c: 0}
     };
     this.stats = {};
     this.max_new_items = 10;
     this.log = new Logs("Stats");
-    this.load();
 }
 
 Stats.prototype.get = function (last_update_date) {
@@ -90,10 +90,7 @@ Stats.prototype.fetchNewItems = function () {
 };
 
 Stats.prototype.fetchActiveTradeCount = function () {
-    var self = this;
-    this.shop.getActiveTrades(function (list) {
-        self.stats.active_trade_count = list.length;
-    });
+    this.stats.active_trade_count = this.sfuminator.activeTrades.length;
 };
 
 Stats.prototype.fetchScannedProfiles = function () {
@@ -132,3 +129,57 @@ Stats.prototype._getTradeCountQuery = function () {
 Stats.prototype._getOldTradeCountQuery = function () {
     return "SELECT COUNT(*) as trade_count FROM `trades` WHERE `when`<1439827244";
 };
+
+Stats.prototype.storePricedStock = function () {
+    var self = this;
+    this.db.connect(function (connection) {
+        connection.query(self._getStoreStockQuery(), function () {
+            connection.release();
+        });
+    });
+};
+
+Stats.prototype.getPricedStockCount = function () {
+    var pricedStockCount = {};
+    for (var type in this.shop.sections) {
+        for (var i = 0; i < this.shop.sections[type].items.length; i += 1) {
+            var item = this.shop.inventory.getItem(this.shop.sections[type].items[i].id);
+            var metalPrice = item.getPrice().toMetal();
+            var owner = item.getOwner();
+            if (!pricedStockCount.hasOwnProperty(owner)) {
+                pricedStockCount[owner] = {};
+            }
+            if (!pricedStockCount[owner].hasOwnProperty(type)) {
+                pricedStockCount[owner][type] = {};
+            }
+            if (!pricedStockCount[owner][type].hasOwnProperty(metalPrice)) {
+                pricedStockCount[owner][type][metalPrice] = 0;
+            }
+            pricedStockCount[owner][type][metalPrice] += 1;
+        }
+    }
+    return pricedStockCount;
+};
+
+Stats.prototype._getStoreStockQuery = function () {
+    var pricedStockCount = this.getPricedStockCount();
+    var query = "INSERT INTO `shop_stock` (`bot_steamid`,`shop_type`,`price`,`count`) VALUES ";
+    for (var owner in pricedStockCount) {
+        for (var type in pricedStockCount[owner]) {
+            for (var metalPrice in pricedStockCount[owner][type]) {
+                query += "('" + owner + "','" + type + "'," + metalPrice + "," + pricedStockCount[owner][type][metalPrice] + "), ";
+            }
+        }
+    }
+    return query.slice(0, query.length - 2) + " ON DUPLICATE KEY UPDATE `count`=VALUES(`count`)";
+};
+/*
+ * {
+ *      bot_steamid:
+ *      shop_type:
+ *      price:
+ *      count:
+ *      store_date:
+ * }
+ * 
+ */

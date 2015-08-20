@@ -51,6 +51,7 @@ Sfuminator.prototype.init = function () {
         self.loadActiveTrades(function () {
             self.log.debug("-- Sfuminator socket is ready --", 0);
             self.emit("ready");
+            self.stats.load();
         });
     });
 };
