@@ -172,7 +172,7 @@ ShopTrade.prototype.dereserveItems = function () {
     this.logAssets(3);
     for (var i = 0; i < this.assets.length; i += 1) {
         var item = this.assets[i].getItem();
-        if (item.getOwner() !== this.partner.getSteamid()) {
+        if (this.shop.reservations.exist(item.id)) {
             this.shop.reservations.cancel(item.id);
         }
     }
