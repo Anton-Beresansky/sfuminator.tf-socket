@@ -17,7 +17,7 @@ function Sfuminator(config, cloud, db) {
     this.db = db;
     this.log = new Logs("Sfuminator");
     this.log.setLevel(0);
-    this.admin = config.admins;
+    this.admin = config.admin;
     this.interrupts = new Interrupts([
         {name: "updateCurrency", delay: 60000, tag: "internal"},
         {name: "updateShopInventory", delay: 2000, tag: "internal"},
