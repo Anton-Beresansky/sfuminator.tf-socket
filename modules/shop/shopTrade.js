@@ -432,7 +432,7 @@ TradeDb.prototype._getSaveItemsQuery = function () {
             var asset = assets[i];
             query += "(" + this.trade.getID() + "," + asset.getItem().id + ",'" + asset.getShopType() + "'," + asset.getPrice().toScrap() + "), ";
         }
-        return query.slice(0, query.length - 2) + " ON DUPLICATE KEY UPDATE item_id=item_id";
+        return query.slice(0, query.length - 2) + " ON DUPLICATE KEY UPDATE item_id=VALUES(item_id)";
     } else {
         this.log.error("Can't save trade items on database, missing trade_id");
     }
