@@ -231,11 +231,11 @@ BotPorting.prototype.getPortedManualTrade = function (shopTrade) {
         var asset = assets[i];
         var item = asset.getItem();
         portedItems.push({
-            name: item.getName(),
+            name: item.getFullName(),
             defindex: item.defindex,
             level: item.level,
             quality: item.quality,
-            id: item.id,
+            id: item.id.toString(),
             original_id: item.original_id,
             scrapPrice: asset.getPrice().toScrap()
         });
