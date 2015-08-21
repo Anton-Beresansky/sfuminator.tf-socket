@@ -30,7 +30,7 @@ TF2Item.prototype.getOwner = function () {
 };
 
 TF2Item.prototype.getName = function () {
-    return this.name;
+    return this.item_name;
 };
 
 TF2Item.prototype.getQualityName = function () {
