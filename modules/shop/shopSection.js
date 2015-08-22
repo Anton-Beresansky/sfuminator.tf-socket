@@ -11,11 +11,17 @@ function Section(shop, type) {
     this.compressedItems = [];
     this.toAdd = [];
     this.toRemove = [];
-    this.versioning = new Versioning(40, "section " + type);
+    if (!this.isMine()) {
+        this.versioning = new Versioning(40, "section " + type);
+    }
     this.log = new Logs("Section " + type);
 }
 
 Section.prototype.getClientChanges = function (last_update_date) {
+    if (this.isMine()) {
+        this.log.error("Can't get client changes for mine backpack");
+        return;
+    }
     last_update_date = new Date(last_update_date);
     if (last_update_date.toString() !== "Invalid Date") {
         this.log.debug("Getting changes: " + last_update_date, 3);
@@ -59,7 +65,9 @@ Section.prototype.commit = function (date) {
     }
     this.commitRemovals();
     this.commitAdds();
-    this.versioning.add(this.toAdd, this.toRemove, date);
+    if (!this.isMine()) {
+        this.versioning.add(this.toAdd, this.toRemove, date);
+    }
     this.toAdd = [];
     this.toRemove = [];
     this.log.debug("Committed, items in stock: " + this.items.length);
@@ -125,6 +133,10 @@ Section.prototype.getCompressedItemIndex = function (id) {
 
 Section.prototype.makeSectionItem = function (item) {
     return new SectionItem(this.shop, this.type, item);
+};
+
+Section.prototype.isMine = function () {
+    return this.type === "mine";
 };
 
 function SectionItem(shop, type, item) {
