@@ -11,10 +11,12 @@ function Section(shop, type) {
     this.compressedItems = [];
     this.toAdd = [];
     this.toRemove = [];
+    this.log = new Logs("Section " + type);
+    this.log.setLevel(1);
     if (!this.isMine()) {
         this.versioning = new Versioning(40, "section " + type);
+        this.log.setLevel(0);
     }
-    this.log = new Logs("Section " + type);
 }
 
 Section.prototype.getClientChanges = function (last_update_date) {
@@ -70,7 +72,7 @@ Section.prototype.commit = function (date) {
     }
     this.toAdd = [];
     this.toRemove = [];
-    this.log.debug("Committed, items in stock: " + this.items.length);
+    this.log.debug("Committed, items in stock: " + this.items.length, 1);
 };
 
 Section.prototype.commitRemovals = function () {
