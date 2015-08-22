@@ -117,6 +117,7 @@ BotPorting.prototype.increaseHatTradeCount = function (steamid) {
 BotPorting.prototype.insertTradeCompatible = function (trades) {
     var self = this;
     this.db.connect(function (connection) {
+        console.log(self._getTradeCompatibleQuery(trades));
         connection.query(self._getTradeCompatibleQuery(trades), function () {
             connection.release();
         });
@@ -129,7 +130,7 @@ BotPorting.prototype._getTradeCompatibleQuery = function (trades) {
         query += "('" + trade.steamid + "'," + trade.my_defindex + "," + trade.his_defindex + "," + trade.date + "), ";
     }
     query = query.slice(0, query.length - 2);
-    return query + " ON DUPLICATE KEY UPDATE "
+    return query + " ON DUPLICATE KEY UPDATE"
             + " `with`=VALUES(`with`),"
             + " `my_defindex`=VALUES(`my_defindex`),"
             + " `his_defindex`=VALUES(`his_defindex`),"
