@@ -5,6 +5,7 @@ var TF2Price = require("./tf2/tf2Price.js");
 var TF2Currency = require("./tf2/tf2Currency.js");
 var ShopRatio = require("./shop/shopRatio.js");
 var ShopInventory = require("./shop/shopInventory.js");
+var Section = require("./shop/shopSection.js");
 var ItemVersioning = require("../lib/dataVersioning.js");
 var Reservations = require("./shop/shopReservations.js");
 var ItemCount = require("./shop/shopItemCount.js");
@@ -60,20 +61,20 @@ Shop.prototype.update = function (_changes) {
     this.log.debug("Changes: " + JSON.stringify(changes, null, " "), 4);
     for (var action in changes) {
         for (var i = 0; i < changes[action].length; i += 1) {
-            var shopType = changes[action][i].shopType;
+            var item = changes[action][i];
+            var shopType = this.inventory.parseType(item);
             if (shopType) {
-                var patchedItem = this.patchItem(changes[action][i]);
                 if (!this.sections.hasOwnProperty(shopType)) {
-                    this.sections[shopType] = new Section(shopType);
+                    this.sections[shopType] = new Section(this, shopType);
                 }
-                this.sections[shopType][action](patchedItem);
+                this.sections[shopType][action](item);
             }
         }
     }
     for (var type in this.sections) {
         this.sections[type].commit();
     }
-    for (var i = 0; i < changes.remove.length; i += 1) {
+    for (var i = 0; i < changes.remove.length; i += 1) { //Removing reservations of deleted items(?)
         if (this.reservations.exist(changes.remove[i].id)) {
             this.reservations.cancel(changes.remove[i].id);
         }
@@ -85,8 +86,7 @@ Shop.prototype.getItem = function (id) {
     for (var section in this.sections) {
         for (var i = 0; i < this.sections[section].items.length; i += 1) {
             var item = this.sections[section].items[i];
-            if (id === item.id) {
-                item.reserved_to = this.reservations.get(item.id).getHolder();
+            if (item.id === id) {
                 return item;
             }
         }
@@ -99,11 +99,7 @@ Shop.prototype.sectionExist = function (section) {
 };
 
 Shop.prototype.getClientBackpack = function (type) {
-    var items = this.sections[type].getItems();
-    for (var i = 0; i < items.length; i += 1) {
-        items[i].reserved_to = this.reservations.get(items[i].id).getHolder();
-    }
-    return items;
+    return this.sections[type].getCompressedItems();
 };
 
 Shop.prototype.getLimit = function (item) {
@@ -117,33 +113,29 @@ Shop.prototype.getLimit = function (item) {
 Shop.prototype.getMine = function (backpack) {
     this.log.debug("Getting mine items, bp: " + backpack.getOwner());
     if (!backpack.hasErrored()) {
-        return this.filterMineItems(backpack.items);
+        return this.filterMineItems(backpack.items).getCompressedItems();
     } else {
         return {
             result: "error",
             message: backpack.getErrorMessage(),
             timestamp: parseInt(backpack.last_update_date.getTime() / 1000),
-            items: this.filterMineItems(backpack.items)
+            items: this.filterMineItems(backpack.items).getCompressedItems()
         };
     }
 };
 
 Shop.prototype.filterMineItems = function (items) {
-    var filteredItems = [];
+    var mySection = new Section(this, "mine");
     if (items) {
         for (var i = 0; i < items.length; i += 1) {
             var item = items[i];
             if (this.canBeSold(item)) {
-                var patchedItem = this.patchItem(item);
-                patchedItem.reserved_to = "";
-                if (item.isPainted()) {
-                    patchedItem.paint_color = item.getPaintColor();
-                }
-                filteredItems.push(patchedItem);
+                mySection.add(item);
             }
         }
+        mySection.commit();
     }
-    return filteredItems;
+    return mySection;
 };
 
 Shop.prototype.canBeSold = function (item) {
@@ -248,70 +240,4 @@ Shop.prototype._getActivePartnersBotComponentQuery = function () {
         query += "'" + this.bots[i] + "'";
     }
     return query + ")";
-};
-
-//Section changes (add, remove) are applied only on commit
-
-function Section(type) {
-    this.type = type;
-    this.items = [];
-    this.toAdd = [];
-    this.toRemove = [];
-    this.versioning = new ItemVersioning(40, "section " + type);
-    this.log = new Logs("Section " + type);
-}
-
-Section.prototype.getClientChanges = function (last_update_date) {
-    last_update_date = new Date(last_update_date);
-    if (last_update_date.toString() !== "Invalid Date") {
-        this.log.debug("Getting changes: " + last_update_date, 3);
-        var itemChanges = this.versioning.get(last_update_date);
-        if (itemChanges) {
-            itemChanges.date = itemChanges.date.getTime();
-            return itemChanges;
-        }
-    }
-    return false;
-};
-
-Section.prototype.itemExist = function (id) {
-    for (var i = 0; i < this.items.length; i += 1) {
-        if (this.items[i].id === id) {
-            return true;
-        }
-    }
-    return false;
-};
-
-Section.prototype.getItems = function () {
-    return this.items;
-};
-
-Section.prototype.add = function (item) {
-    this.toAdd.push(item);
-};
-
-Section.prototype.remove = function (item) {
-    this.toRemove.push(item);
-};
-
-Section.prototype.commit = function (date) {
-    if (!date) {
-        date = new Date();
-    }
-    var length = this.items.length;
-    for (var i = 0; i < length; i += 1) {
-        for (var j = 0; j < this.toRemove.length; j += 1) {
-            if (this.items[i].id === this.toRemove[j].id) {
-                this.items.splice(i, 1);
-                length -= 1;
-                break;
-            }
-        }
-    }
-    this.items = this.items.concat(this.toAdd);
-    this.versioning.add(this.toAdd, this.toRemove, date);
-    this.toAdd = [];
-    this.toRemove = [];
-    this.log.debug("Committed, items in stock: " + this.items.length);
 };

@@ -82,7 +82,7 @@ Stats.prototype.fetchNewItems = function () {
         cycleTill = this.max_new_items;
     }
     for (var i = 0; i < cycleTill; i += 1) {
-        finalList.push(this.shop.getItem(itemList[i].id));
+        finalList.push(itemList[i].valueOf());
     }
     if (!this.stats.hasOwnProperty("new_items") || (JSON.stringify(finalList) !== JSON.stringify(this.stats.new_items.items))) {
         this.stats.new_items = {items: finalList, last_update_date: new Date().getTime()};
@@ -143,7 +143,7 @@ Stats.prototype.getPricedStockCount = function () {
     var pricedStockCount = {};
     for (var type in this.shop.sections) {
         for (var i = 0; i < this.shop.sections[type].items.length; i += 1) {
-            var item = this.shop.inventory.getItem(this.shop.sections[type].items[i].id);
+            var item = this.shop.sections[type].items[i].getItem();
             var metalPrice = item.getPrice().toMetal();
             var owner = item.getOwner();
             if (!pricedStockCount.hasOwnProperty(owner)) {

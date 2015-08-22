@@ -182,7 +182,7 @@ Sfuminator.prototype.onAction = function (request, callback) {
             callback(this.shop.search.find(request.getData().text));
             break;
         case "getShopItem":
-            callback(this.shop.getItem(parseInt(data.id)));
+            callback(this.shop.getItem(parseInt(data.id)).valueOf());
             break;
         case "getStats":
             callback(this.stats.get(parseInt(data.last_update_date)));

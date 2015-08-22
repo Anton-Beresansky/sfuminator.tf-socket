@@ -15,16 +15,16 @@ Search.prototype.find = function (text) {
         for (var section in this.shop.sections) {
             var sectionItems = this.shop.sections[section].getItems();
             for (var i = 0; i < sectionItems.length; i += 1) {
-                var shopItem = sectionItems[i];
-                var shopItemName = shopItem.name.toLowerCase();
+                var item = sectionItems[i].getItem();
+                var itemName = item.getFullName().toLowerCase();
                 for (var j = 0; j < words.length; j += 1) {
-                    var found = shopItemName.search(words[j]);
+                    var found = itemName.search(words[j]);
                     if (found === -1) {
                         break;
                     }
                 }
                 if (found > -1) {
-                    result.push({item: this.shop.getItem(shopItem.id), index: found});
+                    result.push({item: item, index: found});
                 }
             }
         }
