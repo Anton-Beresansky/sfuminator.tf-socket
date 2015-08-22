@@ -12,10 +12,9 @@ function Section(shop, type) {
     this.toAdd = [];
     this.toRemove = [];
     this.log = new Logs("Section " + type);
-    this.log.setLevel(1);
     if (!this.isMine()) {
         this.versioning = new Versioning(40, "section " + type);
-        this.log.setLevel(0);
+        this.log.setLevel(1);
     }
 }
 
