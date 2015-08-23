@@ -291,13 +291,14 @@ BotPorting.prototype.checkIncomingOffer = function (data, callback) {
     var user = this.users.get(data.steamid);
     this.isScammer(data.steamid, function (scammer) {
         if (!scammer) {
-            var itemID = parseInt(data.myItem.id);
+            var itemID = parseInt(data.id);
             var shopItem = self.shop.getItem(itemID);
             if (shopItem) {
-                if (self.shop.reservations.get(itemID).getHolder() === "") {
+                if (shopItem.getReservation().getHolder() === "") {
                     self.shop.reservations.add(user.getSteamid(), itemID);
-                    self.log.debug("Success, allowing trade for item " + shopItem.name + " (" + itemID + ") scrapPrice: " + shopItem.scrapPrice);
-                    callback({result: "success", scrapPrice: shopItem.scrapPrice});
+                    var item = shopItem.getItem();
+                    self.log.debug("Success, allowing trade for item " + item.getFullName() + " (" + itemID + ") scrapPrice: " + shopItem.getPrice().toScrap());
+                    callback({result: "success", scrapPrice: shopItem.getPrice().toScrap()});
                 } else {
                     self.log.debug("Rejecting, item is already reserved");
                     callback({result: "error", error: "item_reserved"});

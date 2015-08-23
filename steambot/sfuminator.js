@@ -86,6 +86,8 @@ function Sfuminator(steamid, tf2Instance, steamTradeInstance) {
     mySteamID = steamid;
     usersFileName = 'sfr_users_' + mySteamID + '.txt';
     socket.setBot(mySteamID);
+    this.mySteamid = mySteamID;
+    
     this.busy = false;
     this.in_trade = false;
     this.logging = false;

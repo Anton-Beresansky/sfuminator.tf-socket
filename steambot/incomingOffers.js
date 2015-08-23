@@ -2,7 +2,12 @@ module.exports = IncomingOffers;
 
 var events = require("events");
 var API = require("../lib/api.js");
+
+var CFG = JSON.parse(require("fs").readFileSync("../socket_config.json"));
 var sfuminatorAPI = new API("sfuminator.tf");
+if (CFG.application === "dev") {
+    sfuminatorAPI = new API("dev.sfuminator.tf");
+}
 
 function IncomingOffers(steam, tradeOffers, sfr) {
     this.incomingOffers = [];
@@ -136,8 +141,7 @@ IncomingOffers.prototype.countMetal = function (items) {
 };
 
 IncomingOffers.prototype.alertIncomingOffer = function (partnerID, myItem, callback) {
-    var realItem = {defindex: myItem.defindex, quality: myItem.quality, id: myItem.id, original_id: myItem.original_id};
-    this.post({action: "checkIncomingOffer", steamid: partnerID, myItem: realItem}, function (result) {
+    this.post({action: "checkIncomingOffer", steamid: partnerID, id: myItem.id}, function (result) {
         callback(result);
     });
 };
@@ -198,12 +202,13 @@ IncomingOffers.prototype._associateAssets = function (backpack, assets, partnerI
 IncomingOffers.prototype.post = function (data, callback) {
     data.rootKey = "9x7797qtujacli7l89ku58cyc7oxmtay43";
     data.botRequest = true;
+    data.botSteamid = this.sfr.mySteamid;
     var myInterface = {
         name: "include",
         method: {
             name: "socket",
             httpmethod: "POST",
-            parameters: JSON.stringify(data)
+            parameters: data
         }
     };
     sfuminatorAPI.callAPI(myInterface, function (result) {
