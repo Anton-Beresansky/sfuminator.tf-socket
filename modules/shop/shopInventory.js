@@ -17,7 +17,7 @@ function ShopInventory(shop, inventoryBots) {
         this.bots.push(this.users.get(inventoryBots[i]));
     }
     this.versioning = new ItemVersioning(10, "inventory");
-    this.items = []; //Full backpack item + shop identifier
+    this.items = []; //Full backpack with tf2 formatted items
     this.count = []; //[{defindex: Int, quality: Int, craftable: Bool, count: Int}]
     this.decay = 2500;
     this.last_update_date = 0;
