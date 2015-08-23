@@ -16,7 +16,6 @@ function Section(shop, type) {
         this.versioning = new Versioning(40, "section " + type);
         this.log.setLevel(1);
     }
-    this.log.setLevel(3);
 }
 
 Section.prototype.getClientChanges = function (last_update_date) {
