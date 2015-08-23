@@ -99,7 +99,17 @@ Shop.prototype.sectionExist = function (section) {
 };
 
 Shop.prototype.getClientBackpack = function (type) {
-    return this.sections[type].getCompressedItems().valueOf();
+    return this.patchCompressedItems(this.sections[type].getCompressedItems());
+
+};
+
+Shop.prototype.patchCompressedItems = function (compressedItems) {
+    for (var i = 0; i < compressedItems.length; i += 1) { //Cycling through items object->json + patching reservations 
+        for (var j = 0; j < compressedItems[i].i.length; j += 1) {
+            compressedItems[i].i[j] = compressedItems[i].i[j].valueOf();
+        }
+    }
+    return compressedItems;
 };
 
 Shop.prototype.getLimit = function (item) {
@@ -113,13 +123,13 @@ Shop.prototype.getLimit = function (item) {
 Shop.prototype.getMine = function (backpack) {
     this.log.debug("Getting mine items, bp: " + backpack.getOwner());
     if (!backpack.hasErrored()) {
-        return this.filterMineItems(backpack.items).getCompressedItems().valueOf();
+        return this.patchCompressedItems(this.filterMineItems(backpack.items).getCompressedItems());
     } else {
         return {
             result: "error",
             message: backpack.getErrorMessage(),
             timestamp: parseInt(backpack.last_update_date.getTime() / 1000),
-            items: this.filterMineItems(backpack.items).getCompressedItems().valueOf()
+            items: this.patchCompressedItems(this.filterMineItems(backpack.items).getCompressedItems())
         };
     }
 };
