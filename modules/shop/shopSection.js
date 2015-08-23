@@ -28,6 +28,12 @@ Section.prototype.getClientChanges = function (last_update_date) {
         this.log.debug("Getting changes: " + last_update_date, 3);
         var itemChanges = this.versioning.get(last_update_date);
         if (itemChanges) {
+            for (var i = 0; i < itemChanges.toAdd.length; i += 1) {
+                itemChanges.toAdd[i] = itemChanges.toAdd[i].valueOf();
+            }
+            for (var i = 0; i < itemChanges.toRemove.length; i += 1) {
+                itemChanges.toRemove[i] = itemChanges.toRemove[i].valueOf();
+            }
             itemChanges.date = itemChanges.date.getTime();
             return itemChanges;
         }
