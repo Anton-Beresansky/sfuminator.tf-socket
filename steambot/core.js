@@ -308,7 +308,7 @@ sfr.on("sendTradeOffer", function (offer) {
 });
 function Error26() {
     this.time_decay = 10000;
-    this.overflow = 2;
+    this.overflow = 4;
     this.errored = [];
     this.exceeded = function () {
         return this.errored.length >= this.overflow;
