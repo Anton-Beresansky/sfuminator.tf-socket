@@ -112,12 +112,17 @@ BotPorting.prototype.increaseHatTradeCount = function (steamid) {
             compatible_trades.push({steamid: steamid, my_defindex: item.defindex, his_defindex: 5002, date: now});
         }
     }
-    this.insertTradeCompatible(compatible_trades);
+    if (compatible_trades.length > 0) {
+        /* It seems that some times procedure fails and there are
+         * no compatible trades, it would mean there are no assets
+         * I would say because trade gets recognised as accepted too late (?)
+         */
+        this.insertTradeCompatible(compatible_trades);
+    }
 };
 BotPorting.prototype.insertTradeCompatible = function (trades) {
     var self = this;
     this.db.connect(function (connection) {
-        console.log(self._getTradeCompatibleQuery(trades));
         connection.query(self._getTradeCompatibleQuery(trades), function () {
             connection.release();
         });
