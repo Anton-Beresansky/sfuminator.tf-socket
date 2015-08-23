@@ -100,12 +100,22 @@ ShopTrade.prototype.load = function (callback) {
             }
         }
         self.setItems(items);
-        self.log.debug("Loaded items: " + JSON.stringify(items), 3);
+        self.log.debug("Loaded items: " + JSON.stringify(items), 0);
         self.verifyItems(function (success) {
             self.log.debug("Loaded trade " + self.getID() + ", verification success: " + ((success) ? success : JSON.stringify(self.response)));
             self.logAssets();
             if (typeof callback === "function") {
                 callback(self);
+            }
+            if (!success) {
+                self.log.warning("Assets list is empty, considering trade as accepted");
+                self.accepted();
+                self.log.warning("Cancelling reservations...");
+                for (var section in items) {
+                    for (var i = 0; i < items[section].length; i += 1) {
+                        self.shop.reservations.cancel(items[section][i]);
+                    }
+                }
             }
         });
     });
@@ -118,7 +128,7 @@ ShopTrade.prototype.verifyItems = function (callback) {
         if (this.shop.sectionExist(section) && this.items[section] instanceof Array) {
             for (var i = 0; i < this.items[section].length; i += 1) {
                 if (this.verifyShopItem(this.items[section][i], section)) {
-                    this.assets.push(this.getAsset(this.shop.inventory.getItem(this.items[section][i])));
+                    this.assets.push(this.makeAsset(this.shop.inventory.getItem(this.items[section][i])));
                 } else {
                     callback(false);
                     return;
@@ -139,7 +149,7 @@ ShopTrade.prototype.verifyItems = function (callback) {
     }
     if (this.items.hasOwnProperty("mine") && this.items.mine instanceof Array) {
         this.verifyMineItems(callback, function (item) {
-            self.assets.push(self.getAsset(item));
+            self.assets.push(self.makeAsset(item));
         });
     } else {
         callback(true);
@@ -313,14 +323,8 @@ ShopTrade.prototype.emptyAssets = function () {
 ShopTrade.prototype.getAssets = function () {
     return this.assets;
 };
-ShopTrade.prototype.getAsset = function (item) {
-    var itemPrice;
-    if (this.shop.isBot(item.getOwner())) {
-        itemPrice = item.getPrice();
-    } else {
-        itemPrice = this.shop.adjustMinePrice(item);
-    }
-    return new ShopTradeAsset(item, itemPrice);
+ShopTrade.prototype.makeAsset = function (item) {
+    return new ShopTradeAsset(this.shop, item);
 };
 ShopTrade.prototype.logAssets = function (level) {
     var self = this;
@@ -332,9 +336,14 @@ ShopTrade.prototype.logAssets = function (level) {
         return result;
     }()), level);
 };
-function ShopTradeAsset(item, itemPrice) {
+function ShopTradeAsset(shop, item) {
+    this.shop = shop;
     this.item = item;
-    this.price = itemPrice;
+    if (this.shop.isBot(this.item.getOwner())) {
+        this.price = item.getPrice();
+    } else {
+        this.price = this.shop.adjustMinePrice(item);
+    }
 }
 
 ShopTradeAsset.prototype.valueOf = function () {
@@ -352,8 +361,8 @@ ShopTradeAsset.prototype.getItem = function () {
     return this.item;
 };
 ShopTradeAsset.prototype.getShopType = function () {
-    if (this.item.hasOwnProperty("shopType") && this.item.shopType) {
-        return this.item.shopType;
+    if (this.shop.isBot(this.item.getOwner())) {
+        return this.shop.inventory.parseType(this.item);
     } else {
         return "mine";
     }
