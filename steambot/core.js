@@ -269,10 +269,7 @@ sfr.on("steamMessage", function (obj) {
 });
 sfr.on("sendTradeOffer", function (offer) {
     debugmsg("Making trade offer to " + offer.partnerSteamId);
-    console.log(JSON.stringify(offer));
     tradeOffers.makeOffer(offer, function (error, result) {
-        console.log(error);
-        console.log(result);
         if (typeof result !== "undefined") {
             sfr.appendTradeOffer(offer.partnerSteamId, result.tradeofferid);
         } else {
@@ -642,6 +639,7 @@ function onReceivedTradeOffersChange(body) {
                 debugmsg("Recognised antiError25, declining");
                 tradeOffers.declineOffer({tradeOfferId: offer.tradeofferid});
             } else {
+                console.log("Analizing incoming offer: " + JSON.stringify(offer));
                 incomingOffers.onOfferChange(offer);
             }
         });
