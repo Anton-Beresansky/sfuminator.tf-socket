@@ -51,6 +51,11 @@ Section.prototype.itemExist = function (id) {
 };
 
 Section.prototype.getCompressedItems = function () {
+    for (var i = 0; i < this.compressedItems.length; i += 1) {
+        for (var j = 0; j < this.compressedItems[i][CompressItemAttributesLookup].length; j += 1) {
+            this.compressedItems[i][CompressItemAttributesLookup][j][CompressItemLookup.reserved_to] = this.shop.reservations.get(this.compressedItems[i][CompressItemAttributesLookup][j][CompressItemLookup.id]).getHolder();
+        }
+    }
     return this.compressedItems;
 };
 
@@ -214,26 +219,8 @@ SectionItem.prototype.getCompressed = function () {
             compressedAttributes[CompressItemLookup[property]] = itemValue[property];
         }
     }
-    compressedItem[CompressItemAttributesLookup] = [new CompressedAttributes(this.shop, compressedAttributes)];
+    compressedItem[CompressItemAttributesLookup] = [compressedAttributes];
     return compressedItem;
-};
-
-function CompressedAttributes(shop, compressedAttributes) {
-    this.shop = shop;
-    this.compressedAttrubtes = compressedAttributes;
-    this.id = this.compressedAttrubtes[CompressItemLookup.id];
-}
-
-CompressedAttributes.prototype.valueOf = function () {
-    var result = {};
-    for (var property in this.compressedAttrubtes) {
-        result[property] = this.compressedAttrubtes[property];
-    }
-    var reserved_to = this.shop.reservations.get(this.id).getHolder();
-    if (reserved_to) {
-        result[CompressReserved_to] = reserved_to;
-    }
-    return result;
 };
 
 CompressSchemaLookup = {
@@ -272,7 +259,6 @@ CompressItemLookup = {
     id: "x",
     level: "y",
     quality: "z",
-    paint_color: "v"
+    paint_color: "v",
+    reserved_to: "w"
 };
-
-CompressReserved_to = "w";
