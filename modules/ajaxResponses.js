@@ -19,10 +19,10 @@ function AjaxResponses(sfuminator) {
     };
     this.tradeCancelled = {result: "success", message: "Trade has been cancelled"};
     this.shopAssetsLimit = function (limit) {
-        return {result: "error", message: "Sorry, you can buy only " + limit + " items per trade in this Beta"};
+        return {result: "error", message: "Sorry, you can buy only " + limit + " items per trade"};
     };
     this.partnerAssetsLimit = function (limit) {
-        return {result: "error", message: "Sorry, you can sell only " + limit + " items per trade in this Beta"};
+        return {result: "error", message: "Sorry, you can sell only " + limit + " items per trade"};
     };
     this.itemExceedCount = function (item, excess) {
         return {result: "error", message: "Sorry, you have to remove " + ((excess > 1) ? (excess + " ") : "") + '"' + item.getFullName() + '", there are too many in the shop right now'};
