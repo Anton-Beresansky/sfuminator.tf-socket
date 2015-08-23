@@ -31,6 +31,7 @@ function Shop(sfuminator) {
     this.count = new ItemCount();
     this.search = new Search(this, this.sfuminator.responses);
     this.sections = {}; //{type: Section()}
+    this.setCompressionValues();
 
     events.EventEmitter.call(this);
     var self = this;
@@ -99,7 +100,13 @@ Shop.prototype.sectionExist = function (section) {
 };
 
 Shop.prototype.getClientBackpack = function (type) {
-    return this.sections[type].getCompressedItems();
+    var compressedItems = this.sections[type].getCompressedItems();
+    for (var i = 0; i < compressedItems.length; i += 1) { //Cycling through items object->json + patching reservations 
+        for (var j = 0; j < compressedItems[i][this.CompressItemAttributesLookup].length; j += 1) {
+            compressedItems[i][this.CompressItemAttributesLookup][j] = compressedItems[i][this.CompressItemAttributesLookup][j].valueOf();
+        }
+    }
+    return compressedItems;
 };
 
 Shop.prototype.getLimit = function (item) {
@@ -240,4 +247,46 @@ Shop.prototype._getActivePartnersBotComponentQuery = function () {
         query += "'" + this.bots[i] + "'";
     }
     return query + ")";
+};
+Shop.prototype.setCompressionValues = function () {
+    this.CompressSchemaLookup = {
+        defindex: "a",
+        name: "b",
+        image_url: "c",
+        image_url_large: "d",
+        used_by_classes: "e",
+        relative_price: "f",
+        currency: "g",
+        shop: "h"
+    };
+
+    this.CompressSchemaAttributeLookup = {
+        currency: {
+            usd: 0,
+            metal: 1,
+            keys: 2,
+            earbuds: 3
+        },
+        shop: {
+            mine: 0,
+            hats: 1
+        },
+        image_url: function (url) {
+            return url.slice(45);
+        },
+        image_url_large: function (url) {
+            return url.slice(45);
+        }
+    };
+
+    this.CompressItemAttributesLookup = "i";
+
+    this.CompressItemLookup = {
+        id: "x",
+        level: "y",
+        quality: "z",
+        paint_color: "v"
+    };
+
+    this.CompressReserved_to = "w";
 };

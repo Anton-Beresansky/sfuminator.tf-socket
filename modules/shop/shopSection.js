@@ -87,8 +87,8 @@ Section.prototype.commitRemovals = function () {
 
         var compressed_index = this.getCompressedItemIndex(idToRemove);
         if (compressed_index) {
-            this.compressedItems[compressed_index[0]][CompressItemAttributesLookup].splice(compressed_index[1], 1);
-            if (this.compressedItems[compressed_index[0]][CompressItemAttributesLookup].length === 0) {
+            this.compressedItems[compressed_index[0]][this.shop.CompressItemAttributesLookup].splice(compressed_index[1], 1);
+            if (this.compressedItems[compressed_index[0]][this.shop.CompressItemAttributesLookup].length === 0) {
                 this.compressedItems.splice(compressed_index[0], 1);
             }
         }
@@ -100,9 +100,9 @@ Section.prototype.commitAdds = function () {
 
     for (var i = 0; i < this.toAdd.length; i += 1) {
         var compressedItem = this.toAdd[i].getCompressed();
-        var index = this.getCompressedSchemaItemIndex(compressedItem[CompressSchemaLookup.defindex]);
+        var index = this.getCompressedSchemaItemIndex(compressedItem[this.shop.CompressSchemaLookup.defindex]);
         if (index >= 0) {
-            this.compressedItems[index][CompressItemAttributesLookup].push(compressedItem[CompressItemAttributesLookup][0]);
+            this.compressedItems[index][this.shop.CompressItemAttributesLookup].push(compressedItem[this.shop.CompressItemAttributesLookup][0]);
         } else {
             this.compressedItems.push(compressedItem);
         }
@@ -120,7 +120,7 @@ Section.prototype.getItemIndex = function (id) {
 
 Section.prototype.getCompressedSchemaItemIndex = function (defindex) {
     for (var i = 0; i < this.compressedItems.length; i += 1) {
-        if (this.compressedItems[i][CompressSchemaLookup.defindex] === defindex) {
+        if (this.compressedItems[i][this.shop.CompressSchemaLookup.defindex] === defindex) {
             return i;
         }
     }
@@ -129,8 +129,8 @@ Section.prototype.getCompressedSchemaItemIndex = function (defindex) {
 
 Section.prototype.getCompressedItemIndex = function (id) {
     for (var i = 0; i < this.compressedItems.length; i += 1) {
-        for (var j = 0; j < this.compressedItems[i][CompressItemAttributesLookup].length; j += 1) {
-            if (this.compressedItems[i][CompressItemAttributesLookup][j][CompressItemLookup.id] === id) {
+        for (var j = 0; j < this.compressedItems[i][this.shop.CompressItemAttributesLookup].length; j += 1) {
+            if (this.compressedItems[i][this.shop.CompressItemAttributesLookup][j][this.shop.CompressItemLookup.id] === id) {
                 return [i, j];
             }
         }
@@ -197,64 +197,41 @@ SectionItem.prototype.valueOf = function () {
 SectionItem.prototype.getCompressed = function () {
     var itemValue = this.valueOf();
     var compressedItem = {};
-    for (var property in CompressSchemaLookup) {
+    for (var property in this.shop.CompressSchemaLookup) {
         if (itemValue.hasOwnProperty(property) && itemValue[property]) {
-            if (!CompressSchemaAttributeLookup.hasOwnProperty(property)) {
-                compressedItem[CompressSchemaLookup[property]] = itemValue[property];
-            } else if (typeof CompressSchemaAttributeLookup[property] === "function") {
-                compressedItem[CompressSchemaLookup[property]] = CompressSchemaAttributeLookup[property](itemValue[property]);
+            if (!this.shop.CompressSchemaAttributeLookup.hasOwnProperty(property)) {
+                compressedItem[this.shop.CompressSchemaLookup[property]] = itemValue[property];
+            } else if (typeof this.shop.CompressSchemaAttributeLookup[property] === "function") {
+                compressedItem[this.shop.CompressSchemaLookup[property]] = this.shop.CompressSchemaAttributeLookup[property](itemValue[property]);
             } else {
-                compressedItem[CompressSchemaLookup[property]] = CompressSchemaAttributeLookup[property][itemValue[property]];
+                compressedItem[this.shop.CompressSchemaLookup[property]] = this.shop.CompressSchemaAttributeLookup[property][itemValue[property]];
             }
         }
     }
     var compressedAttributes = {};
-    for (var property in CompressItemLookup) {
+    for (var property in this.shop.CompressItemLookup) {
         if (itemValue.hasOwnProperty(property) && itemValue[property]) {
-            compressedAttributes[CompressItemLookup[property]] = itemValue[property];
+            compressedAttributes[this.shop.CompressItemLookup[property]] = itemValue[property];
         }
     }
-    compressedItem[CompressItemAttributesLookup] = [compressedAttributes];
+    compressedItem[this.shop.CompressItemAttributesLookup] = [new CompressedAttributes(this.shop, compressedAttributes)];
     return compressedItem;
 };
 
+function CompressedAttributes(shop, compressedAttributes) {
+    this.shop = shop;
+    this.compressedAttrubtes = compressedAttributes;
+    this.id = this.compressedAttrubtes[this.shop.CompressItemLookup.id];
+}
 
-var CompressSchemaLookup = {
-    defindex: "a",
-    name: "b",
-    image_url: "c",
-    image_url_large: "d",
-    used_by_classes: "e",
-    relative_price: "f",
-    currency: "g",
-    shop: "h"
-};
-
-var CompressSchemaAttributeLookup = {
-    currency: {
-        usd: 0,
-        metal: 1,
-        keys: 2,
-        earbuds: 3
-    },
-    shop: {
-        mine: 0,
-        hats: 1
-    },
-    image_url: function (url) {
-        return url.slice(45);
-    },
-    image_url_large: function (url) {
-        return url.slice(45);
+CompressedAttributes.prototype.valueOf = function () {
+    var result = {};
+    for (var property in this.compressedAttrubtes) {
+        result[property] = this.compressedAttrubtes[property];
     }
-};
-
-var CompressItemAttributesLookup = "i";
-
-var CompressItemLookup = {
-    id: "x",
-    level: "y",
-    quality: "z",
-    reserved_to: "w",
-    paint_color: "v"
+    var reserved_to = this.shop.reservations.get(this.id).getHolder();
+    if (reserved_to) {
+        result[this.shop.CompressReserved_to] = reserved_to;
+    }
+    return result;
 };
