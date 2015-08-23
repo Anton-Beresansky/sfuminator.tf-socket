@@ -223,6 +223,7 @@ Sfuminator.prototype.fetchShopInventory = function (request, callback) {
 
 Sfuminator.prototype.getUpdates = function (request) {
     var data = request.getData();
+    console.log(data);
     var response = this.responses.make({update: true, methods: {}});
     var user = this.users.get(request.getRequesterSteamid());
     if (user.hasActiveShopTrade()) {
