@@ -9,16 +9,6 @@ function Section(shop, type) {
     this.type = type;
     this.items = [];
     this.compressedItems = [];
-    this.compressedItems.valueOf = function () {
-        var values = [];
-        for (var i = 0; i < this.length; i += 1) { //Cycling through items object->json + patching reservations
-            values.push(this[i]);
-            for (var j = 0; j < this[i][CompressItemAttributesLookup].length; j += 1) {
-                values[i][CompressItemAttributesLookup][j] = this[i][CompressItemAttributesLookup][j].valueOf();
-            }
-        }
-        return values;
-    };
     this.toAdd = [];
     this.toRemove = [];
     this.log = new Logs("Section " + type);
