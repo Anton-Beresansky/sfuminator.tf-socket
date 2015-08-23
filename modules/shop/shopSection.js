@@ -16,6 +16,7 @@ function Section(shop, type) {
         this.versioning = new Versioning(40, "section " + type);
         this.log.setLevel(1);
     }
+    this.log.setLevel(3);
 }
 
 Section.prototype.getClientChanges = function (last_update_date) {
@@ -129,8 +130,8 @@ Section.prototype.getCompressedSchemaItemIndex = function (defindex) {
 
 Section.prototype.getCompressedItemIndex = function (id) {
     for (var i = 0; i < this.compressedItems.length; i += 1) {
-        for (var j = 0; j < this.compressedItems[i].length; j += 1) {
-            if (this.compressedItems[i][j][CompressItemLookup.id] === id) {
+        for (var j = 0; j < this.compressedItems[i][CompressItemAttributesLookup].length; j += 1) {
+            if (this.compressedItems[i][CompressItemAttributesLookup][j][CompressItemLookup.id] === id) {
                 return [i, j];
             }
         }
