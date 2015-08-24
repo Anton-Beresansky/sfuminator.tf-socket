@@ -30,7 +30,7 @@ Search.prototype.find = function (text) {
         }
         return result;
     } else {
-        this.ajaxResponses.itemNotFound;
+        return [];
     }
 };
 
@@ -40,7 +40,9 @@ Search.prototype.parseText = function (text) {
         if (text.length === 0 || text.length > 30) {
             return false;
         } else {
-            return text.toLowerCase().match(/\S+/g);
+            var punctRE = /[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~]/g;
+            var spaceRE = /\s+/g;
+            return text.toLowerCase().replace(punctRE, '').replace(spaceRE, ' ').split(' ');
         }
     } catch (e) {
         this.log.error("Couldn't parse text input");
