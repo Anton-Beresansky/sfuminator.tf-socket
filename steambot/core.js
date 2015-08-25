@@ -284,10 +284,11 @@ sfr.on("sendTradeOffer", function (offer) {
                 steam.sendMessage(offer.partnerSteamId, "Oh no, there was an error :( steam returned the following message:\n" + error + "\n I'm cancelling this trade. If you want, you can also retry using manual trade");
             } else {
                 if (offer.makeAttempts === 2) {
-                    steam.gamesPlayed([440]);
                     if (ERROR26.check(error.toString())) {
                         console.log("Recognised error 26, pushing to stack");
                         ERROR26.add(offer.partnerSteamId);
+                        debugmsg("Trying to unbug trade offer from error 26 by starting game");
+                        steam.gamesPlayed([440]);
                     }
                     if (ERROR26.exceeded()) {
                         console.log("ERROR 26 HAS EXCEEDED, RESTARTING");
@@ -826,10 +827,12 @@ function startHoldQueueProcedure(tradeInfo) {
     var mailCheck = setInterval(function () {
         _sentOffers.forEach(function (offer) {
             var found = false;
-            for (var i = 0; i < offer.items_to_receive.length; i += 1) {
-                if (offer.items_to_receive[i].assetid === hisFirstID) {
-                    found = true;
-                    break;
+            if (offer.items_to_receive instanceof Array) {
+                for (var i = 0; i < offer.items_to_receive.length; i += 1) {
+                    if (offer.items_to_receive[i].assetid === hisFirstID) {
+                        found = true;
+                        break;
+                    }
                 }
             }
             if (offer.steamid_other === steamid && found) {
