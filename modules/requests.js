@@ -39,12 +39,14 @@ SfuminatorRequest.prototype.getRequesterSteamid = function () {
     if (this.requester && this.requester.privilege === "user") {
         return this.requester.id;
     }
+    return null;
 };
 
 SfuminatorRequest.prototype.getRequester = function () {
     if (this.requester) {
         return this.requester;
     }
+    return null;
 };
 
 SfuminatorRequest.prototype.parseRequester = function (users, callback) {
