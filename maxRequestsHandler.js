@@ -17,25 +17,32 @@ function MaxRequestsHandler() {
         self.cleanOldRequests();
     }, this.requests_window_seconds * ***REMOVED***);
     setInterval(function () {
-        var counter = 0;
-        for (var ips in self.requests) {
-            if (self.requests.hasOwnProperty(ips)) {
-                counter += 1;
+        var clients = 0;
+        var users = 0;
+        for (var ip in self.requests) {
+            if (self.requests.hasOwnProperty(ip)) {
+                clients += 1;
+                if (self.requests[ip].req.getRequesterSteamid()) {
+                    users += 1;
+                }
             }
         }
-        self.log.debug("Currently dealing with: " + counter + " client");
+        self.log.debug("Currently dealing with: " + clients + " clients (" + users + " users)");
     }, 15000);
 }
 
 MaxRequestsHandler.prototype.cleanOldRequests = function () {
-    var limit = (this.requests_window_seconds * 1000) - new Date();
+    var limit = new Date() - (this.requests_window_seconds * 1000);
     for (var ip in this.requests) {
-        var length = this.requests[ip].length;
+        var length = this.requests[ip].date.length;
         for (var i = 0; i < length; i += 1) {
-            if (this.requests[ip][i] > limit) {
-                this.requests[ip].splice(i, 1);
+            if (this.requests[ip].date[i] < limit) {
+                this.requests[ip].date.splice(i, 1);
                 length -= 1;
             }
+        }
+        if (length === 0) {
+            delete this.requests[ip];
         }
     }
 };
@@ -48,7 +55,7 @@ MaxRequestsHandler.prototype.allowRequest = function (request) {
     if (this.ipIsBanned(ip)) {
         return false;
     }
-    this.add(ip);
+    this.add(request);
     var count = this.getCountSince(new Date() - (this.requests_window_seconds * 1000), ip);
     if ((count / this.requests_window_seconds) > this.max_requests_per_second) {
         this.banIP(ip);
@@ -74,19 +81,20 @@ MaxRequestsHandler.prototype.banIP = function (ip) {
     this.banned[ip] = new Date();
 };
 
-MaxRequestsHandler.prototype.add = function (ip) {
+MaxRequestsHandler.prototype.add = function (request) {
+    var ip = request.getIP();
     if (!this.requests.hasOwnProperty(ip)) {
-        this.requests[ip] = [new Date()];
+        this.requests[ip] = {date: [new Date()], req: request};
     } else {
-        this.requests[ip].push(new Date());
+        this.requests[ip].date.push(new Date());
     }
 };
 
 MaxRequestsHandler.prototype.getCountSince = function (date, ip) {
     var requests = this.requests[ip];
     var counter = 0;
-    for (var i = 0; i < requests.length; i += 1) {
-        if (requests[i] > date) {
+    for (var i = 0; i < requests.date.length; i += 1) {
+        if (requests.date[i] > date) {
             counter += 1;
         }
     }
