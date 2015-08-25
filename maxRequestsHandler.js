@@ -16,6 +16,15 @@ function MaxRequestsHandler() {
     setInterval(function () {
         self.cleanOldRequests();
     }, this.requests_window_seconds * 3000);
+    setInterval(function () {
+        var counter = 0;
+        for (var ips in self.requests) {
+            if (self.requests.hasOwnProperty(ips)) {
+                counter += 1;
+            }
+        }
+        self.log.debug("Currently dealing with: " + counter + " client");
+    }, 15000);
 }
 
 MaxRequestsHandler.prototype.cleanOldRequests = function () {
