@@ -321,7 +321,6 @@ BotPorting.prototype.isScammer = function (steamid, callback) {
 };
 BotPorting.prototype.ajax = function (data, callback) {
     data.key = this.site_key;
-    data.predata = "v3_bot_porting.php";
     var myInterface = {
         name: "include",
         method: {
@@ -330,6 +329,7 @@ BotPorting.prototype.ajax = function (data, callback) {
             parameters: data
         }
     };
+    myInterface.method.predata = "v3_bot_porting.php";
     this.site_api.callAPI(myInterface, function (response) {
         if (callback) {
             callback(response);
