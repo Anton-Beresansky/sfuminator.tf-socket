@@ -175,7 +175,9 @@ sfuminatorSocket.prototype.emitSocketData = function (jsonData) {
     }
 };
 ////////////////////////////////////////////////////////////////////////////////
-
+sfuminatorSocket.prototype.alertSteamStatus = function (status) {
+    return status;
+};
 sfuminatorSocket.prototype.getCurrency = function (callback) {
     var self = this;
     self.emit("debug", "getCurrency");
