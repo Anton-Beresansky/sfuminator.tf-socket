@@ -229,8 +229,6 @@ CompressSchemaLookup = {
     image_url: "c",
     image_url_large: "d",
     used_by_classes: "e",
-    relative_price: "f",
-    currency: "g",
     shop: "h"
 };
 
@@ -260,5 +258,7 @@ CompressItemLookup = {
     level: "y",
     quality: "z",
     paint_color: "v",
-    reserved_to: "w"
+    reserved_to: "w",
+    relative_price: "f",
+    currency: "g"
 };
