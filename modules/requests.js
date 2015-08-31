@@ -158,9 +158,14 @@ SfuminatorRequest.prototype.getCookie = function (cname) {
 SfuminatorRequest.prototype._parseCookies = function () {
     var list = {};
     var rc = this.req.headers.cookie;
+    var self = this;
     rc && rc.split(';').forEach(function (cookie) {
         var parts = cookie.split('=');
-        list[parts.shift().trim()] = decodeURI(parts.join('='));
+        try {
+            list[parts.shift().trim()] = decodeURI(parts.join('='));
+        } catch (e) {
+            self.log.error("Couldn't parse cookie " + cookie);
+        }
     });
     this._cookies = list;
 };
