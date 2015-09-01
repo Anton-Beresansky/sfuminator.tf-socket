@@ -104,11 +104,13 @@ Shop.prototype.getClientBackpack = function (type) {
 };
 
 Shop.prototype.getLimit = function (item) {
+    var qualityLimit = (this.countLimit.hasOwnProperty(item.getQualityName())) ? this.countLimit[item.getQualityName()] : this.countLimit._any;
     if (item.getPrice().toMetal() > this.countLimit._price.over) {
-        return this.countLimit._price.limit;
-    } else {
-        return (this.countLimit.hasOwnProperty(item.getQualityName())) ? this.countLimit[item.getQualityName()] : this.countLimit._any;
+        if (this.countLimit._price.limit < qualityLimit) {
+            return this.countLimit._price.limit;
+        }
     }
+    return qualityLimit;
 };
 
 Shop.prototype.getMine = function (backpack) {
