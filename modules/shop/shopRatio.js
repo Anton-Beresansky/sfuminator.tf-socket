@@ -25,6 +25,7 @@ ShopRatio.prototype.getHats = function (callback) {
     var hatRatio = {weBuy: {}, weSell: {}};
     this.db.connect(function (connection) {
         connection.query(self._getHatsQuery(), function (result) {
+            connection.release();
             if (result) {
                 for (var i = 0; i < result.length; i += 1) {
                     switch (result[i].item) {
