@@ -163,7 +163,7 @@ Shop.prototype.adjustMinePrice = function (item) {
         if (originalPrice.toMetal() === 1.66) {
             finalPrice = new TF2Price(this.ratio.hats.weBuy.default166, "metal");
         } else {
-            var ratio = this.ratio.hats.weBuy.default;
+            var ratio = this.ratio.hats.weBuy.normal;
             if (originalPrice.toMetal() <= 2) {
                 ratio = this.ratio.hats.weBuy.lowTier;
             }
