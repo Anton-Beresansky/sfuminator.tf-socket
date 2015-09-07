@@ -5,11 +5,16 @@ var events = require("events");
 function Cloud(socket, options) {
     var self = this;
     this.socket = socket;
+    this.firstConnection = true;
     this._d("Looking for cloud...");
     this.socket.handshake();
     this.socket.on("tcp_connected", function (id) {
         self._d("Connected with partner: " + id);
         self.emit("cloud_connected");
+        if (self.firstConnection) {
+            self.firstConnection = false;
+            self.emit("cloud_first_connection");
+        }
     });
     this.socket.on("tcp_disconnected", function (id) {
         self._d("Lost connection with partner: " + id);
