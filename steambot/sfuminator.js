@@ -3008,7 +3008,7 @@ var answer_keywords = {
         buy: "buying,buy,buyng",
         bye: "bb,cya,goodbye,byebye",
         can: "could,coud,culd",
-        do: "does,do,doesn,don",
+        "do": "does,do,doesn,don",
         give: "giv,gave,gve,have",
         going: "goin",
         hello: "hi,heya,hey,ola,ciao,helo,hy,ello,salut,yo,hiya",
