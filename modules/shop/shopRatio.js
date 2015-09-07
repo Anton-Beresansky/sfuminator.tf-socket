@@ -30,8 +30,8 @@ ShopRatio.prototype.getHats = function (callback) {
                     switch (result[i].item) {
                         case "hat":
                             hatRatio.weBuy.lowTier = result[i].weBuy;
-                            hatRatio.weBuy.default = result[i].weBuy - 0.01;
-                            hatRatio.weSell.default = result[i].weSell;
+                            hatRatio.weBuy.normal = result[i].weBuy - 0.01;
+                            hatRatio.weSell.normal = result[i].weSell;
                             break;
                         case "hat_min":
                             hatRatio.weBuy.minimum = result[i].weBuy;

@@ -19,7 +19,7 @@ function Sfuminator(config, cloud, db) {
     this.log.setLevel(0);
     this.admin = config.admin;
     this.interrupts = new Interrupts([
-        {name: "updateCurrency", delay: 60000, tag: "internal"},
+        {name: "updatePrices", delay: 60000, tag: "internal"},
         {name: "updateShopInventory", delay: 2000, tag: "internal"},
         {name: "updateActiveTrades", delay: 1500, tag: "internal"},
         {name: "updateStats", delay: 1000, tag: "global"},
@@ -58,8 +58,9 @@ Sfuminator.prototype.init = function () {
 
 Sfuminator.prototype.bindInterrupts = function () {
     var self = this;
-    this.interrupts.on("updateCurrency", function () {
+    this.interrupts.on("updatePrices", function () {
         self.shop.tf2Currency.update();
+        self.shop.ratio.updateHats();
     });
     this.interrupts.on("updateStats", function () {
         self.stats.update();
