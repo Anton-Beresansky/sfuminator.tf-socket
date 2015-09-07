@@ -23,7 +23,7 @@ var socket = new zmqSocket({
 var cloud = new Cloud(socket);
 var reqHandler = new MaxRequestsHandler();
 
-cloud.on("cloud_connected", function () {
+cloud.on("cloud_first_connection", function () {
     console.log("Cloud connected");
     sfuminator = new Sfuminator(CFG.sfuminator, cloud, db);
     sfuminator.on("ready", function () {
