@@ -41,7 +41,9 @@ TF2Item.prototype.getQuality = function () {
     return this.quality;
 };
 
-TF2Item.prototype.isHat = function () {
+TF2Item.prototype.isHat = function () { 
+    //First parameter (item_type_name = #TF_Wearable_Hat) automatically identify item as a hat -> it means item is hat and craftable with other hats
+    //Second parameter (item_type_name = Hat) will identify a general cosmetic as craftable with other hats, therefore considering the item implicitly hat
     return (this.hasOwnProperty("item_type_name") && (this.item_type_name === "#TF_Wearable_Hat")) || (this.item_type_name === "Hat") || (this.craft_material_type === "hat");
 };
 
