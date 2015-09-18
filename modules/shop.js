@@ -14,6 +14,11 @@ var Search = require('./shop/shopSearch.js');
 //When updating internal item list and versioning items are patched
 //Shop contains formatted items ready to use on client side
 
+/**
+ * General purpose Shop class
+ * @param {Sfuminator} sfuminator The Sfuminator instance
+ * @returns {Shop}
+ */
 function Shop(sfuminator) {
     this.sfuminator = sfuminator;
     this.cloud = sfuminator.cloud;
@@ -42,6 +47,12 @@ function Shop(sfuminator) {
 
 require("util").inherits(Shop, events.EventEmitter);
 
+/**
+ * Init ratio, currency, reservations and inventory<br>
+ * Called when instancing a new Shop,
+ * a 'ready' event is fired on init complete
+ * @returns {undefined}
+ */
 Shop.prototype.init = function () {
     var self = this;
     self.ratio.updateHats(function () {
@@ -56,6 +67,10 @@ Shop.prototype.init = function () {
     });
 };
 
+/**
+ * Update shop item changes
+ * @param {Object} _changes
+ */
 Shop.prototype.update = function (_changes) {
     var changes = {add: _changes.toAdd, remove: _changes.toRemove};
     this.log.debug("Changes: " + JSON.stringify(changes, null, " "), 4);
@@ -82,6 +97,11 @@ Shop.prototype.update = function (_changes) {
     this.count.update(changes.add, changes.remove);
 };
 
+/**
+ * Get Shop Section Item given its id
+ * @param {Number} id
+ * @returns {SectionItem|Boolean} False if item doesn't exist
+ */
 Shop.prototype.getItem = function (id) {
     for (var section in this.sections) {
         for (var i = 0; i < this.sections[section].items.length; i += 1) {
@@ -94,15 +114,29 @@ Shop.prototype.getItem = function (id) {
     return false;
 };
 
+/**
+ * Establish if given section type exist
+ * @param {String} section
+ * @returns {Boolean}
+ */
 Shop.prototype.sectionExist = function (section) {
     return this.sections.hasOwnProperty(section);
 };
 
+/**
+ * Get client formatted section inventory
+ * @param {String} type
+ */
 Shop.prototype.getClientBackpack = function (type) {
     return this.sections[type].getCompressedItems();
 
 };
 
+/**
+ * Get max possible stock for a given item
+ * @param {TF2Item} item
+ * @returns {Number}
+ */
 Shop.prototype.getLimit = function (item) {
     var qualityLimit = (this.countLimit.hasOwnProperty(item.getQualityName())) ? this.countLimit[item.getQualityName()] : this.countLimit._any;
     if (item.getPrice().toMetal() > this.countLimit._price.over) {
@@ -113,6 +147,11 @@ Shop.prototype.getLimit = function (item) {
     return qualityLimit;
 };
 
+/**
+ * Get client formatted mine section inventory
+ * @param {Backpack} backpack
+ * @returns {Object} Client formatted response
+ */
 Shop.prototype.getMine = function (backpack) {
     this.log.debug("Getting mine items, bp: " + backpack.getOwner());
     if (!backpack.hasErrored()) {
@@ -127,6 +166,11 @@ Shop.prototype.getMine = function (backpack) {
     }
 };
 
+/**
+ * Make mine section from items
+ * @param {TF2Item[]} items
+ * @returns {Section}
+ */
 Shop.prototype.filterMineItems = function (items) {
     var mySection = new Section(this, "mine");
     if (items) {
@@ -141,6 +185,11 @@ Shop.prototype.filterMineItems = function (items) {
     return mySection;
 };
 
+/**
+ * Check if given item can be sold
+ * @param {TF2Item} item
+ * @returns {Boolean}
+ */
 Shop.prototype.canBeSold = function (item) {
     return (
             item.isHat() &&
@@ -152,6 +201,11 @@ Shop.prototype.canBeSold = function (item) {
             );
 };
 
+/**
+ * Make mine price from item
+ * @param {TF2Item} item
+ * @returns {TF2Price}
+ */
 Shop.prototype.adjustMinePrice = function (item) {
     if (item.isHat()) {
         var finalPrice;
@@ -179,6 +233,11 @@ Shop.prototype.adjustMinePrice = function (item) {
     }
 };
 
+/**
+ * Establish if item price range is acceptable
+ * @param {TF2Item} item
+ * @returns {Boolean|Undefined} Undefined if shop doesn't allow item type
+ */
 Shop.prototype.verifyMineItemPriceRange = function (item) {
     if (item.isHat()) {
         var originalPrice = item.getPrice();
@@ -186,28 +245,11 @@ Shop.prototype.verifyMineItemPriceRange = function (item) {
     }
 };
 
-Shop.prototype.patchItem = function (item) {
-    var relative_price = item.relative_price;
-    var shopType = item.shopType;
-    if (!this.isBot(item.getOwner())) {
-        relative_price = this.adjustMinePrice(item).toMetal();
-        shopType = "mine";
-    }
-    return {
-        id: item.id,
-        defindex: item.defindex,
-        level: item.level,
-        quality: item.quality,
-        name: item.getFullName(),
-        image_url: item.image_url,
-        image_url_large: item.image_url_large,
-        used_by_classes: item.used_by_classes,
-        relative_price: relative_price,
-        currency: item.currency,
-        shop: shopType
-    };
-};
-
+/**
+ * Establish if given steamid identify a bot
+ * @param {String} steamid
+ * @returns {Boolean}
+ */
 Shop.prototype.isBot = function (steamid) {
     for (var i = 0; i < this.bots.length; i += 1) {
         if (this.bots[i] === steamid) {
@@ -217,6 +259,15 @@ Shop.prototype.isBot = function (steamid) {
     return false;
 };
 
+/**
+ * Get current active Shop Trades
+ * @param {Function} callback Will pass a list of elements representing the active shop trades<br>
+ * Element object structure:<br>
+ * {<br>
+ * &nbsp;id: Number,<br>
+ * &nbsp;partnerID: String<br>
+ * }
+ */
 Shop.prototype.getActiveTrades = function (callback) {
     var self = this;
     this.log.debug("Loading active trades...", 3);

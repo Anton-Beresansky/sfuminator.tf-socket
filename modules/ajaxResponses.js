@@ -1,4 +1,10 @@
 module.exports = AjaxResponses;
+
+/**
+ * Generic purpose Ajax Responses class
+ * @param {Sfuminator} sfuminator The Sfuminator instance
+ * @returns {AjaxResponses}
+ */
 function AjaxResponses(sfuminator) {
     this.sfuminator = sfuminator;
     this.error = {result: "error", message: "Error"};
@@ -40,15 +46,29 @@ function AjaxResponses(sfuminator) {
     this.manualMultiItems = {result: "error", message: "Sorry, in manual trade you can only sell or only buy items"};
 }
 
+/**
+ * Generate a new response
+ * @param {Object} data
+ * @returns {Response}
+ */
 AjaxResponses.prototype.make = function (data) {
     return new Response(data);
 };
+
+/**
+ * Generic purpose Response class
+ * @param {Object} data
+ * @returns {Response}
+ */
 function Response(data) {
     for (var property in data) {
         this[property] = data[property];
     }
 }
 
+/**
+ * Compact client formatted update instructions
+ */
 Response.prototype.compactUserUpdate = function () {
     if (this.methods.hasOwnProperty("updateItemsVersioning")) {
         var itemChanges = this.methods.updateItemsVersioning;
@@ -76,6 +96,12 @@ Response.prototype.compactUserUpdate = function () {
         this.update = false;
     }
 };
+
+/**
+ * Establish if given object is empty
+ * @param {Object} obj
+ * @returns {Boolean}
+ */
 Response.prototype.isObjectEmpty = function (obj) {
     var is_empty = true;
     for (var i in obj) {

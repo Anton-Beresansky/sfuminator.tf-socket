@@ -4,6 +4,11 @@ var events = require("events");
 var Logs = require('../lib/logs.js');
 var User = require("./user/user.js");
 
+/**
+ * General purpose Users class
+ * @param {Sfuminator} sfuminator The Sfuminator instance
+ * @returns {Users}
+ */
 function Users(sfuminator) {
     this.sfuminator = sfuminator;
     this.db = this.sfuminator.db;
@@ -16,7 +21,12 @@ function Users(sfuminator) {
 
 require("util").inherits(Users, events.EventEmitter);
 
-//Will callback only if steamid associated to token has been found
+/**
+ * Get user instance from token
+ * @param {String} token
+ * @param {Function} callback User instance will be passed. If token has no
+ * user associated to it, null will be passed instead.
+ */
 Users.prototype.getFromToken = function (token, callback) {
     var self = this;
     this.getSteamidFromToken(token, function (steamid) {
@@ -28,6 +38,11 @@ Users.prototype.getFromToken = function (token, callback) {
     });
 };
 
+/**
+ * Get a user instance
+ * @param {String} steamid
+ * @returns {User}
+ */
 Users.prototype.get = function (steamid) {
     var self = this;
     var myUser = null;
@@ -46,6 +61,12 @@ Users.prototype.get = function (steamid) {
     return myUser;
 };
 
+/**
+ * Get steamid from a given token
+ * @param {String} token
+ * @param {Function} callback Steamid is passed. If token has no user associated
+ * to it, empty string is passed instead.
+ */
 Users.prototype.getSteamidFromToken = function (token, callback) {
     var self = this;
     var steamid = this.getLocalSteamidFromToken(token);
@@ -85,6 +106,11 @@ Users.prototype.getLocalSteamidFromToken = function (token) {
     return false;
 };
 
+/**
+ * Establish if current user list instanced given user
+ * @param {String} steamid
+ * @returns {Boolean}
+ */
 Users.prototype.steamidExist = function (steamid) {
     return this._users.hasOwnProperty(steamid);
 };

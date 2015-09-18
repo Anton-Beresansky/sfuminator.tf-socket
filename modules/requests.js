@@ -4,6 +4,13 @@ var events = require("events");
 var qs = require("querystring");
 var Logs = require("../lib/logs.js");
 
+/**
+ * General purpose Sfuminator Request Class<br>
+ * Used for client interfacing
+ * @param {Request} req
+ * @param {String} body
+ * @returns {SfuminatorRequest}
+ */
 function SfuminatorRequest(req, body) {
     this.log = new Logs("Sfuminator Request");
     this.log.setLevel(0);
@@ -35,6 +42,10 @@ function SfuminatorRequest(req, body) {
 
 require("util").inherits(SfuminatorRequest, events.EventEmitter);
 
+/**
+ * Get steamid of the client requester
+ * @returns {String|Null} Null if requester has no steamid associated
+ */
 SfuminatorRequest.prototype.getRequesterSteamid = function () {
     if (this.requester && this.requester.privilege === "user") {
         return this.requester.id;
@@ -42,6 +53,10 @@ SfuminatorRequest.prototype.getRequesterSteamid = function () {
     return null;
 };
 
+/**
+ * Get requester
+ * @returns {User|Null} Null if requester is not a user
+ */
 SfuminatorRequest.prototype.getRequester = function () {
     if (this.requester) {
         return this.requester;
@@ -49,6 +64,12 @@ SfuminatorRequest.prototype.getRequester = function () {
     return null;
 };
 
+/**
+ * Parse requester
+ * @param {Users} users
+ * @param {Function} callback Will be executed when user has been parsed, no
+ * data is passed
+ */
 SfuminatorRequest.prototype.parseRequester = function (users, callback) {
     var self = this;
     if (this.hasRootKey()) {
@@ -70,6 +91,10 @@ SfuminatorRequest.prototype.parseRequester = function (users, callback) {
     }
 };
 
+/**
+ * Get request data
+ * @returns {Object}
+ */
 SfuminatorRequest.prototype.getData = function () {
     if (this.data) {
         return this.data;
@@ -79,10 +104,18 @@ SfuminatorRequest.prototype.getData = function () {
     }
 };
 
+/**
+ * Get user token
+ * @returns {String}
+ */
 SfuminatorRequest.prototype.getToken = function () {
     return this.getCookie("token");
 };
 
+/**
+ * Get request action
+ * @returns {String|Boolean} False if no action is specified
+ */
 SfuminatorRequest.prototype.getAction = function () {
     if (this._action) {
         return this._action;
@@ -93,10 +126,18 @@ SfuminatorRequest.prototype.getAction = function () {
     }
 };
 
+/**
+ * Get requester IP
+ * @returns {String}
+ */
 SfuminatorRequest.prototype.getIP = function () {
     return this.req.headers["x-forwarded-for"];
 };
 
+/**
+ * Establish if request is correct
+ * @returns {Boolean}
+ */
 SfuminatorRequest.prototype.isValid = function () {
     if (this._valid) {
         return true;
@@ -125,6 +166,10 @@ SfuminatorRequest.prototype.isValid = function () {
     }
 };
 
+/**
+ * Establish if request is readable (can be parsed)
+ * @returns {Boolean}
+ */
 SfuminatorRequest.prototype.isReadable = function () {
     if (this._readable) {
         return true;
@@ -147,14 +192,26 @@ SfuminatorRequest.prototype.isReadable = function () {
     }
 };
 
+/**
+ * Establish if request has been sent by an admin
+ * @returns {Boolean}
+ */
 SfuminatorRequest.prototype.hasRootKey = function () {
     return this.data.hasOwnProperty("rootKey") && this.data.rootKey === this._rootKey;
 };
 
+/**
+ * Get cookie from name
+ * @param {String} cname
+ * @returns {String}
+ */
 SfuminatorRequest.prototype.getCookie = function (cname) {
     return this._cookies[cname];
 };
 
+/**
+ * Parse request cookies
+ */
 SfuminatorRequest.prototype._parseCookies = function () {
     var list = {};
     var rc = this.req.headers.cookie;

@@ -2,6 +2,10 @@ module.exports = MaxRequestsHandler;
 
 var Logs = require("./lib/logs.js");
 
+/**
+ * General purpose Max Requests Handler class
+ * @returns {MaxRequestsHandler}
+ */
 function MaxRequestsHandler() {
     this.log = new Logs("Max requests handler");
     this.whitelist = [
@@ -31,6 +35,9 @@ function MaxRequestsHandler() {
     }, 15000);
 }
 
+/**
+ * Clean from memory outdated requests
+ */
 MaxRequestsHandler.prototype.cleanOldRequests = function () {
     var limit = new Date() - (this.requests_window_seconds * 1000);
     for (var ip in this.requests) {
@@ -47,6 +54,11 @@ MaxRequestsHandler.prototype.cleanOldRequests = function () {
     }
 };
 
+/**
+ * Establish if request is allowed
+ * @param {SfuminatorRequest} request
+ * @returns {Boolean}
+ */
 MaxRequestsHandler.prototype.allowRequest = function (request) {
     var ip = request.getIP();
     if (this.isIpWhitelisted(ip)) {
@@ -55,7 +67,7 @@ MaxRequestsHandler.prototype.allowRequest = function (request) {
     if (this.ipIsBanned(ip)) {
         return false;
     }
-    this.add(request);
+    this.track(request);
     var count = this.getCountSince(new Date() - (this.requests_window_seconds * 1000), ip);
     if ((count / this.requests_window_seconds) > this.max_requests_per_second) {
         this.banIP(ip);
@@ -65,6 +77,11 @@ MaxRequestsHandler.prototype.allowRequest = function (request) {
     }
 };
 
+/**
+ * Establish if given ip is currently banned
+ * @param {String} ip
+ * @returns {Boolean}
+ */
 MaxRequestsHandler.prototype.ipIsBanned = function (ip) {
     if (this.banned.hasOwnProperty(ip)) {
         if (this.banned[ip] > (new Date() - this.ban_window_mls)) {
@@ -76,12 +93,21 @@ MaxRequestsHandler.prototype.ipIsBanned = function (ip) {
     return false;
 };
 
+/**
+ * Ban given ip
+ * @param {String} ip
+ * @returns {undefined}
+ */
 MaxRequestsHandler.prototype.banIP = function (ip) {
     this.log.warning("OMG! Banned ip " + ip);
     this.banned[ip] = new Date();
 };
 
-MaxRequestsHandler.prototype.add = function (request) {
+/**
+ * Track request
+ * @param {SfuminatorRequest} request
+ */
+MaxRequestsHandler.prototype.track = function (request) {
     var ip = request.getIP();
     if (!this.requests.hasOwnProperty(ip)) {
         this.requests[ip] = {date: [new Date()], req: request};
@@ -90,6 +116,12 @@ MaxRequestsHandler.prototype.add = function (request) {
     }
 };
 
+/**
+ * Get number of requests from a given IP starting from a given date
+ * @param {Date} date
+ * @param {String} ip
+ * @returns {Number}
+ */
 MaxRequestsHandler.prototype.getCountSince = function (date, ip) {
     var requests = this.requests[ip];
     var counter = 0;
@@ -100,6 +132,12 @@ MaxRequestsHandler.prototype.getCountSince = function (date, ip) {
     }
     return counter;
 };
+
+/**
+ * Establish if given IP is whitelisted
+ * @param {String} ip
+ * @returns {Boolean}
+ */
 MaxRequestsHandler.prototype.isIpWhitelisted = function (ip) {
     for (var i = 0; i < this.whitelist.length; i += 1) {
         if (this.whitelist[i] === ip) {

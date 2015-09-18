@@ -4,6 +4,13 @@ var events = require("events");
 var Logs = require('../lib/logs.js');
 var TF2Item = require("./tf2/tf2Item.js");
 
+/**
+ * Generic purpose Steam Backpack library
+ * @param {String} steamid
+ * @param {Number} game (440 = TF2, 730 = CSGO)
+ * @param {Cloud} cloud Cloud connection
+ * @returns {Backpack}
+ */
 function Backpack(steamid, game, cloud) {
     this.cloud = cloud;
     this.log = new Logs("Backpack " + steamid);
@@ -20,14 +27,27 @@ function Backpack(steamid, game, cloud) {
 
 require("util").inherits(Backpack, events.EventEmitter);
 
+/**
+ * Get last backpack update
+ * @returns {Date}
+ */
 Backpack.prototype.getLastUpdateDate = function () {
     return this.last_update_date;
 };
 
+/**
+ * Get backpack owner steamid
+ * @returns {String}
+ */
 Backpack.prototype.getOwner = function () {
     return this.owner;
 };
 
+/**
+ * Get cached backpack<br>
+ * Will be fetching a new inventory only if current backpack results outdated
+ * @param {Function} callback Self is passed
+ */
 Backpack.prototype.getCached = function (callback) {
     var self = this;
     this.log.debug("Getting cached backpack");
@@ -44,6 +64,10 @@ Backpack.prototype.getCached = function (callback) {
     }
 };
 
+/**
+ * Get backpack (will fetch the latest inventory)
+ * @param {Function} callback Self is passed
+ */
 Backpack.prototype.get = function (callback) {
     var self = this;
     this.cloud.send("getBackpack", {steamid: this.getOwner(), game: this.game}, function (result) {
@@ -71,10 +95,20 @@ Backpack.prototype.get = function (callback) {
     });
 };
 
+/**
+ * Check if given item exist in the inventory
+ * @param {Number} itemID
+ * @returns {Boolean}
+ */
 Backpack.prototype.itemExist = function (itemID) {
     return this.getItem(itemID) !== false;
 };
 
+/**
+ * Get item from id
+ * @param {Number} itemID
+ * @returns {TF2Item|Boolean} False if item does not exist
+ */
 Backpack.prototype.getItem = function (itemID) {
     for (var i = 0; i < this.items.length; i += 1) {
         if (this.items[i].id === itemID) {
@@ -84,10 +118,18 @@ Backpack.prototype.getItem = function (itemID) {
     return false;
 };
 
+/**
+ * Establish if last backpack fetch has errored
+ * @returns {Boolean}
+ */
 Backpack.prototype.hasErrored = function () {
     return this.error === true;
 };
 
+/**
+ * Get last backpack fetch error code
+ * @returns {String}
+ */
 Backpack.prototype.getErrorCode = function () {
     if (this.hasErrored()) {
         return this._error_code;
@@ -95,6 +137,10 @@ Backpack.prototype.getErrorCode = function () {
     return "";
 };
 
+/**
+ * Get last backpack fetch error message
+ * @returns {String}
+ */
 Backpack.prototype.getErrorMessage = function () {
     if (this.hasErrored() && this.error_message) {
         return this.error_message;
@@ -102,6 +148,10 @@ Backpack.prototype.getErrorMessage = function () {
     return "";
 };
 
+/**
+ * Encode backpack fetching error
+ * @param {Object} newBackpack Result from cloud fetching
+ */
 Backpack.prototype._encodeFetchingError = function (newBackpack) {
     this.error = false;
     if (newBackpack.hasOwnProperty("result") && newBackpack.result === "error") {
@@ -124,6 +174,9 @@ Backpack.prototype._encodeFetchingError = function (newBackpack) {
     }
 };
 
+/**
+ * Will instance the new items
+ */
 Backpack.prototype._createItemsObject = function () {
     if (this.game === 440) {
         for (var i = 0; i < this.items.length; i += 1) {
@@ -132,21 +185,34 @@ Backpack.prototype._createItemsObject = function () {
     }
 };
 
+/**
+ * Establish if current inventory is outdated
+ * @returns {Boolean}
+ */
 Backpack.prototype.isOutdated = function () {
     return new Date() - this.last_update_date > this.decayTime;
 };
 
+/**
+ * Extend backpack instance decay
+ */
 Backpack.prototype.renewExpiration = function () {
     this._cancelDecay();
     this._startDecay();
 };
 
+/**
+ * Cancel instance decay
+ */
 Backpack.prototype._cancelDecay = function () {
     if (this._decayTimeout) {
         clearTimeout(this._decayTimeout);
     }
 };
 
+/**
+ * Start instance decay
+ */
 Backpack.prototype._startDecay = function () {
     var self = this;
     this._decayTimeout = setTimeout(function () {

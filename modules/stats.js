@@ -2,6 +2,11 @@ module.exports = Stats;
 
 var Logs = require("../lib/logs.js");
 
+/**
+ * General purpose Stats class
+ * @param {Sfuminator} sfuminator The Sfuminator instance
+ * @returns {Stats}
+ */
 function Stats(sfuminator) {
     this.sfuminator = sfuminator;
     this.shop = this.sfuminator.shop;
@@ -20,6 +25,11 @@ function Stats(sfuminator) {
     this.log = new Logs("Stats");
 }
 
+/**
+ * Get client formatted stats
+ * @param {Date|Number} last_update_date Get stats from a given time
+ * @returns {Object}
+ */
 Stats.prototype.get = function (last_update_date) {
     if (!last_update_date || isNaN(last_update_date) || !last_update_date instanceof Date) {
         last_update_date = new Date(0).getTime();
@@ -38,6 +48,9 @@ Stats.prototype.get = function (last_update_date) {
     return result;
 };
 
+/**
+ * Update stats
+ */
 Stats.prototype.update = function () {
     for (var method in this.ticks) {
         var tick = this.ticks[method];
@@ -50,6 +63,9 @@ Stats.prototype.update = function () {
     }
 };
 
+/**
+ * Load stats
+ */
 Stats.prototype.load = function () {
     this.log.debug("Loading");
     for (var method in this.ticks) {

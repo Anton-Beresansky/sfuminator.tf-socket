@@ -5,6 +5,12 @@ var Logs = require("../../lib/logs.js");
 var TF2Price = require("../tf2/tf2Price.js");
 var ItemVersioning = require("../../lib/dataVersioning.js");
 
+/**
+ * Shop Inventory, contains full backpack with tf2 formatted items
+ * @param {Shop} shop
+ * @param {String[]} inventoryBots
+ * @returns {ShopInventory}
+ */
 function ShopInventory(shop, inventoryBots) {
     this.shop = shop;
     this.sfuminator = shop.sfuminator;
@@ -17,6 +23,10 @@ function ShopInventory(shop, inventoryBots) {
         this.bots.push(this.users.get(inventoryBots[i]));
     }
     this.versioning = new ItemVersioning(10, "inventory");
+    /**
+     * Full TF2item list
+     * @type {TF2Item[]}
+     */
     this.items = []; //Full backpack with tf2 formatted items
     this.count = []; //[{defindex: Int, quality: Int, craftable: Bool, count: Int}]
     this.decay = 2500;
@@ -28,6 +38,11 @@ function ShopInventory(shop, inventoryBots) {
 
 require("util").inherits(ShopInventory, events.EventEmitter);
 
+/**
+ * Update shop inventory
+ * @param {Function} [callback] 
+ * Callback will return ShopInventory.items
+ */
 ShopInventory.prototype.update = function (callback) {
     var self = this;
     this.fetchItems(function (newItems) {
@@ -46,6 +61,11 @@ ShopInventory.prototype.update = function (callback) {
     });
 };
 
+/**
+ * Fetch shop items
+ * @param {Function} callback
+ * Callback will return full tf2 item list
+ */
 ShopInventory.prototype.fetchItems = function (callback) {
     var self = this;
     if (this.fetching) {
@@ -71,6 +91,11 @@ ShopInventory.prototype.fetchItems = function (callback) {
     }
 };
 
+/**
+ * Get user instace of the given bot steamid, should be used alongside Shop.isBot
+ * @param {String} steamid
+ * @returns {User|Boolean} Will return false if bot doesn't exist
+ */
 ShopInventory.prototype.getBot = function (steamid) {
     for (var i = 0; i < this.bots.length; i += 1) {
         if (this.bots[i].getSteamid() === steamid) {
@@ -81,6 +106,11 @@ ShopInventory.prototype.getBot = function (steamid) {
     return false;
 };
 
+/**
+ * Get TF2Item given item id
+ * @param {Number} itemID
+ * @returns {TF2Item}
+ */
 ShopInventory.prototype.getItem = function (itemID) {
     for (var i = 0; i < this.items.length; i += 1) {
         if (this.items[i].id === itemID) {
@@ -90,6 +120,11 @@ ShopInventory.prototype.getItem = function (itemID) {
     return false;
 };
 
+/**
+ * Parse shop type from TF2Item
+ * @param {TF2Item} item
+ * @returns {String}
+ */
 ShopInventory.prototype.parseType = function (item) {
     if (item.isPriced() && item.isTradable()) {
         if (item.isHat() && item.isCraftable()) {
@@ -101,10 +136,18 @@ ShopInventory.prototype.parseType = function (item) {
     return "";
 };
 
+/**
+ * Inject list of TF2Items to add
+ * @param {TF2Item[]} itemsToAdd
+ */
 ShopInventory.prototype._injectNewItems = function (itemsToAdd) {
     this.items = this.items.concat(itemsToAdd);
 };
 
+/**
+ * Remove given TF2Items from the inventory
+ * @param {TF2Item[]} itemsToRemove
+ */
 ShopInventory.prototype._removeOldItems = function (itemsToRemove) {
     var itemsLength = this.items.length;
     for (var j = 0; j < itemsToRemove.length; j += 1) {
@@ -118,6 +161,11 @@ ShopInventory.prototype._removeOldItems = function (itemsToRemove) {
     }
 };
 
+/**
+ * Parse items to add given new item list
+ * @param {TF2Item[]} newItems
+ * @returns {TF2Item[]} itemsToAdd
+ */
 ShopInventory.prototype._parseItemsToAdd = function (newItems) {
     var itemsToAdd = [];
     for (var j = 0; j < newItems.length; j += 1) {
@@ -135,6 +183,11 @@ ShopInventory.prototype._parseItemsToAdd = function (newItems) {
     return itemsToAdd;
 };
 
+/**
+ * Parse items to remove given new item list
+ * @param {TF2Item[]} newItems
+ * @returns {TF2Item[]} itemsToRemove
+ */
 ShopInventory.prototype._parseItemsToRemove = function (newItems) {
     var itemsToRemove = [];
     for (var i = 0; i < this.items.length; i += 1) {

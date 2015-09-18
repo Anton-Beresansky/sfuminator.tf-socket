@@ -11,6 +11,13 @@ var BotPorting = require('./v3_bot_porting.js');
 
 var Valve = require("./valve.js");
 
+/**
+ * General purpose Sfuminator class
+ * @param {Object} config
+ * @param {Cloud} cloud
+ * @param {Database} db
+ * @returns {Sfuminator}
+ */
 function Sfuminator(config, cloud, db) {
     this.config = config;
     this.cloud = cloud;
@@ -42,6 +49,11 @@ function Sfuminator(config, cloud, db) {
 
 require("util").inherits(Sfuminator, events.EventEmitter);
 
+/**
+ * Init shop, interrupts, active trades, stats<br>
+ * Executed when instancing a new Sfuminator
+ * @returns {undefined}
+ */
 Sfuminator.prototype.init = function () {
     var self = this;
     this.shop.on("ready", function () {
@@ -56,6 +68,9 @@ Sfuminator.prototype.init = function () {
     });
 };
 
+/**
+ * Assign actions to execute when interrupts are fired
+ */
 Sfuminator.prototype.bindInterrupts = function () {
     var self = this;
     this.interrupts.on("updatePrices", function () {
@@ -76,6 +91,11 @@ Sfuminator.prototype.bindInterrupts = function () {
     });
 };
 
+/**
+ * Check if given steamid is an admin
+ * @param {String} steamid
+ * @returns {Boolean}
+ */
 Sfuminator.prototype.isAdmin = function (steamid) {
     for (var i = 0; i < this.admin.length; i += 1) {
         if (this.admin[i] === steamid) {
@@ -85,6 +105,10 @@ Sfuminator.prototype.isAdmin = function (steamid) {
     return false;
 };
 
+/**
+ * Load currently active trades
+ * @param {Function} callback Will be executed on trades loaded, no data is passed
+ */
 Sfuminator.prototype.loadActiveTrades = function (callback) {
     var self = this;
     var tryCallbackCount = 0;
@@ -111,6 +135,11 @@ Sfuminator.prototype.loadActiveTrades = function (callback) {
     });
 };
 
+/**
+ * Will update currently active trades
+ * @param {Function} [callback] If given will be executed on update done,
+ * active trades are passed.
+ */
 Sfuminator.prototype.updateActiveTrades = function (callback) {
     var self = this;
     var newActiveTrades = [];
@@ -130,6 +159,11 @@ Sfuminator.prototype.updateActiveTrades = function (callback) {
     });
 };
 
+/**
+ * Execute on incoming request
+ * @param {SfuminatorRequest} request
+ * @param {Function} callback Response object will be passed
+ */
 Sfuminator.prototype.onRequest = function (request, callback) {
     var self = this;
     this.log.debug("Processing sfuminator request", 3);
@@ -143,6 +177,11 @@ Sfuminator.prototype.onRequest = function (request, callback) {
     }
 };
 
+/**
+ * Execute on incoming action
+ * @param {SfuminatorRequest} request
+ * @param {Function} callback Response object will be passed
+ */
 Sfuminator.prototype.onAction = function (request, callback) {
     /** OLD BOT PORTING **/
     if (this.botPorting.requestAvailable(request)) {
@@ -197,6 +236,11 @@ Sfuminator.prototype.onAction = function (request, callback) {
     }
 };
 
+/**
+ * Fetch client shop inventory
+ * @param {SfuminatorRequest} request
+ * @param {Function} callback Response object will be passed
+ */
 Sfuminator.prototype.fetchShopInventory = function (request, callback) {
     var data = request.getData();
     var self = this;
@@ -222,6 +266,11 @@ Sfuminator.prototype.fetchShopInventory = function (request, callback) {
     }
 };
 
+/**
+ * Get client formatted interface updates
+ * @param {SfuminatorRequest} request
+ * @returns {Response}
+ */
 Sfuminator.prototype.getUpdates = function (request) {
     var data = request.getData();
     var response = this.responses.make({update: true, methods: {}});
@@ -262,6 +311,12 @@ Sfuminator.prototype.getUpdates = function (request) {
     return response;
 };
 
+/**
+ * Request shop trade
+ * @param {SfuminatorRequest} request
+ * @param {String} mode See ShopTrade._available_modes for more
+ * @param {Function} callback Response object will be passed
+ */
 Sfuminator.prototype.requestTrade = function (request, mode, callback) {
     var self = this;
     var data = request.getData();
@@ -309,6 +364,11 @@ Sfuminator.prototype.requestTrade = function (request, mode, callback) {
     }
 };
 
+/**
+ * Cancel shop trade
+ * @param {SfuminatorRequest} request
+ * @param {Function} callback Response object will be passed
+ */
 Sfuminator.prototype.cancelTrade = function (request, callback) {
     var user = this.users.get(request.getRequesterSteamid());
     if (user.hasShopTrade() && !user.getShopTrade().isClosed()) {
