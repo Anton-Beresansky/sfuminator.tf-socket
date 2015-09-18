@@ -2,12 +2,23 @@ module.exports = Search;
 
 var Logs = require("../../lib/logs.js");
 
+/**
+ * Generic purpose search shop items class
+ * @param {Shop} shop
+ * @param {AjaxResponses} ajaxResponses
+ * @returns {Search}
+ */
 function Search(shop, ajaxResponses) {
     this.shop = shop;
     this.ajaxResponses = ajaxResponses;
     this.log = new Logs("Search");
 }
 
+/**
+ * Find items
+ * @param {type} text
+ * @returns {SearchResult[]} See SearchResult class for more info
+ */
 Search.prototype.find = function (text) {
     var words = this.parseText(text);
     if (words && words instanceof Array) {
@@ -24,7 +35,7 @@ Search.prototype.find = function (text) {
                     }
                 }
                 if (found > -1) {
-                    result.push({item: item, index: found});
+                    result.push(new SearchResult(item, found));
                 }
             }
         }
@@ -34,6 +45,11 @@ Search.prototype.find = function (text) {
     }
 };
 
+/**
+ * Parse text string for search purposes
+ * @param {type} text
+ * @returns {String[]|Boolean} Words list or false if text can't be parsed
+ */
 Search.prototype.parseText = function (text) {
     try {
         text = text.toString();
@@ -55,3 +71,13 @@ Search.prototype.saveRequest = function (request) {
         this.log.warning("Request has not _me cookie set, it could be a request not coming from the site (IP: " + request.getIP() + ")");
     }
 };
+
+/**
+ * Search result class
+ * @param {SectionItem} item
+ * @param {Number} index Indicating starting offset of the matching string
+ */
+function SearchResult(item, index) {
+    this.item = item;
+    this.index = index;
+}

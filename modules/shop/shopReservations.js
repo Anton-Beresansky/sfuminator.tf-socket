@@ -3,6 +3,12 @@ module.exports = Reservations;
 var Logs = require("../../lib/logs.js");
 var ReservationsVersioning = require("../../lib/dataVersioning.js");
 
+/**
+ * @class Reservations
+ * @description Shop reservations handler
+ * @param {Database} db Database instance
+ * @returns {Reservations}
+ */
 function Reservations(db) {
     this.db = db;
     this.log = new Logs("Reservations");
@@ -10,6 +16,13 @@ function Reservations(db) {
     this.list = [];
 }
 
+/**
+ * Add reservation to specified shop item, if item has already a reservation
+ * attacched to it, nothing will be done
+ * @param {String} steamid Holder steamid
+ * @param {Number} itemID
+ * @returns {Reservation}
+ */
 Reservations.prototype.add = function (steamid, itemID) {
     if (!this.exist(itemID)) {
         var myReservation = this.localAdd(steamid, itemID);
@@ -20,6 +33,12 @@ Reservations.prototype.add = function (steamid, itemID) {
     return myReservation;
 };
 
+/**
+ * Locally add reservation (reservation is applied only within current running code)
+ * @param {String} steamid Holder steamid
+ * @param {Number} itemID
+ * @returns {Reservation}
+ */
 Reservations.prototype.localAdd = function (steamid, itemID) {
     var myReservation = new Reservation(steamid, itemID);
     this.list.push(myReservation);
@@ -27,6 +46,13 @@ Reservations.prototype.localAdd = function (steamid, itemID) {
     return myReservation;
 };
 
+/**
+ * Cancel reservation attached to an item given its id
+ * @param {Number} itemID
+ * @param {Function} [callback] 
+ * Callback will not return anything but it will be
+ * executed once database query has been executed
+ */
 Reservations.prototype.cancel = function (itemID, callback) {
     var self = this;
     if (this.exist(itemID)) {
@@ -43,6 +69,15 @@ Reservations.prototype.cancel = function (itemID, callback) {
     }
 };
 
+/**
+ * Load shop reservations from database
+ * <br><br>
+ * When executed will add any reservation stored to the current running instance,
+ * in case of id conflict most recent reservation will be considered.
+ * @param {Function} callback
+ * Callback will not return anything but it will be
+ * executed once database query has been executed
+ */
 Reservations.prototype.load = function (callback) {
     var self = this;
     this.log.debug("Loading up...");
@@ -68,6 +103,14 @@ Reservations.prototype.load = function (callback) {
     });
 };
 
+/**
+ * Store on database reservation changes
+ * @param {String} action Can be 'cancel' or 'add'
+ * @param {Reservation} reservation Reservation instance to be saved
+ * @param {Function} [callback]
+ * Callback will not return anything but it will be
+ * executed once database query has been executed
+ */
 Reservations.prototype.saveChange = function (action, reservation, callback) {
     var self = this;
     this.log.debug("Saving...");
@@ -81,10 +124,21 @@ Reservations.prototype.saveChange = function (action, reservation, callback) {
     });
 };
 
+/**
+ * Checks if any item has a reservation attached to it
+ * @param {String} itemID
+ * @returns {Boolean}
+ */
 Reservations.prototype.exist = function (itemID) {
     return this.get(itemID).getHolder() !== "";
 };
 
+/**
+ * Get shop reservation changes formatted for client (website) usage
+ * @param {Date|Number} last_update_date Specify changes starting point
+ * @returns {Reservation.valueOf()[]|Boolean} False if invalid parameter is passed
+ * <br>See Reservation.valueOf for more info
+ */
 Reservations.prototype.getClientChanges = function (last_update_date) {
     last_update_date = new Date(last_update_date);
     if (last_update_date.toString() !== "Invalid Date") {
@@ -113,6 +167,10 @@ Reservations.prototype.getClientChanges = function (last_update_date) {
     return false;
 };
 
+/**
+ * Get client formatted reservations list
+ * @returns {Reservation.valueOf()[]}
+ */
 Reservations.prototype.getClientList = function () {
     var clientList = [];
     for (var i = 0; i < this.list.length; i += 1) {
@@ -121,6 +179,11 @@ Reservations.prototype.getClientList = function () {
     return clientList;
 };
 
+/**
+ * Get reservation for given item id
+ * @param {Number} itemID
+ * @returns {Reservation} Will return Reservation with empty string holder if doesn't exist
+ */
 Reservations.prototype.get = function (itemID) {
     var reservationIndex = this.getIndex(itemID);
     if (reservationIndex >= 0) {
@@ -130,6 +193,11 @@ Reservations.prototype.get = function (itemID) {
     }
 };
 
+/**
+ * Get index from reservations list given item id
+ * @param {Number} itemID
+ * @returns {Number}
+ */
 Reservations.prototype.getIndex = function (itemID) {
     for (var i = 0; i < this.list.length; i += 1) {
         if (this.list[i].getID() === itemID) {
@@ -139,10 +207,20 @@ Reservations.prototype.getIndex = function (itemID) {
     return -1;
 };
 
+/**
+ * Get load query
+ * @returns {String}
+ */
 Reservations.prototype._loadQuery = function () {
     return "SELECT `id`, `holder`, `reservation_date` FROM `shop_reservations`";
 };
 
+/**
+ * Get query to save reservation changes
+ * @param {String} action Can be "add" or "cancel"
+ * @param {Reservation} reservation
+ * @returns {String}
+ */
 Reservations.prototype._saveChangeQuery = function (action, reservation) {
     if (action === "cancel") {
         return "DELETE FROM `shop_reservations` WHERE `id`=" + reservation.getID();
@@ -152,24 +230,52 @@ Reservations.prototype._saveChangeQuery = function (action, reservation) {
     }
 };
 
+/**
+ * @class Reservation
+ * @param {String} steamid Holder steamid
+ * @param {Number} itemID Item id
+ * @returns {Reservation}
+ */
 function Reservation(steamid, itemID) {
     this.holder = steamid;
     this.id = itemID;
     this.reservation_date = new Date();
 }
 
+/**
+ * Get data structure of this reservation
+ * @returns {Object}
+ * valueOf data structure:<br>
+ * {<br>
+ * &nbsp;id: Number (Item id),<br>
+ * &nbsp;reserved_to: String (Holder steamid),<br>
+ * &nbsp;date: Number (Date timestamp)<br>
+ * }
+ */
 Reservation.prototype.valueOf = function () {
     return {id: this.id, reserved_to: this.holder, date: new Date().getTime()};
 };
 
+/**
+ * Get item id
+ * @returns {Number}
+ */
 Reservation.prototype.getID = function () {
     return this.id;
 };
 
+/**
+ * Get holder steamid
+ * @returns {String}
+ */
 Reservation.prototype.getHolder = function () {
     return this.holder;
 };
 
+/**
+ * Get date
+ * @returns {Date}
+ */
 Reservation.prototype.getDate = function () {
     return this.reservation_date;
 };

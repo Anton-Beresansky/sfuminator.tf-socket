@@ -2,6 +2,12 @@ module.exports = Cloud;
 
 var events = require("events");
 
+/**
+ * General purpose Cloud interface class
+ * @param {ZmqSocket} socket
+ * @param {Object} options
+ * @returns {Cloud}
+ */
 function Cloud(socket, options) {
     var self = this;
     this.socket = socket;
@@ -33,12 +39,23 @@ function Cloud(socket, options) {
 }
 require("util").inherits(Cloud, events.EventEmitter);
 
+/**
+ * Request query execution from cloud database
+ * @param {String} query
+ * @param {Function} callback Will pass query result
+ */
 Cloud.prototype.query = function (query, callback) {
     this.send("query", query, function (result) {
         callback(result);
     });
 };
 
+/**
+ * Send data packet to cloud
+ * @param {String} action Defines the action
+ * @param {Object} data Action parameters
+ * @param {Function} callback Will pass cloud response
+ */
 Cloud.prototype.send = function (action, data, callback) {
     var self = this;
     var time_beforeSending = new Date();
@@ -50,6 +67,10 @@ Cloud.prototype.send = function (action, data, callback) {
     });
 };
 
+/**
+ * Will execute given function on incoming cloud message
+ * @param {Function} callback(Action,Parameters,Answer())
+ */
 Cloud.prototype.onMessage = function (callback) {
     this.socket.onMessage(function (message, answer) {
         var timeOnMessage = new Date();
@@ -59,6 +80,11 @@ Cloud.prototype.onMessage = function (callback) {
     });
 };
 
+/**
+ * Debug
+ * @param {String} message
+ * @param {Number} depth
+ */
 Cloud.prototype._d = function (message, depth) {
     if (this._debug) {
         if (!depth || depth <= this._dd) {
@@ -67,6 +93,18 @@ Cloud.prototype._d = function (message, depth) {
     }
 };
 
+/**
+ * Update local<->cloud ping
+ * @param {Number} newPing
+ */
 Cloud.prototype.updatePing = function (newPing) {
     this.ping = parseInt((this.ping * 0.7) + (newPing * 0.3));
+};
+
+/**
+ * Get current local<->cloud ping
+ * @returns {Number} ping
+ */
+Cloud.prototype.getPing = function () {
+    return this.ping;
 };

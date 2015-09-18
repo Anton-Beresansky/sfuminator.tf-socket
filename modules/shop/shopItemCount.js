@@ -2,11 +2,20 @@ module.exports = ShopItemCount;
 
 var Logs = require("../../lib/logs.js");
 
+/**
+ * Keeps count of the items available in the shop
+ * @returns {ShopItemCount}
+ */
 function ShopItemCount() {
     this.log = new Logs("Item count");
     this._counters = [];
 }
 
+/**
+ * Update count
+ * @param {TF2Item[]} toAdd
+ * @param {Tf2Item[]} toRemove
+ */
 ShopItemCount.prototype.update = function (toAdd, toRemove) {
     this.log.debug("Updating...");
     for (var i = 0; i < toAdd.length; i += 1) {
@@ -17,14 +26,27 @@ ShopItemCount.prototype.update = function (toAdd, toRemove) {
     }
 };
 
+/**
+ * Will add item to the counter
+ * @param {TF2Item} item
+ */
 ShopItemCount.prototype.add = function (item) {
     this._inject(item, "increase");
 };
 
+/**
+ * Will remove item from the counter
+ * @param {TF2Item} item
+ */
 ShopItemCount.prototype.remove = function (item) {
     this._inject(item, "decrease");
 };
 
+/**
+ * Inject TF2Item and action in order to change count
+ * @param {TF2Item} item
+ * @param {String} action (increase, decrease)
+ */
 ShopItemCount.prototype._inject = function (item, action) {
     if (item.shopType !== "") {
         var index = this.getIndex(item);
@@ -38,6 +60,11 @@ ShopItemCount.prototype._inject = function (item, action) {
     }
 };
 
+/**
+ * Get counter of a given item
+ * @param {TF2Item} item
+ * @returns {ShopItemCounter}
+ */
 ShopItemCount.prototype.get = function (item) {
     var index = this.getIndex(item);
     if (index >= 0) {
@@ -47,6 +74,11 @@ ShopItemCount.prototype.get = function (item) {
     }
 };
 
+/**
+ * Get index from counter list given item
+ * @param {TF2Item} item
+ * @returns {Number}
+ */
 ShopItemCount.prototype.getIndex = function (item) {
     for (var i = 0; i < this._counters.length; i += 1) {
         if (this._counters[i].canAdd(item)) {
@@ -56,19 +88,35 @@ ShopItemCount.prototype.getIndex = function (item) {
     return -1;
 };
 
+/**
+ * Make a new Shop Item Counter
+ * @param {TF2Item} item
+ * @returns {ShopItemCounter}
+ */
 ShopItemCount.prototype.makeCounter = function (item) {
     return new ShopItemCounter({defindex: item.defindex, quality: item.quality});
 };
 
+/**
+ * General purpose Shop Item Counter Class
+ * @param {Object} indentifiers Parameters that indentify this counter
+ * @returns {ShopItemCounter}
+ */
 function ShopItemCounter(indentifiers) {
     this.count = 0;
     this.identifiers = indentifiers;
 }
 
+/**
+ * Increase counter, should be used with ShopItemCounter.canAdd
+ */
 ShopItemCounter.prototype.increase = function () {
     this.count += 1;
 };
 
+/**
+ * Decrease counter, should be used with ShopItemCounter.canAdd
+ */
 ShopItemCounter.prototype.decrease = function () {
     if (this.count > 0) {
         this.count -= 1;
@@ -84,6 +132,11 @@ ShopItemCounter.prototype.valueOf = function () {
     return this.count;
 };
 
+/**
+ * Check if certain item can increase/decrease this counter
+ * @param {TF2Item} item
+ * @returns {Boolean}
+ */
 ShopItemCounter.prototype.canAdd = function (item) {
     for (var property in this.identifiers) {
         if (this.identifiers[property] !== item[property]) {

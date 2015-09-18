@@ -2,12 +2,23 @@ module.exports = ShopRatio;
 
 var Logs = require("../../lib/logs.js");
 
+/**
+ * @class ShopRatio
+ * @description Will define shop price ratios used to buy and sell items 
+ * @param {Database} db Database instance
+ * @returns {ShopRatio}
+ */
 function ShopRatio(db) {
     this.db = db;
     this.log = new Logs("TF2 Shop ratio");
     this.hats = {};
 }
 
+/**
+ * Update hats ratio
+ * @param {Funciton} [callback]
+ * Callback will return this instance 
+ */
 ShopRatio.prototype.updateHats = function (callback) {
     var self = this;
     this.log.debug("Updating hats");
@@ -20,6 +31,23 @@ ShopRatio.prototype.updateHats = function (callback) {
     });
 };
 
+/**
+ * Get hat ratio<br>
+ * Asyincronous database fetching
+ * @param {Funciton} callback
+ * Callback will return the Ratio Object<br>
+ * Object will have following structure<br>
+ * {<br>
+ * &nbsp;weBuy: {
+ * <br>&nbsp;&nbsp;lowTier: Float,
+ * <br>&nbsp;&nbsp;normal: Float,
+ * <br>&nbsp;&nbsp;default166: Float,
+ * <br>&nbsp;&nbsp;minimum: Float,
+ * <br>&nbsp;&nbsp;maximum: Float
+ * <br>&nbsp;},
+ * <br>&nbsp;weSell: {..}
+ * <br>}
+ */
 ShopRatio.prototype.getHats = function (callback) {
     var self = this;
     var hatRatio = {weBuy: {}, weSell: {}};
@@ -55,6 +83,10 @@ ShopRatio.prototype.getHats = function (callback) {
     });
 };
 
+/**
+ * Get query to fetch hat ratio
+ * @returns {String} Query
+ */
 ShopRatio.prototype._getHatsQuery = function () {
     return "SELECT `item`, `weBuy`, `weSell` FROM `botPrices` WHERE item='hat' OR item='hat_min' OR item='hat_max' OR item='hat_166'";
 };
