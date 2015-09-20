@@ -63,7 +63,7 @@ ShopTrade.prototype.send = function () {
         this.log.error("No trade mode set, can't send trade");
     } else if (!this.shop.isBot(this.getBotSteamid())) {
         this.log.error("No bot steamid set, can't send trade");
-    } else {
+    } else {
         this.setStatus("hold");
         this.setStatusInfo("open");
         this.database.save();
@@ -120,7 +120,11 @@ ShopTrade.prototype.getClientChanges = function (last_update_date) {
     last_update_date = new Date(last_update_date);
     if (last_update_date.toString() !== "Invalid Date") {
         if (this.getLastUpdateDate() > last_update_date) {
-            return {status: this.getStatus(), statusInfo: this.getStatusInfo(), last_update_date: this.getLastUpdateDate().getTime()};
+            return {
+                status: this.getStatus(),
+                statusInfo: this.getStatusInfo(),
+                last_update_date: this.getLastUpdateDate().getTime()
+            };
         }
     }
     return false;
@@ -189,7 +193,7 @@ ShopTrade.prototype.load = function (callback) {
 
 /**
  * Verify that set items can be shop traded
- * @param {Function} callback When executed will pass a Boolean value 
+ * @param {Function} callback When executed will pass a Boolean value
  * that establish if items are valid.
  */
 ShopTrade.prototype.verifyItems = function (callback) {
@@ -252,7 +256,6 @@ ShopTrade.prototype.getShopItemCount = function () {
 
 /**
  * Reserve shop items for Shop Trade partner
- * @returns {}
  */
 ShopTrade.prototype.reserveItems = function () {
     this.log.debug("Reserving items", 3);
@@ -554,12 +557,12 @@ ShopTrade.prototype.makeAsset = function (item) {
 ShopTrade.prototype.logAssets = function (level) {
     var self = this;
     this.log.debug("Assets: " + (function () {
-        var result = "";
-        for (var i = 0; i < self.assets.length; i += 1) {
-            result += JSON.stringify(self.assets[i].valueOf()) + "\n";
-        }
-        return result;
-    }()), level);
+            var result = "";
+            for (var i = 0; i < self.assets.length; i += 1) {
+                result += JSON.stringify(self.assets[i].valueOf()) + "\n";
+            }
+            return result;
+        }()), level);
 };
 
 /**
@@ -686,8 +689,8 @@ TradeDb.prototype.update = function (callback) {
 };
 TradeDb.prototype._getUpdateQuery = function () {
     return "UPDATE `shop_trades` SET "
-            + "status='" + this.trade.getStatus() + "',"
-            + "status_info='" + this.trade.getStatusInfo() + "' WHERE id=" + this.trade.getID();
+        + "status='" + this.trade.getStatus() + "',"
+        + "status_info='" + this.trade.getStatusInfo() + "' WHERE id=" + this.trade.getID();
 };
 TradeDb.prototype._getLoadQuery = function () {
     var additionalIdentifier = "";
@@ -695,17 +698,17 @@ TradeDb.prototype._getLoadQuery = function () {
         additionalIdentifier = "AND id=" + this.trade.getID();
     }
     return "SELECT `id`,`steamid`,`bot_steamid`,`mode`,`status`,`status_info`, `item_id`, `shop_type`, `scrapPrice`, `last_update_date` FROM "
-            + "(SELECT `id`,`steamid`,`mode`,`status`,`status_info`,`last_update_date`,`bot_steamid` FROM shop_trades WHERE steamid='" + this.trade.partner.getSteamid() + "' " + additionalIdentifier + " ORDER BY last_update_date DESC LIMIT 1) as myTrade "
-            + "JOIN shop_trade_items ON myTrade.id=shop_trade_items.trade_id ";
+        + "(SELECT `id`,`steamid`,`mode`,`status`,`status_info`,`last_update_date`,`bot_steamid` FROM shop_trades WHERE steamid='" + this.trade.partner.getSteamid() + "' " + additionalIdentifier + " ORDER BY last_update_date DESC LIMIT 1) as myTrade "
+        + "JOIN shop_trade_items ON myTrade.id=shop_trade_items.trade_id ";
 };
 TradeDb.prototype._getSaveQuery = function () {
     return "INSERT INTO `shop_trades` (`steamid`,`mode`,`status`,`status_info`,`bot_steamid`) VALUES ("
-            + "'" + this.trade.partner.getSteamid() + "',"
-            + "'" + this.trade.getMode() + "',"
-            + "'" + this.trade.getStatus() + "',"
-            + "'" + this.trade.getStatusInfo() + "',"
-            + "'" + this.trade.getBotSteamid() + "'"
-            + ");";
+        + "'" + this.trade.partner.getSteamid() + "',"
+        + "'" + this.trade.getMode() + "',"
+        + "'" + this.trade.getStatus() + "',"
+        + "'" + this.trade.getStatusInfo() + "',"
+        + "'" + this.trade.getBotSteamid() + "'"
+        + ");";
 };
 TradeDb.prototype._getSaveItemsQuery = function () {
     if (!isNaN(this.trade.getID())) {

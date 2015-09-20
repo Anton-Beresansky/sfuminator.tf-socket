@@ -3,6 +3,12 @@ module.exports = BotPorting;
 var Logs = require("./lib/logs.js");
 var API = require("./lib/api.js");
 
+/**
+ * Bot porting class<br>
+ * Compatibility layer interface for bot v3 and server v4
+ * @param {Sfuminator} sfuminator
+ * @returns {BotPorting}
+ */
 function BotPorting(sfuminator) {
     this.sfuminator = sfuminator;
     this.shop = this.sfuminator.shop;
@@ -14,7 +20,6 @@ function BotPorting(sfuminator) {
 }
 
 BotPorting.prototype.requestAvailable = function (request) {
-    var data = request.getData();
     return data.hasOwnProperty("botRequest") && data.botRequest;
 };
 
