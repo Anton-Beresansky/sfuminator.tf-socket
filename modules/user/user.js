@@ -35,7 +35,6 @@ require("util").inherits(User, events.EventEmitter);
 User.prototype.getSteamid = function () {
     return this.steamid;
 };
-
 /**
  * Get name
  * @returns {String}
@@ -78,7 +77,7 @@ User.prototype.hasActiveShopTrade = function () {
 
 /**
  * Get user Shop Trade
- * @returns {ShopTrade}
+ * @returns {ShopTrade} 
  */
 User.prototype.getShopTrade = function () {
     return this.shopTrade;
