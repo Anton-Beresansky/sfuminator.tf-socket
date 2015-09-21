@@ -132,10 +132,10 @@ ShopTrade.prototype.getClientChanges = function (last_update_date) {
 
 /**
  * Get object structure of this Shop Trade
- * @returns {ShopTrade.prototype.valueOf.shopTradeAnonym$1}
+ * @returns {ShopTrade.prototype.valueOf.value}
  */
 ShopTrade.prototype.valueOf = function () {
-    return {
+    var value = {
         botSteamid: this.getBotSteamid(),
         partnerID: this.partner.getSteamid(),
         mode: this.getMode(),
@@ -144,6 +144,7 @@ ShopTrade.prototype.valueOf = function () {
         last_update_date: this.getLastUpdateDate().getTime(),
         items: this.getPlate()
     };
+    return value;
 };
 
 /**
@@ -395,7 +396,7 @@ ShopTrade.prototype.setStatus = function (status) {
 
 /**
  * Set Shop Trade Status Info
- * @param {String} status
+ * @param {String} status_info
  */
 ShopTrade.prototype.setStatusInfo = function (status_info) {
     this.status_info = status_info;
@@ -405,7 +406,7 @@ ShopTrade.prototype.setStatusInfo = function (status_info) {
 /**
  * Set Shop Trade Mode<br>
  * Applied only if mode exist (see ShopTrade._available_modes).
- * @param {String} status
+ * @param {String} mode
  */
 ShopTrade.prototype.setMode = function (mode) {
     if (this.modeExist(mode)) {
@@ -543,7 +544,7 @@ ShopTrade.prototype.getAssets = function () {
 
 /**
  * Make Shop Trade Asset
- * @param {Tf2Item} item
+ * @param {TF2Item} item
  * @returns {ShopTradeAsset}
  */
 ShopTrade.prototype.makeAsset = function (item) {
@@ -634,7 +635,7 @@ ShopTradeAsset.prototype.getPrice = function () {
 function TradeDb(trade, db) {
     this.trade = trade;
     this.db = db;
-    this.log = new Logs("TradeDB " + this.trade.partner.getSteamid());
+    this.log = new Logs({applicationName: "TradeDB " + this.trade.partner.getSteamid(), color: "green", dim: true});
 }
 
 /**

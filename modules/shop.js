@@ -6,13 +6,9 @@ var TF2Currency = require("./tf2/tf2Currency.js");
 var ShopRatio = require("./shop/shopRatio.js");
 var ShopInventory = require("./shop/shopInventory.js");
 var Section = require("./shop/shopSection.js");
-var ItemVersioning = require("../lib/dataVersioning.js");
 var Reservations = require("./shop/shopReservations.js");
 var ItemCount = require("./shop/shopItemCount.js");
 var Search = require('./shop/shopSearch.js');
-
-//When updating internal item list and versioning items are patched
-//Shop contains formatted items ready to use on client side
 
 /**
  * General purpose Shop class
@@ -153,7 +149,7 @@ Shop.prototype.getLimit = function (item) {
  * @returns {Object} Client formatted response
  */
 Shop.prototype.getMine = function (backpack) {
-    this.log.debug("Getting mine items, bp: " + backpack.getOwner());
+    this.log.debug("Getting mine items, bp: " + backpack.getOwner(), 1);
     if (!backpack.hasErrored()) {
         return this.filterMineItems(backpack.items).getCompressedItems();
     } else {
