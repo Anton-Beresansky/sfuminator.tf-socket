@@ -22,7 +22,7 @@ function Stats(sfuminator) {
     };
     this.stats = {};
     this.max_new_items = 10;
-    this.log = new Logs("Stats");
+    this.log = new Logs({applicationName: "Stats"});
 }
 
 /**

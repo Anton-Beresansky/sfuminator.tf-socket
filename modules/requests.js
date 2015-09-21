@@ -12,7 +12,7 @@ var Logs = require("../lib/logs.js");
  * @returns {SfuminatorRequest}
  */
 function SfuminatorRequest(req, body) {
-    this.log = new Logs("Sfuminator Request");
+    this.log = new Logs({applicationName: "Sfuminator Request", color: "magenta", dim: true});
     this.log.setLevel(0);
     this.log.debug("Got new request", 3);
     this.log.debug(body, 3);

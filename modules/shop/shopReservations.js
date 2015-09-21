@@ -11,7 +11,7 @@ var ReservationsVersioning = require("../../lib/dataVersioning.js");
  */
 function Reservations(db) {
     this.db = db;
-    this.log = new Logs("Reservations");
+    this.log = new Logs({applicationName: "Reservations", color: "green"});
     this.versioning = new ReservationsVersioning(50, "Reservations");
     this.list = [];
 }

@@ -8,7 +8,7 @@ module.exports = new TF2Currency();
  * @returns {TF2Currency}
  */
 function TF2Currency() {
-    this.log = new Logs("TF2 Currency");
+    this.log = new Logs({applicationName: "TF2 Currency", color: "blue"});
     this._currency = {};
 }
 

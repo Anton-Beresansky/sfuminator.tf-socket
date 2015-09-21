@@ -24,7 +24,7 @@ function Shop(sfuminator) {
     this.cloud = sfuminator.cloud;
     this.db = sfuminator.db;
     this.interrupts = sfuminator.interrupts;
-    this.log = new Logs("Shop");
+    this.log = new Logs({applicationName: "Shop", color: "green"});
     this.ratio = new ShopRatio(this.db);
     this.tf2Currency = TF2Currency;
     this.tf2Currency.setCloud(this.cloud);

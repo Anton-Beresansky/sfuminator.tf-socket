@@ -10,7 +10,7 @@ var Logs = require("../../lib/logs.js");
  */
 function ShopRatio(db) {
     this.db = db;
-    this.log = new Logs("TF2 Shop ratio");
+    this.log = new Logs({applicationName: "TF2 Shop ratio", color: "green", dim: true});
     this.hats = {};
 }
 

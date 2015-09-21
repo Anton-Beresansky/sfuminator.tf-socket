@@ -22,7 +22,7 @@ function Sfuminator(config, cloud, db) {
     this.config = config;
     this.cloud = cloud;
     this.db = db;
-    this.log = new Logs("Sfuminator");
+    this.log = new Logs({applicationName: "Sfuminator", color: "blue"});
     this.log.setLevel(0);
     this.admin = config.admin;
     this.interrupts = new Interrupts([

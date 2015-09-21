@@ -7,7 +7,7 @@ var Logs = require("../../lib/logs.js");
  * @returns {ShopItemCount}
  */
 function ShopItemCount() {
-    this.log = new Logs("Item count");
+    this.log = new Logs({applicationName: "Item count", color: "green", dim: true});
     this._counters = [];
 }
 

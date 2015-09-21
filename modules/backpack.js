@@ -13,7 +13,7 @@ var TF2Item = require("./tf2/tf2Item.js");
  */
 function Backpack(steamid, game, cloud) {
     this.cloud = cloud;
-    this.log = new Logs("Backpack " + steamid);
+    this.log = new Logs({applicationName: "Backpack " + steamid});
     this.game = game;
     this.owner = steamid;
     this.decayTime = 90000; // 1:30min

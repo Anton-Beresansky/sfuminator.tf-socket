@@ -7,7 +7,7 @@ var Logs = require("./lib/logs.js");
  * @returns {MaxRequestsHandler}
  */
 function MaxRequestsHandler() {
-    this.log = new Logs("Max requests handler");
+    this.log = new Logs({applicationName: "Max requests handler", color: "gray"});
     this.whitelist = [
         "107.170.135.170"
     ];
