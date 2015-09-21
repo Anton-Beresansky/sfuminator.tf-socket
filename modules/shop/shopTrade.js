@@ -18,7 +18,7 @@ function ShopTrade(sfuminator, partner) {
     this.ajaxResponses = sfuminator.responses;
     this.response = this.ajaxResponses.error;
     this.database = new TradeDb(this, sfuminator.db);
-    this.log = new Logs("Trade offer " + this.partner.getSteamid());
+    this.log = new Logs({applicationName: "Trade offer " + this.partner.getSteamid(), color: "green"});
     this.assets = [];
     this._available_modes = ["offer", "manual"];
     this.last_update_date = new Date();

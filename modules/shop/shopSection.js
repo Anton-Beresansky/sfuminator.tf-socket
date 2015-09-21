@@ -17,7 +17,7 @@ function Section(shop, type) {
     this.compressedItems = [];
     this.toAdd = [];
     this.toRemove = [];
-    this.log = new Logs("Section " + type);
+    this.log = new Logs({applicationName: "Section " + type, color: "green"});
     if (!this.isMine()) {
         this.versioning = new Versioning(40, "section " + type);
         this.log.setLevel(1);

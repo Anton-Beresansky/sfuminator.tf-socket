@@ -14,7 +14,7 @@ function BotPorting(sfuminator) {
     this.shop = this.sfuminator.shop;
     this.users = this.sfuminator.users;
     this.db = this.sfuminator.db;
-    this.log = new Logs("v3 Bot Porting");
+    this.log = new Logs({applicationName: "v3 Bot Porting"});
     this.site_api = new API("dev.sfuminator.tf");
     this.site_key = "***REMOVED***";
 }

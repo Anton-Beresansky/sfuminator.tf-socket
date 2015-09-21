@@ -16,7 +16,7 @@ function ShopInventory(shop, inventoryBots) {
     this.sfuminator = shop.sfuminator;
     this.users = shop.sfuminator.users;
     this.db = shop.db;
-    this.log = new Logs("Shop Inventory");
+    this.log = new Logs({applicationName: "Shop Inventory", color: "green"});
     this.log.setLevel(3);
     this.bots = [];
     for (var i = 0; i < inventoryBots.length; i += 1) {

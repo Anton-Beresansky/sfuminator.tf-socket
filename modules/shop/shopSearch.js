@@ -11,7 +11,7 @@ var Logs = require("../../lib/logs.js");
 function Search(shop, ajaxResponses) {
     this.shop = shop;
     this.ajaxResponses = ajaxResponses;
-    this.log = new Logs("Search");
+    this.log = new Logs({applicationName: "Search"});
 }
 
 /**
