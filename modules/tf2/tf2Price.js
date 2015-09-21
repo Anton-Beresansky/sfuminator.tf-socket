@@ -17,9 +17,9 @@ function TF2Price(price, initCurrency) {
     if (initCurrency) {
         if (initCurrency === "scrap") {
             initCurrency = "metal";
-            _absolute_price = _absolute_price / 9;
+            price = price / 9;
         }
-        this.absolute_price = _absolute_price * this.currency[initCurrency].usd;
+        this.absolute_price = price * this.currency[initCurrency].usd;
     }
 }
 
