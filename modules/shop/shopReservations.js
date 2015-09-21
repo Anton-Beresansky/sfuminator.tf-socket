@@ -13,12 +13,16 @@ function Reservations(db) {
     this.db = db;
     this.log = new Logs({applicationName: "Reservations", color: "green"});
     this.versioning = new ReservationsVersioning(50, "Reservations");
+    /**
+     * Reservation list
+     * @type {Reservation[]}
+     */
     this.list = [];
 }
 
 /**
  * Add reservation to specified shop item, if item has already a reservation
- * attacched to it, nothing will be done
+ * attached to it, nothing will be done
  * @param {String} steamid Holder steamid
  * @param {Number} itemID
  * @returns {Reservation}
@@ -49,7 +53,7 @@ Reservations.prototype.localAdd = function (steamid, itemID) {
 /**
  * Cancel reservation attached to an item given its id
  * @param {Number} itemID
- * @param {Function} [callback] 
+ * @param {Function} [callback]
  * Callback will not return anything but it will be
  * executed once database query has been executed
  */
@@ -113,7 +117,7 @@ Reservations.prototype.load = function (callback) {
  */
 Reservations.prototype.saveChange = function (action, reservation, callback) {
     var self = this;
-    this.log.debug("Saving...");
+    this.log.debug("Saving, " + action + " - " + reservation.getID());
     this.db.connect(function (connection) {
         connection.query(self._saveChangeQuery(action, reservation), function () {
             connection.release();
@@ -226,7 +230,7 @@ Reservations.prototype._saveChangeQuery = function (action, reservation) {
         return "DELETE FROM `shop_reservations` WHERE `id`=" + reservation.getID();
     } else if (action === "add") {
         return "INSERT INTO `shop_reservations` (`id`,`holder`) VALUES(" + reservation.getID() + ",'" + reservation.getHolder() + "') " +
-                "ON DUPLICATE KEY UPDATE `holder`='" + reservation.getHolder() + "'";
+            "ON DUPLICATE KEY UPDATE `holder`='" + reservation.getHolder() + "'";
     }
 };
 

@@ -14,7 +14,7 @@ function BotPorting(sfuminator) {
     this.shop = this.sfuminator.shop;
     this.users = this.sfuminator.users;
     this.db = this.sfuminator.db;
-    this.log = new Logs({applicationName: "v3 Bot Porting"});
+    this.log = new Logs({applicationName: "v3 Bot Porting", color: "yellow", dim: true});
     this.site_api = new API("dev.sfuminator.tf");
     this.site_key = "lolol_this_is_bot_porting";
 }
@@ -142,14 +142,15 @@ BotPorting.prototype._getTradeCompatibleQuery = function (trades) {
     }
     query = query.slice(0, query.length - 2);
     return query + " ON DUPLICATE KEY UPDATE"
-            + " `with`=VALUES(`with`),"
-            + " `my_defindex`=VALUES(`my_defindex`),"
-            + " `his_defindex`=VALUES(`his_defindex`),"
-            + " `when`=VALUES(`when`)";
+        + " `with`=VALUES(`with`),"
+        + " `my_defindex`=VALUES(`my_defindex`),"
+        + " `his_defindex`=VALUES(`his_defindex`),"
+        + " `when`=VALUES(`when`)";
 };
 BotPorting.prototype.setTradeOfferStatus = function (steamid, status, status_info, callback) {
     var user = this.users.get(steamid);
     var shopTrade = user.getShopTrade();
+    this.log.debug("Setting trade #" + shopTrade.getID() + ": @" + steamid + " - " + status + " - " + status_info);
     shopTrade.setStatus(status);
     shopTrade.setStatusInfo(status_info);
     shopTrade.commit();
