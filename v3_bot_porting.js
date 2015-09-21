@@ -20,6 +20,7 @@ function BotPorting(sfuminator) {
 }
 
 BotPorting.prototype.requestAvailable = function (request) {
+    var data = request.getData();
     return data.hasOwnProperty("botRequest") && data.botRequest;
 };
 
