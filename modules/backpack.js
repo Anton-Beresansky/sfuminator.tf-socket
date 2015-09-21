@@ -50,7 +50,7 @@ Backpack.prototype.getOwner = function () {
  */
 Backpack.prototype.getCached = function (callback) {
     var self = this;
-    this.log.debug("Getting cached backpack");
+    this.log.debug("Getting cached backpack", 1);
     if (this.isOutdated()) {
         this.get(function () {
             if (typeof callback === "function") {

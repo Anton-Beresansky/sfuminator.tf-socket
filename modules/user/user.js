@@ -18,7 +18,7 @@ function User(steamid, sfuminator) {
     this.db = this.sfuminator.db;
     this.cloud = this.sfuminator.cloud;
     this.tf2Backpack = new Backpack(steamid, 440, this.cloud);
-    this.log = new Logs("User " + JSON.stringify(steamid));
+    this.log = new Logs({applicationName: "User " + JSON.stringify(steamid), color: "cyan"});
     this.decayTime = 1000 * 60 * 60 * 8; // 8hrs
     this.last_use_date = new Date();
     this.update();
