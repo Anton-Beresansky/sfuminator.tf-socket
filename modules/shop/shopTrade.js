@@ -286,7 +286,8 @@ ShopTrade.prototype.dereserveItems = function () {
 
 /**
  * Get Trade Shop plate
- * @returns {ShopTrade.prototype.getPlate.plate}
+ * (me = shop item list, them = partner item list, full_list = shop + partner shop formatted item list)
+ * @returns {{me: ShopTradeAssetDataStructure[], them: ShopTradeAssetDataStructure[], full_list: SectionItemDataStructure[]}}
  */
 ShopTrade.prototype.getPlate = function () {
     var plate = {me: [], them: [], full_list: []};
@@ -486,7 +487,7 @@ ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
  * Verify if partner items can be traded
  * @param {Function} callback Will pass a Boolean value establish verification success
  * @param {Function} onAcceptedItem
- * Executed everytime a item has been accepted as tradable, TF2Item is passed.
+ * Executed every time a item has been accepted as tradable, TF2Item is passed.
  */
 ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
     var self = this;
@@ -575,7 +576,7 @@ ShopTrade.prototype.logAssets = function (level) {
 function ShopTradeAsset(shop, item) {
     this.shop = shop;
     this.item = item;
-    if (this.shop.isBot(this.item.getOwner())) {
+    if (this.ownedBySfuminator()) {
         this.price = item.getPrice();
     } else {
         this.price = this.shop.adjustMinePrice(item);
@@ -587,16 +588,23 @@ function ShopTradeAsset(shop, item) {
  * @returns {ShopTradeAsset.prototype.valueOf.shopTradeAnonym$4}
  */
 ShopTradeAsset.prototype.valueOf = function () {
-    return {
-        id: this.item.id,
-        name: this.item.name,
-        level: this.item.level,
-        quality: this.item.quality,
-        defindex: this.item.defindex,
-        scrapPrice: this.getPrice().toScrap(),
-        section: this.getShopType()
-    };
+    return new ShopTradeAssetDataStructure(this);
 };
+
+/**
+ * Shop Trade Asset data structure
+ * @param {ShopTradeAsset} shopTradeAsset
+ * @returns {ShopTradeAssetDataStructure}
+ */
+function ShopTradeAssetDataStructure(shopTradeAsset) {
+    this.id = shopTradeAsset.item.id;
+    this.name = shopTradeAsset.item.name;
+    this.level = shopTradeAsset.item.level;
+    this.quality = shopTradeAsset.item.quality;
+    this.defindex = shopTradeAsset.item.defindex;
+    this.scrapPrice = shopTradeAsset.getPrice().toScrap();
+    this.section = shopTradeAsset.getShopType();
+}
 
 /**
  * Get Shop Trade Asset TF2Item
@@ -611,7 +619,7 @@ ShopTradeAsset.prototype.getItem = function () {
  * @returns {String}
  */
 ShopTradeAsset.prototype.getShopType = function () {
-    if (this.shop.isBot(this.item.getOwner())) {
+    if (this.ownedBySfuminator()) {
         return this.shop.inventory.parseType(this.item);
     } else {
         return "mine";
@@ -624,6 +632,14 @@ ShopTradeAsset.prototype.getShopType = function () {
  */
 ShopTradeAsset.prototype.getPrice = function () {
     return this.price;
+};
+
+/**
+ * Establish if asset is owned by sfuminator
+ * @returns {Boolean}
+ */
+ShopTradeAsset.prototype.ownedBySfuminator = function () {
+    return this.shop.isBot(this.item.getOwner());
 };
 
 /**
