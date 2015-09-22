@@ -124,7 +124,7 @@ Section.prototype.remove = function (item) {
  */
 Section.prototype.commit = function (date) {
     if (this.toAdd.length === 0 && this.toRemove.length === 0) {
-        this.log.debug("Nothing to commit.");
+        this.log.debug("Nothing to commit.", 1);
         return;
     }
     if (!date) {
