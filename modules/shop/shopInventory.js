@@ -92,7 +92,7 @@ ShopInventory.prototype.fetchItems = function (callback) {
 };
 
 /**
- * Get user instace of the given bot steamid, should be used alongside Shop.isBot
+ * Get user instance of the given bot steamid, should be used alongside Shop.isBot
  * @param {String} steamid
  * @returns {User|Boolean} Will return false if bot doesn't exist
  */
@@ -113,7 +113,7 @@ ShopInventory.prototype.getBot = function (steamid) {
  */
 ShopInventory.prototype.getItem = function (itemID) {
     for (var i = 0; i < this.items.length; i += 1) {
-        if (this.items[i].id === itemID) {
+        if (this.items[i].getID() === itemID) {
             return this.items[i];
         }
     }
@@ -152,7 +152,7 @@ ShopInventory.prototype._removeOldItems = function (itemsToRemove) {
     var itemsLength = this.items.length;
     for (var j = 0; j < itemsToRemove.length; j += 1) {
         for (var i = 0; i < itemsLength; i += 1) {
-            if (this.items[i].id === itemsToRemove[j].id) {
+            if (this.items[i].getID() === itemsToRemove[j].getID()) {
                 this.items.splice(i, 1);
                 itemsLength = this.items.length;
                 break;
@@ -171,7 +171,7 @@ ShopInventory.prototype._parseItemsToAdd = function (newItems) {
     for (var j = 0; j < newItems.length; j += 1) {
         for (var i = 0; i < this.items.length; i += 1) {
             var found = false;
-            if (this.items[i].id === newItems[j].id) {
+            if (this.items[i].getID() === newItems[j].getID()) {
                 found = true;
                 break;
             }
@@ -193,7 +193,7 @@ ShopInventory.prototype._parseItemsToRemove = function (newItems) {
     for (var i = 0; i < this.items.length; i += 1) {
         for (var j = 0; j < newItems.length; j += 1) {
             var found = false;
-            if (this.items[i].id === newItems[j].id) {
+            if (this.items[i].getID() === newItems[j].getID()) {
                 found = true;
                 break;
             }

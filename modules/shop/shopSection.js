@@ -66,7 +66,7 @@ Section.prototype.getClientChanges = function (last_update_date) {
  */
 Section.prototype.itemExist = function (id) {
     for (var i = 0; i < this.items.length; i += 1) {
-        if (this.items[i].id === id) {
+        if (this.items[i].getID() === id) {
             return true;
         }
     }
@@ -109,7 +109,7 @@ Section.prototype.add = function (item) {
  * @param {TF2Item} item
  */
 Section.prototype.remove = function (item) {
-    if (this.getItemIndex(item.id) >= 0) {
+    if (this.getItemIndex(item.getID()) >= 0) {
         this.toRemove.push(this.makeSectionItem(item));
     }
 };
@@ -145,7 +145,7 @@ Section.prototype.commit = function (date) {
  */
 Section.prototype.commitRemovals = function () {
     for (var j = 0; j < this.toRemove.length; j += 1) {
-        var idToRemove = this.toRemove[j].id;
+        var idToRemove = this.toRemove[j].getID();
         this.items.splice(this.getItemIndex(idToRemove), 1);
 
         var compressed_index = this.getCompressedItemIndex(idToRemove);
@@ -182,7 +182,7 @@ Section.prototype.commitAdds = function () {
  */
 Section.prototype.getItemIndex = function (id) {
     for (var i = 0; i < this.items.length; i += 1) {
-        if (this.items[i].id === id) {
+        if (this.items[i].getID() === id) {
             return i;
         }
     }
@@ -248,17 +248,25 @@ Section.prototype.isMine = function () {
 function SectionItem(shop, type, item) {
     this.type = type;
     this.item = item;
-    this.id = item.id;
+    this.id = item.getID();
     this.shop = shop;
     this.reservations = this.shop.reservations;
 }
+
+/**
+ * Get Shop Section Item ID
+ * @returns {Number}
+ */
+SectionItem.prototype.getID = function () {
+    return this.id;
+};
 
 /**
  * Get Shop Section Item reservation.
  * @returns {Reservation}
  */
 SectionItem.prototype.getReservation = function () {
-    return this.reservations.get(this.item.id);
+    return this.reservations.get(this.item.getID());
 };
 
 /**
@@ -300,24 +308,6 @@ SectionItem.prototype.getPrice = function () {
  * }}
  */
 SectionItem.prototype.valueOf = function () {
-    /*var itemValue = {
-     id: this.item.id,
-     defindex: this.item.defindex,
-     level: this.item.level,
-     quality: this.item.quality,
-     name: this.item.getFullName(),
-     image_url: this.item.image_url,
-     image_url_large: this.item.image_url_large,
-     used_by_classes: this.item.used_by_classes,
-     relative_price: this.getPrice().toMetal(),
-     currency: "metal",
-     shop: this.type,
-     reserved_to: this.getReservation().getHolder()
-     };
-     if (this.isMineSection() && this.item.isPainted()) {
-     itemValue.paint_color = this.item.getPaintColor();
-     }
-     return itemValue;*/
     return new SectionItemDataStructure(this);
 };
 
@@ -327,7 +317,7 @@ SectionItem.prototype.valueOf = function () {
  * @returns {SectionItemDataStructure}
  */
 function SectionItemDataStructure(sectionItem) {
-    this.id = sectionItem.item.id;
+    this.id = sectionItem.item.getID();
     this.defindex = sectionItem.item.defindex;
     this.level = sectionItem.item.level;
     this.quality = sectionItem.item.getQuality();

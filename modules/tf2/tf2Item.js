@@ -24,6 +24,14 @@ function TF2Item(item, owner) {
 }
 
 /**
+ * Get TF2 Item ID
+ * @returns {Number}
+ */
+TF2Item.prototype.getID = function () {
+    return this.id;
+};
+
+/**
  * Returns tf2 formatted name: quality if needed + item name
  * @returns {TF2Item.item_name|String}
  */

@@ -102,7 +102,7 @@ Shop.prototype.getItem = function (id) {
     for (var section in this.sections) {
         for (var i = 0; i < this.sections[section].items.length; i += 1) {
             var item = this.sections[section].items[i];
-            if (item.id === id) {
+            if (item.getID() === id) {
                 return item;
             }
         }
