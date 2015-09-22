@@ -2,6 +2,7 @@ module.exports = BotPorting;
 
 var Logs = require("./lib/logs.js");
 var API = require("./lib/api.js");
+var Versioning = require("./lib/dataVersioning.js");
 
 /**
  * Bot porting class<br>
@@ -155,14 +156,38 @@ BotPorting.prototype.setTradeOfferStatus = function (steamid, status, status_inf
     shopTrade.setStatusInfo(status_info);
     shopTrade.commit();
     if (shopTrade.isClosed()) {
-        if (!shopTrade.hasBeenAccepted()) {
-            shopTrade.dereserveItems();
-        } else {
+        if (shopTrade.hasBeenAccepted()) {
             this.increaseHatTradeCount(steamid);
+            this._anticipateItemRemoval(shopTrade);
         }
+        shopTrade.dereserveItems();
     }
     callback({result: "success", steamid: steamid, status: status});
 };
+
+/**
+ * Anticipates item removal
+ * @param {ShopTrade} shopTrade
+ * @private
+ */
+BotPorting.prototype._anticipateItemRemoval = function (shopTrade) {
+    var tradePlate = shopTrade.getPlate();
+    if (tradePlate.me.length > 0) {
+        var tmpVersioning = new Versioning(1);
+        var toRemove = [];
+        var assets = shopTrade.getAssets();
+        for (var i = 0; i < assets.length; i += 1) {
+            if (assets[i].ownedBySfuminator()) {
+                toRemove.push(assets[i].getItem());
+            }
+        }
+        tmpVersioning.add([], toRemove);
+        //Operation is save, removal update is accomplished only if item exist
+        this.log.debug("Anticipating item removal on trade #" + shopTrade.getID() + " accepted");
+        this.shop.update(tmpVersioning.get());
+    }
+};
+
 BotPorting.prototype.cancelAllTradeOffers = function (callback) {
 
 };
