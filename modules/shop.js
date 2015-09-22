@@ -65,7 +65,7 @@ Shop.prototype.init = function () {
 
 /**
  * Update shop item changes
- * @param {Object} _changes
+ * @param {DataCommit} _changes
  */
 Shop.prototype.update = function (_changes) {
     var changes = {add: _changes.toAdd, remove: _changes.toRemove};
