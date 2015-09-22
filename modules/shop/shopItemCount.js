@@ -99,12 +99,12 @@ ShopItemCount.prototype.makeCounter = function (item) {
 
 /**
  * General purpose Shop Item Counter Class
- * @param {Object} indentifiers Parameters that indentify this counter
+ * @param {Object} identifiers Parameters that identify this counter
  * @returns {ShopItemCounter}
  */
-function ShopItemCounter(indentifiers) {
+function ShopItemCounter(identifiers) {
     this.count = 0;
-    this.identifiers = indentifiers;
+    this.identifiers = identifiers;
 }
 
 /**

@@ -273,7 +273,7 @@ BotPorting.prototype.getPortedManualTrade = function (shopTrade) {
             defindex: item.defindex,
             level: item.level,
             quality: item.quality,
-            id: item.id.toString(),
+            id: item.getID().toString(),
             original_id: item.original_id,
             scrapPrice: asset.getPrice().toScrap()
         });
@@ -323,7 +323,7 @@ BotPorting.prototype.checkIncomingOffer = function (data, callback) {
     var user = this.users.get(data.steamid);
     this.isScammer(data.steamid, function (scammer) {
         if (!scammer) {
-            var itemID = parseInt(data.id);
+            var itemID = parseInt(data.original_id);
             var shopItem = self.shop.getItem(itemID);
             if (shopItem) {
                 if (shopItem.getReservation().getHolder() === "") {

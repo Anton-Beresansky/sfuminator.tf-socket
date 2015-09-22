@@ -264,7 +264,7 @@ ShopTrade.prototype.reserveItems = function () {
     for (var i = 0; i < this.assets.length; i += 1) {
         var item = this.assets[i].getItem();
         if (item.getOwner() !== this.partner.getSteamid()) {
-            this.shop.reservations.add(this.partner.getSteamid(), item.id);
+            this.shop.reservations.add(this.partner.getSteamid(), item.getID());
         }
     }
 };
@@ -278,8 +278,8 @@ ShopTrade.prototype.dereserveItems = function () {
     this.logAssets(3);
     for (var i = 0; i < this.assets.length; i += 1) {
         var item = this.assets[i].getItem();
-        if (this.shop.reservations.exist(item.id)) {
-            this.shop.reservations.cancel(item.id);
+        if (this.shop.reservations.exist(item.getID())) {
+            this.shop.reservations.cancel(item.getID());
         }
     }
 };
@@ -300,7 +300,7 @@ ShopTrade.prototype.getPlate = function () {
             }
         } else {
             plate.me.push(this.assets[i].valueOf());
-            plate.full_list.push(this.shop.getItem(this.assets[i].getItem().id).valueOf());
+            plate.full_list.push(this.shop.getItem(this.assets[i].getItem().getID()).valueOf());
         }
     }
     return plate;
@@ -544,6 +544,20 @@ ShopTrade.prototype.getAssets = function () {
 };
 
 /**
+ * Get Shop Trade Asset
+ * @parameter {Number} Item id
+ * @returns {ShopTradeAsset|null}
+ */
+ShopTrade.prototype.getAsset = function (id) {
+    for (var i = 0; i < this.assets.length; i += 1) {
+        if (this.assets[i].getItem().getID() === id) {
+            return this.assets[i];
+        }
+    }
+    return null;
+};
+
+/**
  * Make Shop Trade Asset
  * @param {TF2Item} item
  * @returns {ShopTradeAsset}
@@ -597,7 +611,7 @@ ShopTradeAsset.prototype.valueOf = function () {
  * @returns {ShopTradeAssetDataStructure}
  */
 function ShopTradeAssetDataStructure(shopTradeAsset) {
-    this.id = shopTradeAsset.item.id;
+    this.id = shopTradeAsset.item.getID();
     this.name = shopTradeAsset.item.name;
     this.level = shopTradeAsset.item.level;
     this.quality = shopTradeAsset.item.quality;
@@ -733,7 +747,7 @@ TradeDb.prototype._getSaveItemsQuery = function () {
         var assets = this.trade.getAssets();
         for (var i = 0; i < assets.length; i += 1) {
             var asset = assets[i];
-            query += "(" + this.trade.getID() + "," + asset.getItem().id + ",'" + asset.getShopType() + "'," + asset.getPrice().toScrap() + "), ";
+            query += "(" + this.trade.getID() + "," + asset.getItem().getID() + ",'" + asset.getShopType() + "'," + asset.getPrice().toScrap() + "), ";
         }
         return query.slice(0, query.length - 2) + " ON DUPLICATE KEY UPDATE item_id=VALUES(item_id)";
     } else {

@@ -111,7 +111,7 @@ Backpack.prototype.itemExist = function (itemID) {
  */
 Backpack.prototype.getItem = function (itemID) {
     for (var i = 0; i < this.items.length; i += 1) {
-        if (this.items[i].id === itemID) {
+        if (this.items[i].getID() === itemID) {
             return this.items[i];
         }
     }
