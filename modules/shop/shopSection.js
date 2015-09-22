@@ -26,7 +26,7 @@ function Section(shop, type) {
 
 /**
  * Get client formatted changes for shop section
- * @param {Date|Number} last_update_date Specify changes starting point 
+ * @param {Date|Number} last_update_date Specify changes starting point
  * @returns {Object[]|Boolean}
  * False if invalid date is given<br>
  * Object will have following structure<br>
@@ -109,18 +109,24 @@ Section.prototype.add = function (item) {
  * @param {TF2Item} item
  */
 Section.prototype.remove = function (item) {
-    this.toRemove.push(this.makeSectionItem(item));
+    if (this.getItemIndex(item.id) >= 0) {
+        this.toRemove.push(this.makeSectionItem(item));
+    }
 };
 
 /**
  * Commit added and removed items updating
- * the internal shop section item list.<br>
+ * the internal shop section item list.
  * A single method to apply the introduced changes is
  * used so that they will take effect simultaneously
  * @param {Date} [date] Indicates when changes took place, default value
  * will be when commit is called.
  */
 Section.prototype.commit = function (date) {
+    if (this.toAdd.length === 0 && this.toRemove.length === 0) {
+        this.log.debug("Nothing to commit.");
+        return;
+    }
     if (!date) {
         date = new Date();
     }
@@ -285,28 +291,58 @@ SectionItem.prototype.getPrice = function () {
 
 /**
  * Get Shop Section Item object structure
- * @returns {SectionItem.prototype.valueOf.itemValue}
+ * @returns {{
+ * id: Number, defindex: Number, level: Number,
+ * quality: Number, name: String, image_url: String,
+ * image_url_large: String, used_by_classes: String,
+ * relative_price: Number, currency: String, shop: String,
+ * reserved_to: String, [paint_color]: String
+ * }}
  */
 SectionItem.prototype.valueOf = function () {
-    var itemValue = {
-        id: this.item.id,
-        defindex: this.item.defindex,
-        level: this.item.level,
-        quality: this.item.quality,
-        name: this.item.getFullName(),
-        image_url: this.item.image_url,
-        image_url_large: this.item.image_url_large,
-        used_by_classes: this.item.used_by_classes,
-        relative_price: this.getPrice().toMetal(),
-        currency: "metal",
-        shop: this.type,
-        reserved_to: this.getReservation().getHolder()
-    };
-    if (this.isMineSection() && this.item.isPainted()) {
-        itemValue.paint_color = this.item.getPaintColor();
-    }
-    return itemValue;
+    /*var itemValue = {
+     id: this.item.id,
+     defindex: this.item.defindex,
+     level: this.item.level,
+     quality: this.item.quality,
+     name: this.item.getFullName(),
+     image_url: this.item.image_url,
+     image_url_large: this.item.image_url_large,
+     used_by_classes: this.item.used_by_classes,
+     relative_price: this.getPrice().toMetal(),
+     currency: "metal",
+     shop: this.type,
+     reserved_to: this.getReservation().getHolder()
+     };
+     if (this.isMineSection() && this.item.isPainted()) {
+     itemValue.paint_color = this.item.getPaintColor();
+     }
+     return itemValue;*/
+    return new SectionItemDataStructure(this);
 };
+
+/**
+ *
+ * @param {SectionItem} sectionItem Section Item
+ * @returns {SectionItemDataStructure}
+ */
+function SectionItemDataStructure(sectionItem) {
+    this.id = sectionItem.item.id;
+    this.defindex = sectionItem.item.defindex;
+    this.level = sectionItem.item.level;
+    this.quality = sectionItem.item.getQuality();
+    this.name = sectionItem.item.getFullName();
+    this.image_url = sectionItem.item.image_url;
+    this.image_url_large = sectionItem.item.image_url_large;
+    this.used_by_classes = sectionItem.item.used_by_classes;
+    this.currency = "metal";
+    this.relative_price = sectionItem.getPrice().toMetal();
+    this.shop = sectionItem.type;
+    this.reserved_to = sectionItem.getReservation().getHolder();
+    if (sectionItem.isMineSection() && sectionItem.item.isPainted()) {
+        this.paint_color = sectionItem.item.getPaintColor();
+    }
+}
 
 /**
  * Get compressed Shop Section Item<br><br>
