@@ -30,11 +30,31 @@ CFG.prototype.getAdmins = function () {
 };
 
 /**
+ * @param steamid
+ * @returns {{steamid: String, username: String, password: String, steamApiKey: String}}
+ */
+CFG.prototype.getBotCredentials = function (steamid) {
+    var types = this.getBotTypes();
+    for (var i = 0; i < types.length; i += 1) {
+        var botType = types[i];
+        for (var index in this.sfuminator.bots[botType]) {
+            if (this.sfuminator.bots[botType][index].steamid === steamid) {
+                return this.sfuminator.bots[botType][index];
+            }
+        }
+    }
+};
+
+/**
  * Trade bots steam ids
  * @returns {Array}
  */
 CFG.prototype.getTradeBots = function () {
-    return this.sfuminator.trade_bots;
+    var steamidList = [];
+    for (var index in this.sfuminator.bots.trading) {
+        steamidList.push(this.sfuminator.bots.trading[index].steamid);
+    }
+    return steamidList;
 };
 
 /**
@@ -43,4 +63,12 @@ CFG.prototype.getTradeBots = function () {
  */
 CFG.prototype.getBots = function () {
     return this.getTradeBots();
+};
+
+CFG.prototype.getBotTypes = function () {
+    var types = [];
+    for (var type in this.sfuminator.bots) {
+        types.push(type);
+    }
+    return types;
 };
