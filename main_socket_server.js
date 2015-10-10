@@ -4,11 +4,10 @@ var Cloud = require('./modules/cloud.js');
 var SfuminatorRequest = require('./modules/requests.js');
 var Sfuminator = require('./sfuminator.js');
 var MaxRequestsHandler = require('./maxRequestsHandler.js');
+var CFG = require("./cfg.js");
 
-var CFG = JSON.parse(require("fs").readFileSync('./socket_config.json'));
-
-var httpListenPort = CFG.http_listen_port; //dev ***REMOVED*** | main ***REMOVED***
-var socketPorts = {connect: CFG.cloud_ports.connect, listen: CFG.cloud_ports.listen}; //main ***REMOVED***,***REMOVED*** | dev ***REMOVED***,***REMOVED***
+var httpListenPort = CFG.getHTTPListenPort(); //dev ***REMOVED*** | main ***REMOVED***
+var socketPorts = {connect: CFG.getConnectCloudPort(), listen: CFG.getListenCloudPort()}; //main ***REMOVED***,***REMOVED*** | dev ***REMOVED***,***REMOVED***
 
 var db = new Database({user: "root", password: "***REMOVED***", database: "my_sfuminator"});
 var socket = new zmqSocket({
@@ -25,7 +24,7 @@ var reqHandler = new MaxRequestsHandler();
 
 cloud.on("cloud_first_connection", function () {
     console.log("Cloud connected");
-    sfuminator = new Sfuminator(CFG.sfuminator, cloud, db);
+    sfuminator = new Sfuminator(cloud, db);
     sfuminator.on("ready", function () {
         var http = require('http');
         http.createServer(function (req, res) {
