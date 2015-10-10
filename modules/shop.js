@@ -18,15 +18,15 @@ var Search = require('./shop/shopSearch.js');
  */
 function Shop(sfuminator) {
     this.sfuminator = sfuminator;
-    this.cloud = sfuminator.cloud;
-    this.db = sfuminator.db;
-    this.interrupts = sfuminator.interrupts;
-    this.users = sfuminator.users;
+    this.cloud = this.sfuminator.cloud;
+    this.db = this.sfuminator.db;
+    this.interrupts = this.sfuminator.interrupts;
+    this.users = this.sfuminator.users;
     this.log = new Logs({applicationName: "Shop", color: "green"});
     this.ratio = new ShopRatio(this.db);
     this.tf2Currency = TF2Currency;
     this.tf2Currency.setCloud(this.cloud);
-    this.bots = sfuminator.config.trade_bots;
+    this.bots = this.sfuminator.getCFG().getBots();
     this.inventory = new ShopInventory(this, this.bots);
     this.reservations = new Reservations(this.db);
     this.instanceID = new Date().getTime();
@@ -275,7 +275,9 @@ Shop.prototype.getActiveTrades = function (callback) {
 };
 
 Shop.prototype._getActivePartnersQuery = function () {
-    return "SELECT id,steamid FROM shop_trades WHERE (status!='closed' OR last_update_date>='" + new Date(new Date() - this.sfuminator.shopTrade_decay).toMysqlFormat() + "') " + this._getActivePartnersBotComponentQuery() + " ORDER BY last_update_date ASC";
+    return "SELECT id,steamid FROM shop_trades WHERE (status!='closed' OR last_update_date>='"
+        + new Date(new Date() - this.sfuminator.shopTrade_decay).toMysqlFormat() + "') " + this._getActivePartnersBotComponentQuery()
+        + " ORDER BY last_update_date ASC";
 };
 Shop.prototype._getActivePartnersBotComponentQuery = function () {
     var query = "AND `bot_steamid` IN (";

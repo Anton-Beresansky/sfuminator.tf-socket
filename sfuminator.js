@@ -1,5 +1,6 @@
 module.exports = Sfuminator;
 var events = require('events');
+var CFG = require('./cfg.js');
 var Logs = require('./lib/logs.js');
 var Users = require('./modules/users.js');
 var Shop = require('./modules/shop.js');
@@ -13,18 +14,16 @@ var Valve = require("./valve.js");
 
 /**
  * General purpose Sfuminator class
- * @param {Object} config
  * @param {Cloud} cloud
  * @param {Database} db
  * @returns {Sfuminator}
  */
-function Sfuminator(config, cloud, db) {
-    this.config = config;
+function Sfuminator(cloud, db) {
     this.cloud = cloud;
     this.db = db;
     this.log = new Logs({applicationName: "Sfuminator", color: "blue"});
     this.log.setLevel(0);
-    this.admin = config.admin;
+    this.admin = CFG.getAdmins();
     this.interrupts = new Interrupts([
         {name: "updatePrices", delay: 60000, tag: "internal"},
         {name: "updateShopInventory", delay: 2000, tag: "internal"},
@@ -377,4 +376,11 @@ Sfuminator.prototype.cancelTrade = function (request, callback) {
     } else {
         callback(this.responses.notInTrade);
     }
+};
+
+/**
+ * @returns {CFG}
+ */
+Sfuminator.prototype.getCFG = function () {
+    return CFG;
 };
