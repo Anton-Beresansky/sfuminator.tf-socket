@@ -250,7 +250,7 @@ Sfuminator.prototype.fetchShopInventory = function (request, callback) {
                 var steamid = request.getRequester().id;
                 var user = this.users.get(steamid);
                 user.tf2Backpack.getCached(function (backpack) {
-                    callback(self.shop.getMine(backpack));
+                    callback(self.shop.makeMine(backpack));
                 });
             } else {
                 callback(this.responses.notLogged);
@@ -296,7 +296,7 @@ Sfuminator.prototype.getUpdates = function (request) {
     }
     if (data.hasOwnProperty("section") && data.section.type === "mine" && !isNaN(data.section.last_update_date)) {
         if (user.getTF2Backpack().getLastUpdateDate() > new Date(data.section.last_update_date)) {
-            response.methods.freshBackpack = this.shop.getMine(user.getTF2Backpack());
+            response.methods.freshBackpack = this.shop.makeMine(user.getTF2Backpack());
         }
     }
     if (data.hasOwnProperty("last_reservation_date")) { //Reservations

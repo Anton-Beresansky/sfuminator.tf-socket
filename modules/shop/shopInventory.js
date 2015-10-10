@@ -4,9 +4,12 @@ var events = require("events");
 var Logs = require("../../lib/logs.js");
 var TF2Price = require("../tf2/tf2Price.js");
 var ItemVersioning = require("../../lib/dataVersioning.js");
+var ShopItem = require("./inventory/shopItem.js");
+var ShopItemIds = require("./inventory/shopItemIds.js");
 
 /**
  * Shop Inventory, contains full backpack with tf2 formatted items
+ * @class ShopInventory
  * @param {Shop} shop
  * @param {String[]} inventoryBots
  * @returns {ShopInventory}
@@ -22,14 +25,14 @@ function ShopInventory(shop, inventoryBots) {
     for (var i = 0; i < inventoryBots.length; i += 1) {
         this.bots.push(this.users.get(inventoryBots[i]));
     }
+    this.ids = new ShopItemIds(this.db);
     this.versioning = new ItemVersioning(10, "inventory");
     /**
-     * Full TF2item list
-     * @type {TF2Item[]}
+     * Full Shop Items list
+     * @type {ShopItem[]}
      */
-    this.items = []; //Full backpack with tf2 formatted items
+    this.items = [];
     this.count = []; //[{defindex: Int, quality: Int, craftable: Bool, count: Int}]
-    this.decay = 2500;
     this.last_update_date = 0;
     this.fetching = false;
 
@@ -40,17 +43,17 @@ require("util").inherits(ShopInventory, events.EventEmitter);
 
 /**
  * Update shop inventory
- * @param {Function} [callback] 
+ * @param {Function} [callback]
  * Callback will return ShopInventory.items
  */
 ShopInventory.prototype.update = function (callback) {
     var self = this;
-    this.fetchItems(function (newItems) {
-        var itemsToAdd = self._parseItemsToAdd(newItems);
-        var itemsToRemove = self._parseItemsToRemove(newItems);
+    this.fetchTF2Items(function (newItems) {
+        var itemsToAdd = self._parseTF2ItemsToAdd(newItems);
+        var itemsToRemove = self._parseTF2ItemsToRemove(newItems);
         self.versioning.add(itemsToAdd, itemsToRemove);
-        self._removeOldItems(itemsToRemove);
-        self._injectNewItems(itemsToAdd);
+        self.removeItems(itemsToRemove);
+        self.addItems(itemsToAdd);
         if (itemsToAdd.length || itemsToRemove.length) {
             self.emit("new", self.versioning.getLatest());
         }
@@ -66,7 +69,7 @@ ShopInventory.prototype.update = function (callback) {
  * @param {Function} callback
  * Callback will return full tf2 item list
  */
-ShopInventory.prototype.fetchItems = function (callback) {
+ShopInventory.prototype.fetchTF2Items = function (callback) {
     var self = this;
     if (this.fetching) {
         this.log.warning("Fetching items... callback is busy, skipping.");
@@ -79,7 +82,7 @@ ShopInventory.prototype.fetchItems = function (callback) {
         this.bots[i].tf2Backpack.get(function (backpack) {
             fetchCounter += 1;
             if (backpack.hasErrored() && backpack._error_code !== "#database_backpack") {
-                self.log.warning("Couldn't fetch bot " + backpack.getOwner() + " inventory" + ((backpack.items.length === 0) ? " (items empty)" : ""));
+                self.log.warning("Couldn't fetch bot " + backpack.getOwner() + " inventory" + ((backpack.getItems().length === 0) ? " (items empty)" : ""));
             } else {
                 allItems = allItems.concat(backpack.items);
             }
@@ -92,24 +95,9 @@ ShopInventory.prototype.fetchItems = function (callback) {
 };
 
 /**
- * Get user instance of the given bot steamid, should be used alongside Shop.isBot
- * @param {String} steamid
- * @returns {User|Boolean} Will return false if bot doesn't exist
- */
-ShopInventory.prototype.getBot = function (steamid) {
-    for (var i = 0; i < this.bots.length; i += 1) {
-        if (this.bots[i].getSteamid() === steamid) {
-            return this.bots[i];
-        }
-    }
-    this.log.error("Bot " + steamid + " doesn't exist");
-    return false;
-};
-
-/**
- * Get TF2Item given item id
- * @param {Number} itemID
- * @returns {TF2Item}
+ * Get Shop Item given item id
+ * @param {Number} itemID id
+ * @returns {ShopItem}
  */
 ShopInventory.prototype.getItem = function (itemID) {
     for (var i = 0; i < this.items.length; i += 1) {
@@ -121,34 +109,18 @@ ShopInventory.prototype.getItem = function (itemID) {
 };
 
 /**
- * Parse shop type from TF2Item
- * @param {TF2Item} item
- * @returns {String}
+ * Inject list of Shop Items to add
+ * @param {ShopItem[]} itemsToAdd
  */
-ShopInventory.prototype.parseType = function (item) {
-    if (item.isPriced() && item.isTradable()) {
-        if (item.isHat() && item.isCraftable()) {
-            if (item.getPrice().toMetal() <= this.shop.ratio.hats.weSell.maximum) {
-                return "hats";
-            }
-        }
-    }
-    return "";
-};
-
-/**
- * Inject list of TF2Items to add
- * @param {TF2Item[]} itemsToAdd
- */
-ShopInventory.prototype._injectNewItems = function (itemsToAdd) {
+ShopInventory.prototype.addItems = function (itemsToAdd) {
     this.items = this.items.concat(itemsToAdd);
 };
 
 /**
- * Remove given TF2Items from the inventory
- * @param {TF2Item[]} itemsToRemove
+ * Remove given Shop Items from the inventory
+ * @param {ShopItem[]} itemsToRemove
  */
-ShopInventory.prototype._removeOldItems = function (itemsToRemove) {
+ShopInventory.prototype.removeItems = function (itemsToRemove) {
     var itemsLength = this.items.length;
     for (var j = 0; j < itemsToRemove.length; j += 1) {
         for (var i = 0; i < itemsLength; i += 1) {
@@ -166,41 +138,68 @@ ShopInventory.prototype._removeOldItems = function (itemsToRemove) {
  * @param {TF2Item[]} newItems
  * @returns {TF2Item[]} itemsToAdd
  */
-ShopInventory.prototype._parseItemsToAdd = function (newItems) {
+ShopInventory.prototype._parseTF2ItemsToAdd = function (newItems) {
     var itemsToAdd = [];
-    for (var j = 0; j < newItems.length; j += 1) {
-        for (var i = 0; i < this.items.length; i += 1) {
-            var found = false;
-            if (this.items[i].getID() === newItems[j].getID()) {
-                found = true;
-                break;
+
+    for (var i = 0; i < newItems.length; i += 1) {
+
+        var item_exist = false;
+        for (var j = 0; j < this.items.length; j += 1) {
+            if (this.items[j].isTF2Item()) {
+                if (newItems[i].getOriginalID() === this.items[i].getItem().getOriginalID()) {
+                    item_exist = true;
+                    //If item already exist, tf2item gets updated
+                    //This will handle new ids due to bot ownership change
+                    this.items[i].item = newItems[i];
+                    break;
+                }
             }
         }
-        if (!found) {
-            itemsToAdd.push(newItems[j]);
+
+        if (!item_exist) {
+            itemsToAdd.push(this.makeShopItem(newItems[i]));
         }
     }
+
     return itemsToAdd;
 };
 
 /**
  * Parse items to remove given new item list
  * @param {TF2Item[]} newItems
- * @returns {TF2Item[]} itemsToRemove
+ * @returns {ShopItem[]} itemsToRemove
  */
-ShopInventory.prototype._parseItemsToRemove = function (newItems) {
+ShopInventory.prototype._parseTF2ItemsToRemove = function (newItems) {
     var itemsToRemove = [];
+
     for (var i = 0; i < this.items.length; i += 1) {
-        for (var j = 0; j < newItems.length; j += 1) {
-            var found = false;
-            if (this.items[i].getID() === newItems[j].getID()) {
-                found = true;
-                break;
+        if (this.items[i].isTF2Item()) {
+
+            var item_exist = false;
+            for (var j = 0; j < newItems.length; j += 1) {
+                if (this.items[i].getItem().getOriginalID() === newItems[j].getOriginalID()) {
+                    item_exist = true;
+                    break;
+                }
+            }
+
+            if (!item_exist && !this.shop.getBot(this.items[i].getItem().getOwner()).getTF2Backpack().hasErrored()) {
+                itemsToRemove.push(this.items[i]);
+                this.ids.unlink(this.items[i]);
             }
         }
-        if (!found && !this.getBot(this.items[i].getOwner()).getTF2Backpack().hasErrored()) {
-            itemsToRemove.push(this.items[i]);
-        }
     }
+
     return itemsToRemove;
+};
+
+/**
+ * Make shop item
+ * @param {TF2Item} item
+ * @returns {ShopItem}
+ */
+ShopInventory.prototype.makeShopItem = function (item) {
+    var shopItem = new ShopItem(this.shop, item);
+    shopItem.setID(this.ids.make(shopItem));
+    return shopItem;
 };

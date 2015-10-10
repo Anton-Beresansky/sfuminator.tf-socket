@@ -23,17 +23,17 @@ function TF2Item(item, owner) {
     this.owner = owner;
 }
 
-/**
- * Get TF2 Item ID
- * @returns {Number}
- */
 TF2Item.prototype.getID = function () {
     return this.id;
 };
 
+TF2Item.prototype.getOriginalID = function () {
+    return this.original_id;
+};
+
 /**
  * Returns tf2 formatted name: quality if needed + item name
- * @returns {TF2Item.item_name|String}
+ * @returns {String}
  */
 TF2Item.prototype.getFullName = function () {
     if (!this.full_name) {
@@ -53,7 +53,7 @@ TF2Item.prototype.getOwner = function () {
 
 /**
  * Get item name
- * @returns {TF2Item.item_name|String}
+ * @returns {String}
  */
 TF2Item.prototype.getName = function () {
     return this.item_name;
@@ -68,46 +68,29 @@ TF2Item.prototype.getQualityName = function () {
 };
 
 /**
- * Get item quality
- * @returns {TF2Item.quality|Int}
+ * Get item quality given from steam
+ * @returns {Number}
  */
 TF2Item.prototype.getQuality = function () {
     return this.quality;
 };
 
-/**
- * Establish if item is hat.
- * <br><br>
- * Following parameters are checked:<br>
- * - item_type_name =? #TF_Wearable_Hat<br>Automatically identify item as a hat -> it means item is hat and craftable with other hats
- * <br>
- * - item_type_name =? Hat<br>will identify a general cosmetic as craftable with other hats, therefore considering the item implicitly hat
- * @returns {Boolean}
- */
-TF2Item.prototype.isHat = function () {
-    return (this.hasOwnProperty("item_type_name") && (this.item_type_name === "#TF_Wearable_Hat")) || (this.item_type_name === "Hat") || (this.craft_material_type === "hat");
+TF2Item.prototype.getLevel = function () {
+    return this.level;
 };
 
-/**
- * Establish if item can be traded
- * @returns {Boolean}
- */
+TF2Item.prototype.getDefindex = function () {
+    return this.defindex;
+};
+
 TF2Item.prototype.isTradable = function () {
     return !this.hasOwnProperty("flag_cannot_trade") || !this.flag_cannot_trade;
 };
 
-/**
- * Establish if item can be crafted
- * @returns {Boolean}
- */
 TF2Item.prototype.isCraftable = function () {
     return !this.hasOwnProperty("flag_cannot_craft") || !this.flag_cannot_craft;
 };
 
-/**
- * Establish if item is priced
- * @returns {Boolean}
- */
 TF2Item.prototype.isPriced = function () {
     return this.hasOwnProperty("absolute_price") && !isNaN(this.absolute_price);
 };
@@ -122,6 +105,19 @@ TF2Item.prototype.getPrice = function () {
     } else {
         return new TF2Price(0);
     }
+};
+
+/**
+ * Establish if item is hat.
+ * <br><br>
+ * Following parameters are checked:<br>
+ * - item_type_name =? #TF_Wearable_Hat<br>Automatically identify item as a hat -> it means item is hat and craftable with other hats
+ * <br>
+ * - item_type_name =? Hat<br>will identify a general cosmetic as craftable with other hats, therefore considering the item implicitly hat
+ * @returns {Boolean}
+ */
+TF2Item.prototype.isHat = function () {
+    return (this.hasOwnProperty("item_type_name") && (this.item_type_name === "#TF_Wearable_Hat")) || (this.item_type_name === "Hat") || (this.craft_material_type === "hat");
 };
 
 /**
@@ -180,24 +176,24 @@ function TF2Attribute(attribute) {
 }
 
 /**
- * Get attribute's value
- * @returns {Int.value}
+ * Get attribute value
+ * @returns {Number}
  */
 TF2Attribute.prototype.getValue = function () {
     return this.value;
 };
 
 /**
- * Get attribute's float value
- * @returns {Int.float_value}
+ * Get attribute float value
+ * @returns {Number}
  */
 TF2Attribute.prototype.getFloatValue = function () {
     return this.float_value;
 };
 
 /**
- * Get attribute's defindex
- * @returns {Int.defindex}
+ * Get attribute defindex
+ * @returns {Number}
  */
 TF2Attribute.prototype.getDefindex = function () {
     return this.defindex;

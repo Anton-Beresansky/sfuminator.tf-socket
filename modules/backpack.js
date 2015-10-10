@@ -3,6 +3,10 @@ module.exports = Backpack;
 var events = require("events");
 var Logs = require('../lib/logs.js');
 var TF2Item = require("./tf2/tf2Item.js");
+var GAME_CODE = {
+    TF2: 440,
+    CSGO: 730
+};
 
 /**
  * Generic purpose Steam Backpack library
@@ -116,6 +120,17 @@ Backpack.prototype.getItem = function (itemID) {
         }
     }
     return false;
+};
+
+Backpack.prototype.getItems = function () {
+    if (this.items instanceof Array) {
+        return this.items;
+    }
+    return [];
+};
+
+Backpack.prototype.hasTF2Items = function () {
+    return this.game === GAME_CODE.TF2;
 };
 
 /**
