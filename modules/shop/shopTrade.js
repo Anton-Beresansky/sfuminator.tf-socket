@@ -1,6 +1,7 @@
 module.exports = ShopTrade;
 var events = require("events");
 var Logs = require("../../lib/logs.js");
+var ShopItem = require("./inventory/shopItem.js");
 var TF2Price = require("../tf2/tf2Price.js");
 var ItemCount = require("./shopItemCount.js");
 //Shop Trade Status: hold -> (noFriend) -> active -> sent -> closed/accepted/declined
@@ -131,11 +132,11 @@ ShopTrade.prototype.getClientChanges = function (last_update_date) {
 };
 
 /**
- * Get object structure of this Shop Trade
- * @returns {ShopTrade.prototype.valueOf.value}
+ * Shop Trade value
+ * @returns {{botSteamid: String, partnerID: String, mode: ShopTrade.mode, status: String, statusInfo: String, last_update_date: number, items: {me: ShopTradeAssetDataStructure[], them: ShopTradeAssetDataStructure[], full_list: SectionItemDataStructure[]}}}
  */
 ShopTrade.prototype.valueOf = function () {
-    var value = {
+    return {
         botSteamid: this.getBotSteamid(),
         partnerID: this.partner.getSteamid(),
         mode: this.getMode(),
@@ -144,7 +145,6 @@ ShopTrade.prototype.valueOf = function () {
         last_update_date: this.getLastUpdateDate().getTime(),
         items: this.getPlate()
     };
-    return value;
 };
 
 /**
@@ -205,7 +205,7 @@ ShopTrade.prototype.verifyItems = function (callback) {
         if (this.shop.sectionExist(section) && this.items[section] instanceof Array) {
             for (var i = 0; i < this.items[section].length; i += 1) {
                 if (this.verifyShopItem(this.items[section][i], section)) {
-                    this.assets.push(this.makeAsset(this.shop.inventory.getItem(this.items[section][i])));
+                    this.assets.push(new ShopTradeAsset(this.shop.inventory.getItem(this.items[section][i])));
                 } else {
                     callback(false);
                     return;
@@ -226,7 +226,9 @@ ShopTrade.prototype.verifyItems = function (callback) {
     }
     if (this.items.hasOwnProperty("mine") && this.items.mine instanceof Array) {
         this.verifyMineItems(callback, function (item) {
-            self.assets.push(self.makeAsset(item));
+            var shopItem = new ShopItem(self.shop, item);
+            shopItem.setAsMineSection();
+            self.assets.push(new ShopTradeAsset(shopItem));
         });
     } else {
         callback(true);
@@ -287,20 +289,19 @@ ShopTrade.prototype.dereserveItems = function () {
 /**
  * Get Trade Shop plate
  * (me = shop item list, them = partner item list, full_list = shop + partner shop formatted item list)
- * @returns {{me: ShopTradeAssetDataStructure[], them: ShopTradeAssetDataStructure[], full_list: SectionItemDataStructure[]}}
+ * @returns {{me: ShopTradeAssetDataStructure[], them: ShopTradeAssetDataStructure[], full_list: ShopItemDataStructure[]}}
  */
 ShopTrade.prototype.getPlate = function () {
     var plate = {me: [], them: [], full_list: []};
     for (var i = 0; i < this.assets.length; i += 1) {
         if (this.partner.getSteamid() === this.assets[i].getItem().getOwner()) {
             plate.them.push(this.assets[i].valueOf());
-            var filtered = this.shop.filterMineItems([this.assets[i].getItem()]);
-            if (filtered.getItems().length) {
-                plate.full_list.push(filtered.getItems()[0].valueOf());
-            }
+            var mineItem = new ShopItem(this.shop, this.assets[i].getItem());
+            mineItem.setAsMineSection();
+            plate.full_list.push(mineItem.valueOf());
         } else {
             plate.me.push(this.assets[i].valueOf());
-            plate.full_list.push(this.shop.getItem(this.assets[i].getItem().getID()).valueOf());
+            plate.full_list.push(this.shop.getItem(this.assets[i].getID()).valueOf());
         }
     }
     return plate;
@@ -558,15 +559,6 @@ ShopTrade.prototype.getAsset = function (id) {
 };
 
 /**
- * Make Shop Trade Asset
- * @param {TF2Item} item
- * @returns {ShopTradeAsset}
- */
-ShopTrade.prototype.makeAsset = function (item) {
-    return new ShopTradeAsset(this.shop, item);
-};
-
-/**
  * Print assets on console
  * @param {Number} [level] Define debug level
  */
@@ -583,78 +575,32 @@ ShopTrade.prototype.logAssets = function (level) {
 
 /**
  * General purpose Shop Trade Asset class
- * @param {Shop} shop The sfuminator shop instance
- * @param {TF2Item} item
+ * @param {ShopItem} shopItem
  * @returns {ShopTradeAsset}
  */
-function ShopTradeAsset(shop, item) {
-    this.shop = shop;
-    this.item = item;
-    if (this.ownedBySfuminator()) {
-        this.price = item.getPrice();
-    } else {
-        this.price = this.shop.adjustMinePrice(item);
+function ShopTradeAsset(shopItem) {
+    for (prop in shopItem) {
+        this[prop] = shopItem[prop];
+    }
+    this.valueOf = function () {
+        return new ShopTradeAssetDataStructure(shopItem);
     }
 }
-
-/**
- * Get Shop Trade Asset data structure
- * @returns {ShopTradeAsset.prototype.valueOf.shopTradeAnonym$4}
- */
-ShopTradeAsset.prototype.valueOf = function () {
-    return new ShopTradeAssetDataStructure(this);
-};
 
 /**
  * Shop Trade Asset data structure
- * @param {ShopTradeAsset} shopTradeAsset
+ * @param {ShopItem} shopItem
  * @returns {ShopTradeAssetDataStructure}
  */
-function ShopTradeAssetDataStructure(shopTradeAsset) {
-    this.id = shopTradeAsset.item.getID();
-    this.name = shopTradeAsset.item.name;
-    this.level = shopTradeAsset.item.level;
-    this.quality = shopTradeAsset.item.quality;
-    this.defindex = shopTradeAsset.item.defindex;
-    this.scrapPrice = shopTradeAsset.getPrice().toScrap();
-    this.section = shopTradeAsset.getShopType();
+function ShopTradeAssetDataStructure(shopItem) {
+    this.id = shopItem.getID();
+    this.name = shopItem.getItem().getFullName();
+    this.level = shopItem.getItem().getLevel();
+    this.quality = shopItem.getItem().getQuality();
+    this.defindex = shopItem.getItem().getDefindex();
+    this.scrapPrice = shopItem.getPrice().toScrap();
+    this.section = shopItem.getSectionID();
 }
-
-/**
- * Get Shop Trade Asset TF2Item
- * @returns {TF2Item}
- */
-ShopTradeAsset.prototype.getItem = function () {
-    return this.item;
-};
-
-/**
- * Get Shop Trade Asset section Type
- * @returns {String}
- */
-ShopTradeAsset.prototype.getShopType = function () {
-    if (this.ownedBySfuminator()) {
-        return this.shop.inventory.parseType(this.item);
-    } else {
-        return "mine";
-    }
-};
-
-/**
- * Get Shop Trade Asset Price
- * @returns {TF2Price}
- */
-ShopTradeAsset.prototype.getPrice = function () {
-    return this.price;
-};
-
-/**
- * Establish if asset is owned by sfuminator
- * @returns {Boolean}
- */
-ShopTradeAsset.prototype.ownedBySfuminator = function () {
-    return this.shop.isBot(this.item.getOwner());
-};
 
 /**
  * General purpose Shop Trade Database interface
@@ -728,7 +674,7 @@ TradeDb.prototype._getLoadQuery = function () {
     if (!isNaN(this.trade.getID())) {
         additionalIdentifier = "AND id=" + this.trade.getID();
     }
-    return "SELECT `id`,`steamid`,`bot_steamid`,`mode`,`status`,`status_info`, `item_id`, `shop_type`, `scrapPrice`, `last_update_date` FROM "
+    return "SELECT `id`,`steamid`,`bot_steamid`,`mode`,`status`,`status_info`, `item_id`, `shop_id`, `shop_type`, `scrapPrice`, `last_update_date` FROM "
         + "(SELECT `id`,`steamid`,`mode`,`status`,`status_info`,`last_update_date`,`bot_steamid` FROM shop_trades WHERE steamid='" + this.trade.partner.getSteamid() + "' " + additionalIdentifier + " ORDER BY last_update_date DESC LIMIT 1) as myTrade "
         + "JOIN shop_trade_items ON myTrade.id=shop_trade_items.trade_id ";
 };
@@ -743,13 +689,13 @@ TradeDb.prototype._getSaveQuery = function () {
 };
 TradeDb.prototype._getSaveItemsQuery = function () {
     if (!isNaN(this.trade.getID())) {
-        var query = "INSERT INTO `shop_trade_items` (`trade_id`,`item_id`,`shop_type`,`scrapPrice`) VALUES ";
+        var query = "INSERT INTO `shop_trade_items` (`trade_id`,`item_id`,`shop_id`,`shop_type`,`scrapPrice`) VALUES ";
         var assets = this.trade.getAssets();
         for (var i = 0; i < assets.length; i += 1) {
             var asset = assets[i];
-            query += "(" + this.trade.getID() + "," + asset.getItem().getID() + ",'" + asset.getShopType() + "'," + asset.getPrice().toScrap() + "), ";
+            query += "(" + this.trade.getID() + "," + asset.getItem().getID() + "," + asset.getID() + ",'" + asset.getSectionID() + "'," + asset.getPrice().toScrap() + "), ";
         }
-        return query.slice(0, query.length - 2) + " ON DUPLICATE KEY UPDATE item_id=VALUES(item_id)";
+        return query.slice(0, query.length - 2) + " ON DUPLICATE KEY UPDATE shop_id=VALUES(shop_id)";
     } else {
         this.log.error("Can't save trade items on database, missing trade_id");
     }

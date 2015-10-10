@@ -3,6 +3,7 @@ module.exports = Section;
 
 var Logs = require("../../lib/logs.js");
 var Versioning = require("../../lib/dataVersioning.js");
+var CompressionLookup = require("./inventory/compressionTable.js");
 
 /**
  * General purpose shop Section class
@@ -61,7 +62,7 @@ Section.prototype.getClientChanges = function (last_update_date) {
 
 /**
  * Establish if Shop Section Item exist
- * @param {Number} id Shop Section Item id
+ * @param {Number} id Shop Item id
  * @returns {Boolean}
  */
 Section.prototype.itemExist = function (id) {
@@ -79,8 +80,8 @@ Section.prototype.itemExist = function (id) {
  */
 Section.prototype.getCompressedItems = function () {
     for (var i = 0; i < this.compressedItems.length; i += 1) {
-        for (var j = 0; j < this.compressedItems[i][CompressItemAttributesLookup].length; j += 1) {
-            this.compressedItems[i][CompressItemAttributesLookup][j][CompressItemLookup.reserved_to] = this.shop.reservations.get(this.compressedItems[i][CompressItemAttributesLookup][j][CompressItemLookup.id]).getHolder();
+        for (var j = 0; j < this.compressedItems[i][CompressionLookup.items_group].length; j += 1) {
+            this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.reserved_to] = this.shop.reservations.get(this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.id]).getHolder();
         }
     }
     return this.compressedItems;
@@ -88,7 +89,7 @@ Section.prototype.getCompressedItems = function () {
 
 /**
  * Get item list of this shop section
- * @returns {SectionItem[]}
+ * @returns {ShopItem[]}
  */
 Section.prototype.getItems = function () {
     return this.items;
@@ -97,20 +98,20 @@ Section.prototype.getItems = function () {
 /**
  * Add item to this shop section, change will be effective
  * only on commit (see Section.commit)
- * @param {TF2Item} item
+ * @param {ShopItem} shopItem
  */
-Section.prototype.add = function (item) {
-    this.toAdd.push(this.makeSectionItem(item));
+Section.prototype.add = function (shopItem) {
+    this.toAdd.push(shopItem);
 };
 
 /**
  * Remove item from this shop section, change will be effective
  * only on commit (see Section.commit)
- * @param {TF2Item} item
+ * @param {ShopItem} shopItem
  */
-Section.prototype.remove = function (item) {
+Section.prototype.remove = function (shopItem) {
     if (this.getItemIndex(item.getID()) >= 0) {
-        this.toRemove.push(this.makeSectionItem(item));
+        this.toRemove.push(shopItem);
     }
 };
 
@@ -150,8 +151,8 @@ Section.prototype.commitRemovals = function () {
 
         var compressed_index = this.getCompressedItemIndex(idToRemove);
         if (compressed_index) {
-            this.compressedItems[compressed_index[0]][CompressItemAttributesLookup].splice(compressed_index[1], 1);
-            if (this.compressedItems[compressed_index[0]][CompressItemAttributesLookup].length === 0) {
+            this.compressedItems[compressed_index[0]][CompressionLookup.items_group].splice(compressed_index[1], 1);
+            if (this.compressedItems[compressed_index[0]][CompressionLookup.items_group].length === 0) {
                 this.compressedItems.splice(compressed_index[0], 1);
             }
         }
@@ -166,9 +167,9 @@ Section.prototype.commitAdds = function () {
 
     for (var i = 0; i < this.toAdd.length; i += 1) {
         var compressedItem = this.toAdd[i].getCompressed();
-        var index = this.getCompressedSchemaItemIndex(compressedItem[CompressSchemaLookup.defindex]);
+        var index = this.getCompressedSchemaItemIndex(this.toAdd[i].getItem().defindex);
         if (index >= 0) {
-            this.compressedItems[index][CompressItemAttributesLookup].push(compressedItem[CompressItemAttributesLookup][0]);
+            this.compressedItems[index][CompressionLookup.items_group].push(compressedItem[CompressionLookup.items_group][0]);
         } else {
             this.compressedItems.push(compressedItem);
         }
@@ -196,7 +197,7 @@ Section.prototype.getItemIndex = function (id) {
  */
 Section.prototype.getCompressedSchemaItemIndex = function (defindex) {
     for (var i = 0; i < this.compressedItems.length; i += 1) {
-        if (this.compressedItems[i][CompressSchemaLookup.defindex] === defindex) {
+        if (this.compressedItems[i][CompressionLookup.schema.defindex] === defindex) {
             return i;
         }
     }
@@ -212,8 +213,8 @@ Section.prototype.getCompressedSchemaItemIndex = function (defindex) {
  */
 Section.prototype.getCompressedItemIndex = function (id) {
     for (var i = 0; i < this.compressedItems.length; i += 1) {
-        for (var j = 0; j < this.compressedItems[i][CompressItemAttributesLookup].length; j += 1) {
-            if (this.compressedItems[i][CompressItemAttributesLookup][j][CompressItemLookup.id] === id) {
+        for (var j = 0; j < this.compressedItems[i][CompressionLookup.items_group].length; j += 1) {
+            if (this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.id] === id) {
                 return [i, j];
             }
         }
@@ -222,189 +223,9 @@ Section.prototype.getCompressedItemIndex = function (id) {
 };
 
 /**
- * Make a new Shop Section Item
- * @param {TF2Item} item
- * @returns {SectionItem}
- */
-Section.prototype.makeSectionItem = function (item) {
-    return new SectionItem(this.shop, this.type, item);
-};
-
-/**
  * Establish if section is of type "mine"
  * @returns {Boolean}
  */
 Section.prototype.isMine = function () {
     return this.type === "mine";
-};
-
-/**
- * General purpose class for section item<br><br>
- * See section class for more info
- * @param {Shop} shop Shop instance
- * @param {String} type Indicate section type the item belongs to (hats, mine, ..)
- * @param {TF2Item} item
- */
-function SectionItem(shop, type, item) {
-    this.type = type;
-    this.item = item;
-    this.id = item.getID();
-    this.shop = shop;
-    this.reservations = this.shop.reservations;
-}
-
-/**
- * Get Shop Section Item ID
- * @returns {Number}
- */
-SectionItem.prototype.getID = function () {
-    return this.id;
-};
-
-/**
- * Get Shop Section Item reservation.
- * @returns {Reservation}
- */
-SectionItem.prototype.getReservation = function () {
-    return this.reservations.get(this.item.getID());
-};
-
-/**
- * Get Shop Section TF2Item.
- * @returns {TF2Item}
- */
-SectionItem.prototype.getItem = function () {
-    return this.item;
-};
-
-/**
- * Establish if Shop Section Item belongs to Section of type "mine"
- * @returns {Boolean}
- */
-SectionItem.prototype.isMineSection = function () {
-    return this.type === "mine";
-};
-
-/**
- * Get Shop Section Item price.<br>
- * Price is related to shop section.
- * @returns {TF2Price}
- */
-SectionItem.prototype.getPrice = function () {
-    if (this.isMineSection()) {
-        return this.shop.adjustMinePrice(this.item);
-    }
-    return this.item.getPrice();
-};
-
-/**
- * Get Shop Section Item object structure
- * @returns {{
- * id: Number, defindex: Number, level: Number,
- * quality: Number, name: String, image_url: String,
- * image_url_large: String, used_by_classes: String,
- * relative_price: Number, currency: String, shop: String,
- * reserved_to: String, [paint_color]: String
- * }}
- */
-SectionItem.prototype.valueOf = function () {
-    return new SectionItemDataStructure(this);
-};
-
-/**
- *
- * @param {SectionItem} sectionItem Section Item
- * @returns {SectionItemDataStructure}
- */
-function SectionItemDataStructure(sectionItem) {
-    this.id = sectionItem.item.getID();
-    this.defindex = sectionItem.item.defindex;
-    this.level = sectionItem.item.level;
-    this.quality = sectionItem.item.getQuality();
-    this.name = sectionItem.item.getFullName();
-    this.image_url = sectionItem.item.image_url;
-    this.image_url_large = sectionItem.item.image_url_large;
-    this.used_by_classes = sectionItem.item.used_by_classes;
-    this.currency = "metal";
-    this.relative_price = sectionItem.getPrice().toMetal();
-    this.shop = sectionItem.type;
-    this.reserved_to = sectionItem.getReservation().getHolder();
-    if (sectionItem.isMineSection() && sectionItem.item.isPainted()) {
-        this.paint_color = sectionItem.item.getPaintColor();
-    }
-}
-
-/**
- * Get compressed Shop Section Item<br><br>
- * Item compression has its purpose on client data exchange.
- * Shop Section Item properties are reduced to single chars and certain
- * properties are reduced in length.<br>
- * Compression will also eliminate any data redundancies.<br>
- * Lookup tables are coded in, and easy to modify.<br>
- * For more info on their data structure, check the lookup tables stored
- * in the Section/SectionItem class file.
- * @returns {Object}
- */
-SectionItem.prototype.getCompressed = function () {
-    var itemValue = this.valueOf();
-    var compressedItem = {};
-    for (var property in CompressSchemaLookup) {
-        if (itemValue.hasOwnProperty(property) && itemValue[property]) {
-            if (!CompressSchemaAttributeLookup.hasOwnProperty(property)) {
-                compressedItem[CompressSchemaLookup[property]] = itemValue[property];
-            } else if (typeof CompressSchemaAttributeLookup[property] === "function") {
-                compressedItem[CompressSchemaLookup[property]] = CompressSchemaAttributeLookup[property](itemValue[property]);
-            } else {
-                compressedItem[CompressSchemaLookup[property]] = CompressSchemaAttributeLookup[property][itemValue[property]];
-            }
-        }
-    }
-    var compressedAttributes = {};
-    for (var property in CompressItemLookup) {
-        if (itemValue.hasOwnProperty(property) && itemValue[property]) {
-            compressedAttributes[CompressItemLookup[property]] = itemValue[property];
-        }
-    }
-    compressedItem[CompressItemAttributesLookup] = [compressedAttributes];
-    return compressedItem;
-};
-
-CompressSchemaLookup = {
-    defindex: "a",
-    name: "b",
-    image_url: "c",
-    image_url_large: "d",
-    used_by_classes: "e",
-    shop: "h"
-};
-
-CompressSchemaAttributeLookup = {
-    currency: {
-        usd: 0,
-        metal: 1,
-        keys: 2,
-        earbuds: 3
-    },
-    shop: {
-        mine: 0,
-        hats: 1
-    },
-    image_url: function (url) {
-        return url.slice(45);
-    },
-    image_url_large: function (url) {
-        return url.slice(45);
-    }
-};
-
-CompressItemAttributesLookup = "i";
-
-CompressItemLookup = {
-    id: "x",
-    level: "y",
-    quality: "z",
-    paint_color: "v",
-    reserved_to: "w",
-    relative_price: "f",
-    currency: "g"
 };

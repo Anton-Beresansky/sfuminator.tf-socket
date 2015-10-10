@@ -26,8 +26,7 @@ Search.prototype.find = function (text) {
         for (var section in this.shop.sections) {
             var sectionItems = this.shop.sections[section].getItems();
             for (var i = 0; i < sectionItems.length; i += 1) {
-                var item = sectionItems[i].getItem();
-                var itemName = item.getFullName().toLowerCase();
+                var itemName = sectionItems[i].getItem().getFullName().toLowerCase();
                 for (var j = 0; j < words.length; j += 1) {
                     var found = itemName.search(words[j]);
                     if (found === -1) {
@@ -35,7 +34,7 @@ Search.prototype.find = function (text) {
                     }
                 }
                 if (found > -1) {
-                    result.push(new SearchResult(item, found));
+                    result.push(new SearchResult(sectionItems[i].valueOf(), found));
                 }
             }
         }
@@ -74,7 +73,7 @@ Search.prototype.saveRequest = function (request) {
 
 /**
  * Search result class
- * @param {SectionItem} item
+ * @param {ShopItemDataStructure} item
  * @param {Number} index Indicating starting offset of the matching string
  */
 function SearchResult(item, index) {

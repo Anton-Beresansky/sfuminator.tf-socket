@@ -3,6 +3,7 @@ var events = require("events");
 var Logs = require("../lib/logs.js");
 var TF2Price = require("./tf2/tf2Price.js");
 var TF2Currency = require("./tf2/tf2Currency.js");
+var TF2Item = require("./tf2/tf2Item.js");
 var ShopRatio = require("./shop/shopRatio.js");
 var ShopInventory = require("./shop/shopInventory.js");
 var Section = require("./shop/shopSection.js");
@@ -20,6 +21,7 @@ function Shop(sfuminator) {
     this.cloud = sfuminator.cloud;
     this.db = sfuminator.db;
     this.interrupts = sfuminator.interrupts;
+    this.users = sfuminator.users;
     this.log = new Logs({applicationName: "Shop", color: "green"});
     this.ratio = new ShopRatio(this.db);
     this.tf2Currency = TF2Currency;
@@ -54,9 +56,11 @@ Shop.prototype.init = function () {
     self.ratio.updateHats(function () {
         self.tf2Currency.update(function () {
             self.reservations.load(function () {
-                self.log.debug("Loading up inventory...");
-                self.inventory.update(function () {
-                    self.emit("ready");
+                self.inventory.ids.load(function () {
+                    self.log.debug("Loading up inventory...");
+                    self.inventory.update(function () {
+                        self.emit("ready");
+                    });
                 });
             });
         });
@@ -69,16 +73,16 @@ Shop.prototype.init = function () {
  */
 Shop.prototype.update = function (_changes) {
     var changes = {add: _changes.toAdd, remove: _changes.toRemove};
-    this.log.debug("Changes: " + JSON.stringify(changes, null, " "), 4);
+
     for (var action in changes) {
         for (var i = 0; i < changes[action].length; i += 1) {
-            var item = changes[action][i];
-            var shopType = this.inventory.parseType(item);
+            var shopItem = changes[action][i];
+            var shopType = shopItem.getType();
             if (shopType) {
                 if (!this.sections.hasOwnProperty(shopType)) {
                     this.sections[shopType] = new Section(this, shopType);
                 }
-                this.sections[shopType][action](item);
+                this.sections[shopType][action](shopItem);
             }
         }
     }
@@ -96,7 +100,7 @@ Shop.prototype.update = function (_changes) {
 /**
  * Get Shop Section Item given its id
  * @param {Number} id
- * @returns {SectionItem|Boolean} False if item doesn't exist
+ * @returns {ShopItem|Boolean} False if item doesn't exist
  */
 Shop.prototype.getItem = function (id) {
     for (var section in this.sections) {
@@ -148,36 +152,41 @@ Shop.prototype.getLimit = function (item) {
  * @param {Backpack} backpack
  * @returns {Object} Client formatted response
  */
-Shop.prototype.getMine = function (backpack) {
+Shop.prototype.makeMine = function (backpack) {
     this.log.debug("Getting mine items, bp: " + backpack.getOwner(), 1);
     if (!backpack.hasErrored()) {
-        return this.filterMineItems(backpack.items).getCompressedItems();
+        return this.filterMineItems(backpack).getCompressedItems();
     } else {
         return {
             result: "error",
             message: backpack.getErrorMessage(),
             timestamp: parseInt(backpack.last_update_date.getTime() / 1000),
-            items: this.filterMineItems(backpack.items).getCompressedItems()
+            items: this.filterMineItems(backpack).getCompressedItems()
         };
     }
 };
 
+var ShopItem = require("./shop/inventory/shopItem.js");
 /**
  * Make mine section from items
- * @param {TF2Item[]} items
+ * @param {Backpack} backpack
  * @returns {Section}
  */
-Shop.prototype.filterMineItems = function (items) {
+Shop.prototype.filterMineItems = function (backpack) {
     var mySection = new Section(this, "mine");
-    if (items) {
-        for (var i = 0; i < items.length; i += 1) {
-            var item = items[i];
-            if (this.canBeSold(item)) {
-                mySection.add(item);
+    if (backpack.hasTF2Items()) {
+        var items = backpack.getItems();
+        if (items) {
+            for (var i = 0; i < items.length; i += 1) {
+                if (this.canBeSold(items[i])) {
+                    var mineItem = new ShopItem(this, items[i]);
+                    mineItem.setAsMineSection();
+                    mySection.add(mineItem);
+                }
             }
         }
-        mySection.commit();
     }
+    mySection.commit();
     return mySection;
 };
 
@@ -187,46 +196,17 @@ Shop.prototype.filterMineItems = function (items) {
  * @returns {Boolean}
  */
 Shop.prototype.canBeSold = function (item) {
-    return (
+    if (item instanceof TF2Item) {
+        return (
             item.isHat() &&
             item.isCraftable() &&
             item.isTradable() &&
             item.isPriced() &&
             this.verifyMineItemPriceRange(item) &&
             this.count.get(item) < this.getLimit(item)
-            );
-};
-
-/**
- * Make mine price from item
- * @param {TF2Item} item
- * @returns {TF2Price}
- */
-Shop.prototype.adjustMinePrice = function (item) {
-    if (item.isHat()) {
-        var finalPrice;
-        var originalPrice = item.getPrice();
-        if (originalPrice.toMetal() > this.ratio.hats.weBuy.maximum) {
-            originalPrice = new TF2Price(this.ratio.hats.weBuy.maximum, "metal");
-        }
-
-        if (originalPrice.toMetal() === 1.66) {
-            finalPrice = new TF2Price(this.ratio.hats.weBuy.default166, "metal");
-        } else {
-            var ratio = this.ratio.hats.weBuy.normal;
-            if (originalPrice.toMetal() <= 2) {
-                ratio = this.ratio.hats.weBuy.lowTier;
-            }
-            finalPrice = new TF2Price(parseInt(originalPrice.toScrap() * ratio), "scrap");
-        }
-
-        if (finalPrice.toMetal() < this.ratio.hats.weBuy.minimum) {
-            finalPrice = new TF2Price(this.ratio.hats.weBuy.minimum, "metal");
-        }
-        return finalPrice;
-    } else {
-        return null;
+        );
     }
+    return false;
 };
 
 /**
@@ -252,6 +232,19 @@ Shop.prototype.isBot = function (steamid) {
             return true;
         }
     }
+    return false;
+};
+
+/**
+ * Get user instance of the given bot steamid, should be used alongside Shop.isBot
+ * @param {String} steamid
+ * @returns {User|Boolean} Will return false if bot doesn't exist
+ */
+Shop.prototype.getBot = function (steamid) {
+    if (this.isBot(steamid)) {
+        return this.users.get(steamid);
+    }
+    this.log.error("Bot " + steamid + " doesn't exist");
     return false;
 };
 
