@@ -3,15 +3,12 @@ module.exports = Backpack;
 var events = require("events");
 var Logs = require('../lib/logs.js');
 var TF2Item = require("./tf2/tf2Item.js");
-var GAME_CODE = {
-    TF2: 440,
-    CSGO: 730
-};
+var SteamGames = require('../lib/steamGames.js');
 
 /**
  * Generic purpose Steam Backpack library
  * @param {String} steamid
- * @param {Number} game (440 = TF2, 730 = CSGO)
+ * @param {SteamGame} game
  * @param {Cloud} cloud Cloud connection
  * @returns {Backpack}
  */
@@ -74,7 +71,7 @@ Backpack.prototype.getCached = function (callback) {
  */
 Backpack.prototype.get = function (callback) {
     var self = this;
-    this.cloud.send("getBackpack", {steamid: this.getOwner(), game: this.game}, function (result) {
+    this.cloud.send("getBackpack", {steamid: this.getOwner(), game: this.game.getID()}, function (result) {
         //self.log.debug(JSON.stringify(result).slice(0, 300));
         for (var i in result) {
             self[i] = result[i];
@@ -130,7 +127,7 @@ Backpack.prototype.getItems = function () {
 };
 
 Backpack.prototype.hasTF2Items = function () {
-    return this.game === GAME_CODE.TF2;
+    return this.game.getID() === SteamGames.TF2.getID();
 };
 
 /**
@@ -193,7 +190,7 @@ Backpack.prototype._encodeFetchingError = function (newBackpack) {
  * Will instance the new items
  */
 Backpack.prototype._createItemsObject = function () {
-    if (this.game === 440) {
+    if (this.game.getID() === SteamGames.TF2.getID()) {
         for (var i = 0; i < this.items.length; i += 1) {
             this.items[i] = new TF2Item(this.items[i], this.getOwner());
         }

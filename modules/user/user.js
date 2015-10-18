@@ -4,6 +4,7 @@ var events = require("events");
 var Logs = require('../../lib/logs.js');
 var Backpack = require('../backpack.js');
 var ShopTrade = require('../shop/shopTrade.js');
+var SteamGames = require('../../lib/steamGames.js');
 
 /**
  * General purpose User class
@@ -17,7 +18,7 @@ function User(steamid, sfuminator) {
     this.shop = this.sfuminator.shop;
     this.db = this.sfuminator.db;
     this.cloud = this.sfuminator.cloud;
-    this.tf2Backpack = new Backpack(steamid, 440, this.cloud);
+    this.tf2Backpack = new Backpack(steamid, SteamGames.TF2, this.cloud);
     this.log = new Logs({applicationName: "User " + JSON.stringify(steamid), color: "cyan"});
     this.decayTime = 1000 * 60 * 60 * 8; // 8hrs
     this.last_use_date = new Date();

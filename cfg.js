@@ -1,5 +1,15 @@
 module.exports = new CFG();
 
+var SENTRYFILES_PATH = './sentryFiles/';
+var fs = require("fs");
+var crypto = require("crypto");
+var Logs = require("./lib/logs.js");
+
+/**
+ * Class for socket configuration and loading cfg
+ * @class CFG
+ * @constructor
+ */
 function CFG() {
     var config = JSON.parse(require("fs").readFileSync('./socket_config.json'));
     for (var prop in config) {
@@ -31,7 +41,7 @@ CFG.prototype.getAdmins = function () {
 
 /**
  * @param steamid
- * @returns {{steamid: String, username: String, password: String, steamApiKey: String}}
+ * @returns {BotCredentials}
  */
 CFG.prototype.getBotCredentials = function (steamid) {
     var types = this.getBotTypes();
@@ -39,7 +49,7 @@ CFG.prototype.getBotCredentials = function (steamid) {
         var botType = types[i];
         for (var index in this.sfuminator.bots[botType]) {
             if (this.sfuminator.bots[botType][index].steamid === steamid) {
-                return this.sfuminator.bots[botType][index];
+                return new BotCredentials(this.sfuminator.bots[botType][index]);
             }
         }
     }
@@ -47,9 +57,9 @@ CFG.prototype.getBotCredentials = function (steamid) {
 
 /**
  * Trade bots steam ids
- * @returns {Array}
+ * @returns {String[]}
  */
-CFG.prototype.getTradeBots = function () {
+CFG.prototype.getTradeBotSteamids = function () {
     var steamidList = [];
     for (var index in this.sfuminator.bots.trading) {
         steamidList.push(this.sfuminator.bots.trading[index].steamid);
@@ -59,10 +69,10 @@ CFG.prototype.getTradeBots = function () {
 
 /**
  * All bots steam ids
- * @returns {Array}
+ * @returns {String[]}
  */
-CFG.prototype.getBots = function () {
-    return this.getTradeBots();
+CFG.prototype.getBotSteamids = function () {
+    return this.getTradeBotSteamids();
 };
 
 CFG.prototype.getBotTypes = function () {
@@ -71,4 +81,66 @@ CFG.prototype.getBotTypes = function () {
         types.push(type);
     }
     return types;
+};
+
+/**
+ * @class BotCredentials
+ * @constructor
+ */
+function BotCredentials(data) {
+    this.botCredentials = data;
+    this.steamid = this.botCredentials.steamid;
+    this.log = new Logs({applicationName: "BotCredentials " + this.steamid, color: "red", dim: true});
+}
+
+BotCredentials.prototype.getUsername = function () {
+    return this.botCredentials.username;
+};
+
+BotCredentials.prototype.getPassword = function () {
+    return this.botCredentials.password;
+};
+
+BotCredentials.prototype.hasSteamGuardCode = function () {
+    return this.botCredentials.hasOwnProperty("steamGuardCode");
+};
+
+BotCredentials.prototype.getSteamGuardCode = function () {
+    return this.botCredentials.steamGuardCode;
+};
+
+BotCredentials.prototype.hasSentryHash = function () {
+    return fs.existsSync(SENTRYFILES_PATH + this.steamid);
+};
+
+BotCredentials.prototype.getSentryHash = function () {
+    if (!this._sentryBytes) {
+        this._sentryBytes = fs.readFileSync(SENTRYFILES_PATH + this.steamid);
+    }
+    if (this._sentryBytes.length === 20) { //Old steam lib format compatibility
+        this.log.debug("Porting old sentry file");
+        this._sentryHash = this._sentryBytes;
+        this._sentryBytes = null;
+    } else {
+        this._sentryHash = this._makeSha(this._sentryBytes);
+    }
+    return this._sentryHash;
+};
+
+BotCredentials.prototype.saveSentryFile = function (sentryFile) {
+    this._sentryBytes = sentryFile.bytes;
+    var self = this;
+    fs.writeFile(SENTRYFILES_PATH + this.steamid, this._sentryBytes, function (err) {
+        if (err) {
+            self.log.error(err);
+        } else {
+            self.log.debug('Saved sentry file hash');
+        }
+    });
+};
+
+BotCredentials.prototype._makeSha = function (bytes) {
+    var hash = crypto.createHash('sha1');
+    hash.update(bytes);
+    return hash.digest();
 };

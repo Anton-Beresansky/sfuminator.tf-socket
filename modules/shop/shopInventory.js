@@ -2,7 +2,7 @@ module.exports = ShopInventory;
 
 var events = require("events");
 var Logs = require("../../lib/logs.js");
-var TF2Price = require("../tf2/tf2Price.js");
+var Price = require("../Price.js");
 var ItemVersioning = require("../../lib/dataVersioning.js");
 var ShopItem = require("./inventory/shopItem.js");
 var ShopItemIds = require("./inventory/shopItemIds.js");
@@ -11,20 +11,17 @@ var ShopItemIds = require("./inventory/shopItemIds.js");
  * Shop Inventory, contains full backpack with tf2 formatted items
  * @class ShopInventory
  * @param {Shop} shop
- * @param {String[]} inventoryBots
  * @returns {ShopInventory}
  */
-function ShopInventory(shop, inventoryBots) {
+function ShopInventory(shop) {
     this.shop = shop;
     this.sfuminator = shop.sfuminator;
     this.users = shop.sfuminator.users;
     this.db = shop.db;
+    this.bots = this.shop.bots;
+
     this.log = new Logs({applicationName: "Shop Inventory", color: "green"});
     this.log.setLevel(3);
-    this.bots = [];
-    for (var i = 0; i < inventoryBots.length; i += 1) {
-        this.bots.push(this.users.get(inventoryBots[i]));
-    }
     this.ids = new ShopItemIds(this.db);
     this.versioning = new ItemVersioning(10, "inventory");
     /**

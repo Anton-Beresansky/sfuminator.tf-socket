@@ -10,10 +10,16 @@ module.exports = new TF2Currency();
 function TF2Currency() {
     this.log = new Logs({applicationName: "TF2 Currency", color: "blue"});
     this._currency = {};
+    this.priceInits = {
+        Scrap: "scrap",
+        Metal: "metal",
+        Keys: "keys",
+        Usd: "usd"
+    }
 }
 
 /**
- * Will apply cloud instance to the TF2 Currency isntance
+ * Will apply cloud instance to the TF2 Currency instance
  * @param {Cloud} cloud
  */
 TF2Currency.prototype.setCloud = function (cloud) {
@@ -52,7 +58,7 @@ TF2Currency.prototype.get = function () {
 
 /**
  * Will update currency through cloud connection
- * @param {Function} [callback] 
+ * @param {Function} [callback]
  * Callback will return TF2Currency.valueOf
  */
 TF2Currency.prototype.update = function (callback) {

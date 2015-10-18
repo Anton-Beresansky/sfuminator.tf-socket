@@ -160,7 +160,7 @@ BotPorting.prototype.setTradeOfferStatus = function (steamid, status, status_inf
             this.increaseHatTradeCount(steamid);
             this._anticipateItemRemoval(shopTrade);
         }
-        shopTrade.dereserveItems();
+        shopTrade.dereserveShopItems();
     }
     callback({result: "success", steamid: steamid, status: status});
 };
@@ -207,7 +207,7 @@ BotPorting.prototype.removeFromQueue = function (steamid, callback) {
     var shopTrade = this.users.get(steamid).getShopTrade();
     shopTrade.setStatus("closed");
     shopTrade.commit();
-    shopTrade.dereserveItems();
+    shopTrade.dereserveShopItems();
     callback({result: "success", message: "Person removed"});
 };
 BotPorting.prototype.setBotStatus = function (status, callback) {
