@@ -2,8 +2,9 @@ module.exports = ShopTrade;
 var events = require("events");
 var Logs = require("../../lib/logs.js");
 var ShopItem = require("./inventory/shopItem.js");
-var TF2Price = require("../tf2/tf2Price.js");
+var Price = require("../Price.js");
 var ItemCount = require("./shopItemCount.js");
+var TradeConstants = require("./../trade/tradeConstants.js");
 //Shop Trade Status: hold -> (noFriend) -> active -> sent -> closed/accepted/declined
 
 /**
@@ -19,8 +20,12 @@ function ShopTrade(sfuminator, partner) {
     this.ajaxResponses = sfuminator.responses;
     this.response = this.ajaxResponses.error;
     this.database = new TradeDb(this, sfuminator.db);
-    this.log = new Logs({applicationName: "Trade offer " + this.partner.getSteamid(), color: "green"});
+    /**
+     * @type {ShopItem[]}
+     */
     this.assets = [];
+
+    this.log = new Logs({applicationName: "Shop Trade " + this.partner.getSteamid(), color: "green"});
     this._available_modes = ["offer", "manual"];
     this.last_update_date = new Date();
     this.assets_limit = {partner: 20, shop: 20};
@@ -34,7 +39,7 @@ require("util").inherits(ShopTrade, events.EventEmitter);
  * @returns {Boolean}
  */
 ShopTrade.prototype.hasBeenAccepted = function () {
-    return this.getStatusInfo() === "accepted";
+    return this.getStatusInfo() === TradeConstants.statusInfo.closed.ACCEPTED;
 };
 
 /**
@@ -43,7 +48,7 @@ ShopTrade.prototype.hasBeenAccepted = function () {
  * @returns {Boolean}
  */
 ShopTrade.prototype.isActive = function () {
-    return this.status && (this.status !== "closed" || (this.getLastUpdateDate() > new Date(new Date() - this.sfuminator.shopTrade_decay)));
+    return this.status && (this.status !== TradeConstants.status.CLOSED || (this.getLastUpdateDate() > new Date(new Date() - this.sfuminator.shopTrade_decay)));
 };
 
 /**
@@ -52,21 +57,21 @@ ShopTrade.prototype.isActive = function () {
  * @returns {Boolean}
  */
 ShopTrade.prototype.isClosed = function () {
-    return this.status === "closed";
+    return this.status === TradeConstants.status.CLOSED;
 };
 
 /**
  * Send Shop Trade to partner<br>
  * Will initiate trade procedures
  */
-ShopTrade.prototype.send = function () {
+ShopTrade.prototype.setAsSending = function () {
     if (!this.getMode()) {
         this.log.error("No trade mode set, can't send trade");
-    } else if (!this.shop.isBot(this.getBotSteamid())) {
+    } else if (!this.shop.isBot(this.getBot().getSteamid())) {
         this.log.error("No bot steamid set, can't send trade");
     } else {
-        this.setStatus("hold");
-        this.setStatusInfo("open");
+        this.setStatus(TradeConstants.status.HOLD);
+        this.setStatusInfo("open"); //Are you sure this is needed?
         this.database.save();
         this.log.debug("Sent trade: " + JSON.stringify(this.valueOf()));
     }
@@ -76,9 +81,9 @@ ShopTrade.prototype.send = function () {
  * Cancel Shop Trade
  */
 ShopTrade.prototype.cancel = function () {
-    this.dereserveItems();
-    this.setStatus("closed");
-    this.setStatusInfo("cancelled");
+    this.dereserveShopItems();
+    this.setStatus(TradeConstants.status.CLOSED);
+    this.setStatusInfo(TradeConstants.statusInfo.closed.CANCELLED);
     this.commit();
     this.log.debug("Trade " + this.getID() + " has been cancelled");
 };
@@ -87,8 +92,8 @@ ShopTrade.prototype.cancel = function () {
  * Mark Shop Trade as accepted
  */
 ShopTrade.prototype.accepted = function () {
-    this.setStatus("closed");
-    this.setStatusInfo("accepted");
+    this.setStatus(TradeConstants.status.CLOSED);
+    this.setStatusInfo(TradeConstants.statusInfo.closed.ACCEPTED);
     this.commit();
     this.log.debug("Trade " + this.getID() + " has been accepted");
 };
@@ -137,8 +142,8 @@ ShopTrade.prototype.getClientChanges = function (last_update_date) {
  */
 ShopTrade.prototype.valueOf = function () {
     return {
-        botSteamid: this.getBotSteamid(),
-        partnerID: this.partner.getSteamid(),
+        botSteamid: this.getBot().getSteamid(),
+        partnerID: this.getPartner().getSteamid(),
         mode: this.getMode(),
         status: this.getStatus(),
         statusInfo: this.getStatusInfo(),
@@ -205,7 +210,7 @@ ShopTrade.prototype.verifyItems = function (callback) {
         if (this.shop.sectionExist(section) && this.items[section] instanceof Array) {
             for (var i = 0; i < this.items[section].length; i += 1) {
                 if (this.verifyShopItem(this.items[section][i], section)) {
-                    this.assets.push(new ShopTradeAsset(this.shop.inventory.getItem(this.items[section][i])));
+                    this.assets.push(this.shop.inventory.getItem(this.items[section][i]));
                 } else {
                     callback(false);
                     return;
@@ -228,7 +233,7 @@ ShopTrade.prototype.verifyItems = function (callback) {
         this.verifyMineItems(callback, function (item) {
             var shopItem = new ShopItem(self.shop, item);
             shopItem.setAsMineSection();
-            self.assets.push(new ShopTradeAsset(shopItem));
+            self.assets.push(shopItem);
         });
     } else {
         callback(true);
@@ -242,7 +247,7 @@ ShopTrade.prototype.verifyItems = function (callback) {
 ShopTrade.prototype.getPartnerItemCount = function () {
     var count = 0;
     for (var i = 0; i < this.assets.length; i += 1) {
-        if (this.assets[i].getItem().getOwner() === this.partner.getSteamid()) {
+        if (this.assets[i].getItem().getOwner() === this.getPartner().getSteamid()) {
             count += 1;
         }
     }
@@ -257,16 +262,43 @@ ShopTrade.prototype.getShopItemCount = function () {
     return this.assets.length - this.getPartnerItemCount();
 };
 
+ShopTrade.prototype.reserveItems = function () {
+    this.reserveShopItems();
+
+    var self = this;
+    this.reserveCurrency(function () {
+        self.emit("itemsReserved");
+    });
+};
+
+ShopTrade.prototype.reserveCurrency = function (callback) {
+    var i;
+    var currencyBalance = new Price(0);
+    for (i = 0; i < this.assets.length; i += 1) {
+        var asset = this.assets[i];
+        if (this.assets[i].isMineItem()) {
+            currencyBalance += asset.getPrice();
+        } else {
+            currencyBalance -= asset.getPrice();
+        }
+    }
+    if (currencyBalance < 0) {
+        for (i = 0; i < this.sfuminator.shop.section.currency; i += 1) {
+
+        }
+    }
+};
+
 /**
  * Reserve shop items for Shop Trade partner
  */
-ShopTrade.prototype.reserveItems = function () {
+ShopTrade.prototype.reserveShopItems = function () {
     this.log.debug("Reserving items", 3);
     this.logAssets(3);
     for (var i = 0; i < this.assets.length; i += 1) {
         var item = this.assets[i].getItem();
-        if (item.getOwner() !== this.partner.getSteamid()) {
-            this.shop.reservations.add(this.partner.getSteamid(), item.getID());
+        if (item.getOwner() !== this.getPartner().getSteamid()) {
+            this.shop.reservations.add(this.getPartner().getSteamid(), item.getID());
         }
     }
 };
@@ -275,7 +307,7 @@ ShopTrade.prototype.reserveItems = function () {
  * Remove reservation from shop items of this Shop Trade
  * @returns {undefined}
  */
-ShopTrade.prototype.dereserveItems = function () {
+ShopTrade.prototype.dereserveShopItems = function () {
     this.log.debug("Dereserving items", 3);
     this.logAssets(3);
     for (var i = 0; i < this.assets.length; i += 1) {
@@ -294,15 +326,12 @@ ShopTrade.prototype.dereserveItems = function () {
 ShopTrade.prototype.getPlate = function () {
     var plate = {me: [], them: [], full_list: []};
     for (var i = 0; i < this.assets.length; i += 1) {
-        if (this.partner.getSteamid() === this.assets[i].getItem().getOwner()) {
-            plate.them.push(this.assets[i].valueOf());
-            var mineItem = new ShopItem(this.shop, this.assets[i].getItem());
-            mineItem.setAsMineSection();
-            plate.full_list.push(mineItem.valueOf());
+        if (this.assets[i].isMineItem()) {
+            plate.them.push(new ShopTradeAssetDataStructure(this.assets[i]));
         } else {
-            plate.me.push(this.assets[i].valueOf());
-            plate.full_list.push(this.shop.getItem(this.assets[i].getID()).valueOf());
+            plate.me.push(new ShopTradeAssetDataStructure(this.assets[i]));
         }
+        plate.full_list.push(this.assets[i]);
     }
     return plate;
 };
@@ -317,18 +346,18 @@ ShopTrade.prototype.getPartner = function () {
 
 /**
  * Set bot steamid assigned to this Shop Trade
- * @param {String} steamid
+ * @param {User} bot
  */
-ShopTrade.prototype.setBotSteamid = function (steamid) {
-    this.botSteamid = steamid;
+ShopTrade.prototype.setBot = function (bot) {
+    this.bot = bot;
 };
 
 /**
  * Get bot steamid assigned to this Shop Trade
- * @returns {String}
+ * @returns {User}
  */
-ShopTrade.prototype.getBotSteamid = function () {
-    return this.botSteamid;
+ShopTrade.prototype.getBot = function () {
+    return this.bot;
 };
 
 /**
@@ -340,15 +369,15 @@ ShopTrade.prototype.getID = function () {
 };
 
 /**
- * Get Shop Trade Status<br>
- * Legend:<br>
- * - Hold:[info] => Trade is being processed<br>
- * - Active => Trade is being made<br>
- * - Sent:[info] => Trade has been sent<br>
- * - Accepted => Trade has been accepted by partner<br>
- * - Declined => Trade has been declined by partner<br>
- * - Closed:[info] => Trade ended for other causes<br>
- * <br>
+ * Get Shop Trade Status
+ * Legend:
+ * - Hold:[info] => Trade is being processed
+ * - Active => Trade is being made
+ * - Sent:[info] => Trade has been sent
+ * - Accepted => Trade has been accepted by partner
+ * - Declined => Trade has been declined by partner
+ * - Closed:[info] => Trade ended for other causes
+ *
  * [info] tags indicate a StatusInfo associated, see getStatusInfo for more
  * @returns {String}
  */
@@ -357,13 +386,13 @@ ShopTrade.prototype.getStatus = function () {
 };
 
 /**
- * Get Shop Trade Status Info<br>
- * Legend:<br>
- * - Hold.noFriend => Partner has to accept friend request<br>
- * - Sent.[String] => Steam trade id of this Shop Trade<br>
- * - Closed.cancelled => Trade has been cancelled<br>
- * - Closed.error => Most likely steam errored<br>
- * - Closed.afk => Partner didn't accept in time<br>
+ * Get Shop Trade Status Info
+ * Legend:
+ * - Hold.noFriend => Partner has to accept friend request
+ * - Sent.[String] => Steam trade id of this Shop Trade
+ * - Closed.cancelled => Trade has been cancelled
+ * - Closed.error => Most likely steam errored
+ * - Closed.afk => Partner didn't accept in time
  * @returns {String}
  */
 ShopTrade.prototype.getStatusInfo = function () {
@@ -450,7 +479,7 @@ ShopTrade.prototype.setLastUpdateDate = function (updateDate) {
         if (this.hasBeenAccepted()) { //Force refresh user backpack if trade has been accepted
             var self = this;
             setTimeout(function () {
-                self.partner.getTF2Backpack().get();
+                self.getPartner().getTF2Backpack().get();
             }, 10000);
         }
     }
@@ -476,7 +505,7 @@ ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
         this.emit("response", this.response);
         return false;
     }
-    if (this.shop.reservations.exist(idToCheck) && this.shop.reservations.get(idToCheck).getHolder() !== this.partner.getSteamid()) {
+    if (this.shop.reservations.exist(idToCheck) && this.shop.reservations.get(idToCheck).getHolder() !== this.getPartner().getSteamid()) {
         this.response = this.ajaxResponses.itemIsAlreadyReserved;
         this.emit("response", this.response);
         return false;
@@ -493,7 +522,7 @@ ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
 ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
     var self = this;
     var itemCount = new ItemCount();
-    this.partner.tf2Backpack.getCached(function (backpack) {
+    this.getPartner().getTF2Backpack().getCached(function (backpack) {
         for (var i = 0; i < self.items.mine.length; i += 1) {
             var itemID = self.items.mine[i];
             var item = backpack.getItem(itemID);
@@ -574,20 +603,6 @@ ShopTrade.prototype.logAssets = function (level) {
 };
 
 /**
- * General purpose Shop Trade Asset class
- * @param {ShopItem} shopItem
- * @returns {ShopTradeAsset}
- */
-function ShopTradeAsset(shopItem) {
-    for (prop in shopItem) {
-        this[prop] = shopItem[prop];
-    }
-    this.valueOf = function () {
-        return new ShopTradeAssetDataStructure(shopItem);
-    }
-}
-
-/**
  * Shop Trade Asset data structure
  * @param {ShopItem} shopItem
  * @returns {ShopTradeAssetDataStructure}
@@ -611,7 +626,11 @@ function ShopTradeAssetDataStructure(shopItem) {
 function TradeDb(trade, db) {
     this.trade = trade;
     this.db = db;
-    this.log = new Logs({applicationName: "TradeDB " + this.trade.partner.getSteamid(), color: "green", dim: true});
+    this.log = new Logs({
+        applicationName: "TradeDB " + this.trade.getPartner().getSteamid(),
+        color: "green",
+        dim: true
+    });
 }
 
 /**
@@ -675,16 +694,16 @@ TradeDb.prototype._getLoadQuery = function () {
         additionalIdentifier = "AND id=" + this.trade.getID();
     }
     return "SELECT `id`,`steamid`,`bot_steamid`,`mode`,`status`,`status_info`, `item_id`, `shop_id`, `shop_type`, `scrapPrice`, `last_update_date` FROM "
-        + "(SELECT `id`,`steamid`,`mode`,`status`,`status_info`,`last_update_date`,`bot_steamid` FROM shop_trades WHERE steamid='" + this.trade.partner.getSteamid() + "' " + additionalIdentifier + " ORDER BY last_update_date DESC LIMIT 1) as myTrade "
+        + "(SELECT `id`,`steamid`,`mode`,`status`,`status_info`,`last_update_date`,`bot_steamid` FROM shop_trades WHERE steamid='" + this.trade.getPartner().getSteamid() + "' " + additionalIdentifier + " ORDER BY last_update_date DESC LIMIT 1) as myTrade "
         + "JOIN shop_trade_items ON myTrade.id=shop_trade_items.trade_id ";
 };
 TradeDb.prototype._getSaveQuery = function () {
     return "INSERT INTO `shop_trades` (`steamid`,`mode`,`status`,`status_info`,`bot_steamid`) VALUES ("
-        + "'" + this.trade.partner.getSteamid() + "',"
+        + "'" + this.trade.getPartner().getSteamid() + "',"
         + "'" + this.trade.getMode() + "',"
         + "'" + this.trade.getStatus() + "',"
         + "'" + this.trade.getStatusInfo() + "',"
-        + "'" + this.trade.getBotSteamid() + "'"
+        + "'" + this.trade.getBot().getSteamid() + "'"
         + ");";
 };
 TradeDb.prototype._getSaveItemsQuery = function () {

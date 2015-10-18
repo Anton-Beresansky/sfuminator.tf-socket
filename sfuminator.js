@@ -4,6 +4,8 @@ var CFG = require('./cfg.js');
 var Logs = require('./lib/logs.js');
 var Users = require('./modules/users.js');
 var Shop = require('./modules/shop.js');
+var TradingController = require('./modules/controllers/tradingController.js');
+var BotsController = require('./modules/controllers/botsController.js');
 var AjaxResponses = require('./modules/ajaxResponses.js');
 var Stats = require('./modules/stats.js');
 var TradeStatus = require('./modules/trade/status.js');
@@ -34,6 +36,8 @@ function Sfuminator(cloud, db) {
     this.responses = new AjaxResponses(this);
     this.users = new Users(this, this.db, cloud);
     this.shop = new Shop(this);
+    this.tradingController = new TradingController(this);
+    this.botsController = new BotsController(this);
     this.stats = new Stats(this);
     this.status = new TradeStatus(this);
 
@@ -330,27 +334,18 @@ Sfuminator.prototype.requestTrade = function (request, mode, callback) {
     var user = this.users.get(request.getRequesterSteamid());
     if (!user.hasActiveShopTrade()) {
         var trade = user.makeShopTrade(data.items);
+        trade.setMode(mode);
         trade.on("response", function (response) {
             callback(response);
         });
         trade.verifyItems(function (success) {
             self.log.debug("Request Trade Offer item verification, success: " + success);
             if (success) {
-                trade.setMode(mode);
-                trade.setBotSteamid(self.shop.bots[0]);
-                if (mode === "offer") {
-                    trade.reserveItems();
-                    trade.send();
+                if (trade.getPartnerItemCount() > 0 && trade.getShopItemCount() > 0) {
+                    callback(self.responses.denyManualMultiItems);
+                } else {
+                    self.tradingController.startOffNewShopTrade(trade);
                     callback(self.responses.tradeRequestSuccess(trade));
-                } else if (mode === "manual") {
-                    var plate = trade.getPlate();
-                    if (plate.me.length === 0 || plate.them.length === 0) {
-                        trade.reserveItems();
-                        trade.send();
-                        callback(self.responses.tradeRequestSuccess(trade));
-                    } else {
-                        callback(self.responses.manualMultiItems);
-                    }
                 }
             }
         });
@@ -383,4 +378,18 @@ Sfuminator.prototype.cancelTrade = function (request, callback) {
  */
 Sfuminator.prototype.getCFG = function () {
     return CFG;
+};
+
+/**
+ * @returns {TradingController}
+ */
+Sfuminator.prototype.getTradingController = function () {
+    return this.tradingController;
+};
+
+/**
+ * @returns {BotsController}
+ */
+Sfuminator.prototype.getBotsController = function () {
+    return this.botsController;
 };

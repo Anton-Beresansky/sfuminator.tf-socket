@@ -1,7 +1,7 @@
 module.exports = Shop;
 var events = require("events");
 var Logs = require("../lib/logs.js");
-var TF2Price = require("./tf2/tf2Price.js");
+var Price = require("./Price.js");
 var TF2Currency = require("./tf2/tf2Currency.js");
 var TF2Item = require("./tf2/tf2Item.js");
 var ShopRatio = require("./shop/shopRatio.js");
@@ -23,11 +23,12 @@ function Shop(sfuminator) {
     this.interrupts = this.sfuminator.interrupts;
     this.users = this.sfuminator.users;
     this.log = new Logs({applicationName: "Shop", color: "green"});
+
     this.ratio = new ShopRatio(this.db);
     this.tf2Currency = TF2Currency;
     this.tf2Currency.setCloud(this.cloud);
-    this.bots = this.sfuminator.getCFG().getBots();
-    this.inventory = new ShopInventory(this, this.bots);
+    this.bots = this.getBots();
+    this.inventory = new ShopInventory(this);
     this.reservations = new Reservations(this.db);
     this.instanceID = new Date().getTime();
     this.countLimit = {Strange: 0, Vintage: 3, Genuine: 3, Haunted: 3, _any: 5, _price: {over: 6, limit: 3}};
@@ -228,7 +229,7 @@ Shop.prototype.verifyMineItemPriceRange = function (item) {
  */
 Shop.prototype.isBot = function (steamid) {
     for (var i = 0; i < this.bots.length; i += 1) {
-        if (this.bots[i] === steamid) {
+        if (this.bots[i].getSteamid() === steamid) {
             return true;
         }
     }
@@ -246,6 +247,18 @@ Shop.prototype.getBot = function (steamid) {
     }
     this.log.error("Bot " + steamid + " doesn't exist");
     return false;
+};
+
+/**
+ * @returns {User[]} Bots
+ */
+Shop.prototype.getBots = function () {
+    var bots = [];
+    var steamids = this.sfuminator.getCFG().getBotSteamids();
+    for (var i = 0; i < steamids.length; i += 1) {
+        bots.push(this.users.get(steamids[i]));
+    }
+    return bots;
 };
 
 /**

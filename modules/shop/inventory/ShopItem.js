@@ -2,11 +2,9 @@ module.exports = ShopItem;
 
 var CompressionLookup = require("./compressionTable.js");
 var TF2Item = require("../../tf2/tf2Item.js");
-var TF2Price = require("../../tf2/tf2Price.js");
-var GAME_CODE = {
-    TF2: 440,
-    CSGO: 730
-};
+var Price = require("../../Price.js");
+var TF2Currency = require('../../tf2/tf2Currency.js');
+var SteamGames = require("../../../lib/steamGames.js");
 
 /**
  * Generic purpose Shop Item class, default shop ID is equal to item id
@@ -25,7 +23,7 @@ function ShopItem(shop, item) {
      */
     this.item = item;
     if (this.item instanceof TF2Item) {
-        this.game_code = GAME_CODE.TF2;
+        this.game = SteamGames.TF2;
     }
     this.id = this.item.getID();
     this.section = this.getType();
@@ -40,11 +38,11 @@ ShopItem.prototype.getID = function () {
 };
 
 ShopItem.prototype.getGameCode = function () {
-    return this.game_code;
+    return this.game.getID();
 };
 
 ShopItem.prototype.isTF2Item = function () {
-    return this.game_code === GAME_CODE.TF2;
+    return this.game.getID() === SteamGames.TF2.getID();
 };
 
 /**
@@ -78,6 +76,8 @@ ShopItem.prototype.getType = function () {
                 if (this.getPrice().toMetal() <= this.shop.ratio.hats.weSell.maximum) {
                     return "hats";
                 }
+            } else if (this.item.isCurrency()) {
+                return "currency";
             }
         }
         return "";
@@ -103,17 +103,17 @@ ShopItem.prototype.setAsMineSection = function () {
  * Establish if Shop Section Item belongs to Section of type "mine"
  * @returns {Boolean}
  */
-ShopItem.prototype.isMineSection = function () {
+ShopItem.prototype.isMineItem = function () {
     return this.section === "mine";
 };
 
 /**
  * Get Shop Section Item price.
  * Price is related to shop section.
- * @returns {TF2Price}
+ * @returns {Price}
  */
 ShopItem.prototype.getPrice = function () {
-    if (this.isMineSection()) {
+    if (this.isMineItem()) {
         return this.getMinePrice();
     }
     return this.item.getPrice();
@@ -129,24 +129,24 @@ ShopItem.prototype.getMinePrice = function () {
         if (item.isHat()) {
             var originalPrice = item.getPrice();
             if (originalPrice.toMetal() > this.shop.ratio.hats.weBuy.maximum) {
-                originalPrice = new TF2Price(this.shop.ratio.hats.weBuy.maximum, "metal");
+                originalPrice = new Price(this.shop.ratio.hats.weBuy.maximum, TF2Currency.priceInits.Metal);
             }
 
             if (originalPrice.toMetal() === 1.66) {
-                finalPrice = new TF2Price(this.shop.ratio.hats.weBuy.default166, "metal");
+                finalPrice = new Price(this.shop.ratio.hats.weBuy.default166, TF2Currency.priceInits.Metal);
             } else {
                 var ratio = this.shop.ratio.hats.weBuy.normal;
                 if (originalPrice.toMetal() <= 2) {
                     ratio = this.shop.ratio.hats.weBuy.lowTier;
                 }
-                finalPrice = new TF2Price(parseInt(originalPrice.toScrap() * ratio), "scrap");
+                finalPrice = new Price(parseInt(originalPrice.toScrap() * ratio), TF2Currency.priceInits.Scrap);
             }
 
             if (finalPrice.toMetal() < this.shop.ratio.hats.weBuy.minimum) {
-                finalPrice = new TF2Price(this.shop.ratio.hats.weBuy.minimum, "metal");
+                finalPrice = new Price(this.shop.ratio.hats.weBuy.minimum, TF2Currency.priceInits.Metal);
             }
         } else {
-            finalPrice = TF2Price(0);
+            finalPrice = Price(0);
         }
     }
     this.minePrice = finalPrice;
@@ -180,11 +180,11 @@ function ShopItemDataStructure(shopItem) {
     this.image_url = shopItem.item.image_url;
     this.image_url_large = shopItem.item.image_url_large;
     this.used_by_classes = shopItem.item.used_by_classes;
-    this.currency = "metal";
+    this.currency = TF2Currency.priceInits.Metal;
     this.relative_price = shopItem.getPrice().toMetal();
     this.shop = shopItem.section;
     this.reserved_to = shopItem.getReservation().getHolder();
-    if (shopItem.isMineSection() && shopItem.item.isPainted()) {
+    if (shopItem.isMineItem() && shopItem.item.isPainted()) {
         this.paint_color = shopItem.item.getPaintColor();
     }
 }

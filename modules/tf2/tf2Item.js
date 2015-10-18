@@ -1,6 +1,12 @@
 module.exports = TF2Item;
 
-var TF2Price = require("./tf2Price.js");
+var Price = require("./../Price.js");
+var CurrenciesDefindex = {
+    ScrapMetal: 5000,
+    ReclaimedMetal: 5001,
+    RefinedMetal: 5002,
+    MannCoKey: 5021
+};
 var Qualities = [
     "Normal", "Genuine", "rarity2", "Vintage", "rarity3",
     "Unusual", "Unique", "Community", "Valve", "Self-Made",
@@ -97,27 +103,41 @@ TF2Item.prototype.isPriced = function () {
 
 /**
  * Get item price
- * @returns {TF2Price}
+ * @returns {Price}
  */
 TF2Item.prototype.getPrice = function () {
     if (this.isPriced()) {
-        return new TF2Price(this.absolute_price);
+        return new Price(this.absolute_price);
     } else {
-        return new TF2Price(0);
+        return new Price(0);
     }
 };
 
 /**
  * Establish if item is hat.
- * <br><br>
- * Following parameters are checked:<br>
- * - item_type_name =? #TF_Wearable_Hat<br>Automatically identify item as a hat -> it means item is hat and craftable with other hats
- * <br>
- * - item_type_name =? Hat<br>will identify a general cosmetic as craftable with other hats, therefore considering the item implicitly hat
+ *
+ * Following parameters are checked:
+ * - item_type_name =? #TF_Wearable_Hat
+ * Automatically identify item as a hat -> it means item is hat and craftable with other hats
+ *
+ * - item_type_name =? Hat
+ * Will identify a general cosmetic as craftable with other hats, therefore considering the item implicitly hat
  * @returns {Boolean}
  */
 TF2Item.prototype.isHat = function () {
     return (this.hasOwnProperty("item_type_name") && (this.item_type_name === "#TF_Wearable_Hat")) || (this.item_type_name === "Hat") || (this.craft_material_type === "hat");
+};
+
+/**
+ * Establish if item is Currency
+ * Scrap, Reclaimed, Refined and Mann Co Key defindex are checked
+ * @returns {boolean}
+ */
+TF2Item.prototype.isCurrency = function () {
+    return (this.defindex === CurrenciesDefindex.ScrapMetal
+    || this.defindex === CurrenciesDefindex.ReclaimedMetal
+    || this.defindex === CurrenciesDefindex.RefinedMetal
+    || this.defindex === CurrenciesDefindex.MannCoKey);
 };
 
 /**
@@ -128,19 +148,10 @@ TF2Item.prototype.getPaintColor = function () {
     return this.getAttribute(142).getFloatValue().toString(16);
 };
 
-/**
- * Establish if item has paint attached to it
- * @returns {Boolean}
- */
 TF2Item.prototype.isPainted = function () {
     return this.attributeExist(142);
 };
 
-/**
- * Check if given attribute defindex exist
- * @param {Number} defindex
- * @returns {Boolean}
- */
 TF2Item.prototype.attributeExist = function (defindex) {
     return this.getAttribute(defindex).getDefindex() === defindex;
 };
@@ -175,26 +186,14 @@ function TF2Attribute(attribute) {
     this.float_value = attribute.float_value;
 }
 
-/**
- * Get attribute value
- * @returns {Number}
- */
 TF2Attribute.prototype.getValue = function () {
     return this.value;
 };
 
-/**
- * Get attribute float value
- * @returns {Number}
- */
 TF2Attribute.prototype.getFloatValue = function () {
     return this.float_value;
 };
 
-/**
- * Get attribute defindex
- * @returns {Number}
- */
 TF2Attribute.prototype.getDefindex = function () {
     return this.defindex;
 };
