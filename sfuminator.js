@@ -34,10 +34,10 @@ function Sfuminator(cloud, db) {
         {name: "updateTradeStatus", delay: 1000, tag: "global"}
     ]);
     this.responses = new AjaxResponses(this);
-    this.users = new Users(this, this.db, cloud);
+    this.users = new Users(this);
     this.shop = new Shop(this);
     this.tradingController = new TradingController(this);
-    this.botsController = new BotsController(this);
+    //this.botsController = new BotsController(this);
     this.stats = new Stats(this);
     this.status = new TradeStatus(this);
 
@@ -152,7 +152,7 @@ Sfuminator.prototype.updateActiveTrades = function (callback) {
             if (shopTrade && shopTrade.getID() === active_trades[i].id) {
                 newActiveTrades.push(shopTrade);
             } else {
-                self.log.error("Can't update active trade " + active_trades[i].id + ": id mismatch (" + shopTrade.getID() + ")");
+                self.log.error("Can't update active trade " + active_trades[i].id + ": id mismatch (local shop trade id for associated user is " + shopTrade.getID() + ")");
             }
         }
         self.activeTrades = newActiveTrades;

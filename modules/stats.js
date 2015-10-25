@@ -82,7 +82,10 @@ Stats.prototype.getStockCount = function () {
 Stats.prototype.fetchNewItems = function () {
     var itemList = [];
     for (var sectionID in this.shop.sections) {
-        var sectionItems = this.shop.sections[sectionID].items;
+        var sectionItems = [];
+        if (!this.shop.sections[sectionID].isHidden()) {
+            sectionItems = this.shop.sections[sectionID].getItems();
+        }
         itemList = itemList.concat(sectionItems.slice(sectionItems.length - this.max_new_items, sectionItems.length));
     }
     itemList.sort(function (a, b) {

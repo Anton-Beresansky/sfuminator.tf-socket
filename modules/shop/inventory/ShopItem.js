@@ -100,7 +100,7 @@ ShopItem.prototype.setAsMineSection = function () {
 };
 
 /**
- * Establish if Shop Section Item belongs to Section of type "mine"
+ * Establish if Shop Item belongs to Section of type "mine"
  * @returns {Boolean}
  */
 ShopItem.prototype.isMineItem = function () {

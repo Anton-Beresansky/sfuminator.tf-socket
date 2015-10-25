@@ -10,7 +10,7 @@ ACCOUNTS = {
     "76561198195946391": {username: "sfuminator4", password: "fuckYourTightThumb", steamid: "76561198195946391"}
 };
 var CFG = JSON.parse(require("fs").readFileSync("../socket_config.json"));
-myAccount = ACCOUNTS[CFG.sfuminator.trade_bots[0]];
+myAccount = ACCOUNTS[CFG.sfuminator.bots.trading[0]];
 console.log("My account: " + JSON.stringify(myAccount));
 
 var SOFTWARE_VERSION = "v4 beta";
