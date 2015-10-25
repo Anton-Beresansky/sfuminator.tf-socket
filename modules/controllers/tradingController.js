@@ -23,9 +23,9 @@ TradingController.prototype.startOffNewShopTrade = function (newShopTrade) {
     //    this.log.error("Wasn't able to assign bot");
     //} else {
     //    assignedBot.assignShopTrade(newShopTrade);
-        newShopTrade.setBot(this.sfuminator.users.get("76561198195936315")); //temp
-        newShopTrade.reserveItems();
-        newShopTrade.setAsSending();
+    newShopTrade.setBot(this.sfuminator.users.get(this.sfuminator.shop.getBots()[0].getSteamid())); //temp
+    newShopTrade.reserveItems();
+    newShopTrade.setAsSending();
     //}
 };
 
