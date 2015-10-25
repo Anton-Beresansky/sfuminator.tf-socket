@@ -19,6 +19,7 @@ var socket = new zmqSocket({
     application: "cloud",
     startOption: "p2p"
 });
+
 var cloud = new Cloud(socket);
 var reqHandler = new MaxRequestsHandler();
 

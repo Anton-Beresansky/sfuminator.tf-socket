@@ -35,6 +35,7 @@ function Shop(sfuminator) {
     this.count = new ItemCount();
     this.search = new Search(this, this.sfuminator.responses);
     this.sections = {}; //{type: Section()}
+    this.hiddenSections = ["currency"];
 
     events.EventEmitter.call(this);
     var self = this;
@@ -295,7 +296,7 @@ Shop.prototype._getActivePartnersQuery = function () {
 Shop.prototype._getActivePartnersBotComponentQuery = function () {
     var query = "AND `bot_steamid` IN (";
     for (var i = 0; i < this.bots.length; i += 1) {
-        query += "'" + this.bots[i] + "'";
+        query += "'" + this.bots[i].getSteamid() + "'";
     }
     return query + ")";
 };

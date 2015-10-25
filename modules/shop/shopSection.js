@@ -61,6 +61,19 @@ Section.prototype.getClientChanges = function (last_update_date) {
 };
 
 /**
+ * Can be seen by user from shop page
+ * @returns {boolean}
+ */
+Section.prototype.isHidden = function () {
+    for (var i = 0; i < this.shop.hiddenSections.length; i += 1) {
+        if (this.shop.hiddenSections[i] === this.type) {
+            return true;
+        }
+    }
+    return false;
+};
+
+/**
  * Establish if Shop Section Item exist
  * @param {Number} id Shop Item id
  * @returns {Boolean}

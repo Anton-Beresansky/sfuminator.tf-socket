@@ -166,13 +166,14 @@ ShopTrade.prototype.load = function (callback) {
         self.setStatus(trade.status);
         self.setStatusInfo(trade.status_info);
         self.setMode(trade.mode);
+        self.setBot(self.sfuminator.users.get(trade.bot_steamid));
         var items = {};
         for (var i = 0; i < rows.length; i += 1) {
             var iRow = rows[i];
             if (items.hasOwnProperty(iRow.shop_type)) {
-                items[iRow.shop_type].push(iRow.item_id);
+                items[iRow.shop_type].push(iRow.shop_id);
             } else {
-                items[iRow.shop_type] = [iRow.item_id];
+                items[iRow.shop_type] = [iRow.shop_id];
             }
         }
         self.setItems(items);
@@ -265,10 +266,10 @@ ShopTrade.prototype.getShopItemCount = function () {
 ShopTrade.prototype.reserveItems = function () {
     this.reserveShopItems();
 
-    var self = this;
+    /*var self = this;
     this.reserveCurrency(function () {
         self.emit("itemsReserved");
-    });
+    });*/
 };
 
 ShopTrade.prototype.reserveCurrency = function (callback) {
@@ -331,7 +332,7 @@ ShopTrade.prototype.getPlate = function () {
         } else {
             plate.me.push(new ShopTradeAssetDataStructure(this.assets[i]));
         }
-        plate.full_list.push(this.assets[i]);
+        plate.full_list.push(this.assets[i].valueOf());
     }
     return plate;
 };
@@ -567,7 +568,7 @@ ShopTrade.prototype.emptyAssets = function () {
 
 /**
  * Get Shop Trade Assets
- * @returns {ShopTradeAsset[]}
+ * @returns {ShopItem[]}
  */
 ShopTrade.prototype.getAssets = function () {
     return this.assets;
@@ -576,7 +577,7 @@ ShopTrade.prototype.getAssets = function () {
 /**
  * Get Shop Trade Asset
  * @parameter {Number} Item id
- * @returns {ShopTradeAsset|null}
+ * @returns {ShopItem|null}
  */
 ShopTrade.prototype.getAsset = function (id) {
     for (var i = 0; i < this.assets.length; i += 1) {

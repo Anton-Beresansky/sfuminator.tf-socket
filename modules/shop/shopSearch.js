@@ -24,7 +24,10 @@ Search.prototype.find = function (text) {
     if (words && words instanceof Array) {
         var result = [];
         for (var section in this.shop.sections) {
-            var sectionItems = this.shop.sections[section].getItems();
+            var sectionItems = [];
+            if (!this.shop.sections[section].isHidden()) {
+                sectionItems = this.shop.sections[section].getItems();
+            }
             for (var i = 0; i < sectionItems.length; i += 1) {
                 var itemName = sectionItems[i].getItem().getFullName().toLowerCase();
                 for (var j = 0; j < words.length; j += 1) {
