@@ -14,7 +14,7 @@ function ShopItemCount() {
 /**
  * Update count
  * @param {TF2Item[]} toAdd
- * @param {Tf2Item[]} toRemove
+ * @param {TF2Item[]} toRemove
  */
 ShopItemCount.prototype.update = function (toAdd, toRemove) {
     this.log.debug("Updating...");
