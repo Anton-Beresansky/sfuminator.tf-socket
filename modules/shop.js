@@ -226,7 +226,7 @@ Shop.prototype.verifyMineItemPriceRange = function (item) {
 /**
  * Establish if given steamid identify a bot
  * @param {String} steamid
- * @returns {Boolean}
+ * @returns {Boolean}s
  */
 Shop.prototype.isBot = function (steamid) {
     for (var i = 0; i < this.bots.length; i += 1) {
