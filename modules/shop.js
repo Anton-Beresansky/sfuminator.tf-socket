@@ -1,7 +1,7 @@
 module.exports = Shop;
 var events = require("events");
 var Logs = require("../lib/logs.js");
-var Price = require("./Price.js");
+var Price = require("./price.js");
 var TF2Currency = require("./tf2/tf2Currency.js");
 var TF2Item = require("./tf2/tf2Item.js");
 var ShopRatio = require("./shop/shopRatio.js");

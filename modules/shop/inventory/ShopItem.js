@@ -2,7 +2,7 @@ module.exports = ShopItem;
 
 var CompressionLookup = require("./compressionTable.js");
 var TF2Item = require("../../tf2/tf2Item.js");
-var Price = require("../../Price.js");
+var Price = require("../../price.js");
 var TF2Currency = require('../../tf2/tf2Currency.js');
 var SteamGames = require("../../../lib/steamGames.js");
 

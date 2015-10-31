@@ -2,7 +2,7 @@ module.exports = ShopInventory;
 
 var events = require("events");
 var Logs = require("../../lib/logs.js");
-var Price = require("../Price.js");
+var Price = require("../price.js");
 var ItemVersioning = require("../../lib/dataVersioning.js");
 var ShopItem = require("./inventory/shopItem.js");
 var ShopItemIds = require("./inventory/shopItemIds.js");
