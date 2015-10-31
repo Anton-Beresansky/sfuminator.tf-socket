@@ -2,7 +2,7 @@ module.exports = ShopTrade;
 var events = require("events");
 var Logs = require("../../lib/logs.js");
 var ShopItem = require("./inventory/shopItem.js");
-var Price = require("../Price.js");
+var Price = require("../price.js");
 var ItemCount = require("./shopItemCount.js");
 var TradeConstants = require("./../trade/tradeConstants.js");
 //Shop Trade Status: hold -> (noFriend) -> active -> sent -> closed/accepted/declined
