@@ -32,6 +32,9 @@ function Shop(sfuminator) {
     this.reservations = new Reservations(this.db);
     this.instanceID = new Date().getTime();
     this.countLimit = {Strange: 0, Vintage: 3, Genuine: 3, Haunted: 3, _any: 5, _price: {over: 6, limit: 3}};
+    /**
+     * @type {ShopItemCount}
+     */
     this.count = new ItemCount();
     this.search = new Search(this, this.sfuminator.responses);
     this.sections = {}; //{type: Section()}
