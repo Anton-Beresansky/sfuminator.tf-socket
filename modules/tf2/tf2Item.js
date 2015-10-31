@@ -1,6 +1,6 @@
 module.exports = TF2Item;
 
-var Price = require("../../price.js");
+var Price = require("../price.js");
 var CurrenciesDefindex = {
     ScrapMetal: 5000,
     ReclaimedMetal: 5001,
