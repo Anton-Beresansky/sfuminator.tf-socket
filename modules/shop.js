@@ -208,7 +208,7 @@ Shop.prototype.canBeSold = function (item) {
             item.isTradable() &&
             item.isPriced() &&
             this.verifyMineItemPriceRange(item) &&
-            this.count.get(item) < this.getLimit(item)
+            this.count.getForTF2(item) < this.getLimit(item)
         );
     }
     return false;

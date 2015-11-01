@@ -75,6 +75,20 @@ ShopItemCount.prototype.get = function (item) {
 };
 
 /**
+ * Get counter of a given item
+ * @param {TF2Item} item
+ * @returns {ShopItemCounter}
+ */
+ShopItemCount.prototype.getForTF2 = function (item) {
+    var index = this.getTF2Index(item);
+    if (index >= 0) {
+        return this._counters[index];
+    } else {
+        return new ShopItemCounter({defindex: item.getDefindex(), quality: item.getQuality()});
+    }
+};
+
+/**
  * Get index from counter list given item
  * @param {ShopItem} item
  * @returns {Number}
@@ -88,13 +102,22 @@ ShopItemCount.prototype.getIndex = function (item) {
     return -1;
 };
 
+ShopItemCount.prototype.getTF2Index = function (item) {
+    for (var i = 0; i < this._counters.length; i += 1) {
+        if (this._counters[i].canAddAsTF2(item)) {
+            return i;
+        }
+    }
+    return -1;
+};
+
 /**
  * Make a new Shop Item Counter
  * @param {ShopItem} item
  * @returns {ShopItemCounter}
  */
 ShopItemCount.prototype.makeCounter = function (item) {
-    if(item.isTF2Item()) {
+    if (item.isTF2Item()) {
         return new ShopItemCounter({defindex: item.getItem().getDefindex(), quality: item.getItem().getQuality()});
     }
 };
