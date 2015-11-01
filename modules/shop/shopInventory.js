@@ -143,7 +143,7 @@ ShopInventory.prototype._parseTF2ItemsToAdd = function (newItems) {
         var item_exist = false;
         for (var j = 0; j < this.items.length; j += 1) {
             if (this.items[j].isTF2Item()) {
-                if (newItems[i].getOriginalID() === this.items[i].getItem().getOriginalID()) {
+                if (newItems[i].getOriginalID() === this.items[i].getID()) {
                     item_exist = true;
                     //If item already exist, tf2item gets updated
                     //This will handle new ids due to bot ownership change
