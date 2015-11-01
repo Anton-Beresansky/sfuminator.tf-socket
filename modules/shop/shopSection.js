@@ -123,7 +123,7 @@ Section.prototype.add = function (shopItem) {
  * @param {ShopItem} shopItem
  */
 Section.prototype.remove = function (shopItem) {
-    if (this.getItemIndex(item.getID()) >= 0) {
+    if (this.getItemIndex(shopItem.getID()) >= 0) {
         this.toRemove.push(shopItem);
     }
 };
