@@ -235,8 +235,14 @@ BotPorting.prototype.getPortedTradeOffer = function (shopTrade) {
     var trade = shopTrade.valueOf();
     trade.additional = shopTrade.getStatusInfo();
     trade.steamid = shopTrade.partner.getSteamid();
+    var assets = shopTrade.getAssets();
     for (var i = 0; i < trade.items.me.length; i += 1) {
-        trade.items.me[i].id = this.shop.getItem(trade.items.me[i].id).getItem().getID().toString();
+        for (var z = 0; z < assets.length; z += 1) {
+            if (trade.items.me[i].id === assets[z].getID()) {
+                trade.items.me[i].id = assets[z].getItem().getID().toString();
+                break;
+            }
+        }
     }
     for (var i = 0; i < trade.items.them.length; i += 1) {
         trade.items.them[i].id = trade.items.them[i].id.toString();
