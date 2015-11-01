@@ -4,13 +4,20 @@ ACCOUNTS = {
     "76561198045065602": {username: "axe_fish", password: "emvalerio?", steamid: "76561198045065602"},
     "76561198189662807": {username: "sfumin", password: "Error36ismadeup", steamid: "76561198189662807"},
     "76561198145778912": {username: "sfuminator", password: "3-.skate.-3", steamid: "76561198145778912"},
-    "76561198195936315": {username: "sfuminator1", password: "noMaybeNotYet5", steamid: "76561198195936315", steamApiKey: "EFF763E361AE251C6A3A79FE9DA23F17"},
+    "76561198195936315": {
+        username: "sfuminator1",
+        password: "noMaybeNotYet5",
+        steamid: "76561198195936315",
+        steamApiKey: "EFF763E361AE251C6A3A79FE9DA23F17"
+    },
     "76561198228007284": {username: "sfuminator2", password: "wipeMyAssWithDogs1", steamid: "76561198228007284"},
     "76561198195909649": {username: "sfuminator3", password: "theStadiumIsShort", steamid: "76561198195909649"},
     "76561198195946391": {username: "sfuminator4", password: "fuckYourTightThumb", steamid: "76561198195946391"}
 };
 var CFG = JSON.parse(require("fs").readFileSync("../socket_config.json"));
-myAccount = ACCOUNTS[CFG.sfuminator.bots.trading[0]];
+for (var steamid in CFG.sfuminator.bots.trading) {
+    myAccount = ACCOUNTS[steamid];
+}
 console.log("My account: " + JSON.stringify(myAccount));
 
 var SOFTWARE_VERSION = "v4 beta";
@@ -351,7 +358,7 @@ sfr.on("postProfileComment", function (steamid, message) {
         browser.post("http://steamcommunity.com/comment/Profile/post/" + steamid + "/-1/", options, function (result) {
             if (!result.hasOwnProperty("success") || result.success !== true) {
                 debugmsg("ERROR: received bad answer when posting profile comment (sessionID: " + sessionID + ") - " +
-                        ((result.hasOwnProperty("success")) ? ("Success: " + result.success) : ("Bad response: " + result)));
+                    ((result.hasOwnProperty("success")) ? ("Success: " + result.success) : ("Bad response: " + result)));
                 onPostCommentError(function (retry) {
                     if (retry) {
                         sfr.emit("postProfileComment", steamid, message);
@@ -524,16 +531,16 @@ var _receivedOffers = null;
 function checkTradeOffersChanges() {
     setInterval(function () {
         tradeOffersChanged(
-                function (result) {
-                    if (result) {
-                        onSentTradeOffersChange(result);
-                    }
-                },
-                function (result) {
-                    if (result) {
-                        onReceivedTradeOffersChange(result);
-                    }
-                });
+            function (result) {
+                if (result) {
+                    onSentTradeOffersChange(result);
+                }
+            },
+            function (result) {
+                if (result) {
+                    onReceivedTradeOffersChange(result);
+                }
+            });
     }, 1500);
 }
 function tradeOffersChanged(onSentChange, onReceivedChange) {
@@ -817,7 +824,10 @@ function endTradeProcedure(result, thisTrade) {
 function startHoldQueueProcedure(tradeInfo) {
     var steamid = tradeInfo.partnerID;
     var hisFirstID = tradeInfo.hisItems[0].id;
-    sfr.emit("steamMessage", {steamid: steamid, message: "I'll keep the items for you another minute, waiting your mail confirmation."});
+    sfr.emit("steamMessage", {
+        steamid: steamid,
+        message: "I'll keep the items for you another minute, waiting your mail confirmation."
+    });
     sfr.pendingMailVerifications.push(tradeInfo.partnerID);
     sfr.lockPendingMailVerificationChanges();
     sfr.socket.queueHoldTrade(tradeInfo.partnerID, function () {
@@ -925,8 +935,8 @@ function bot_cmd(message, moderator_steamid) {
         additional = additional.slice(0, additional.length - 1);
     }
     if (botCommands.hasOwnProperty(command) &&
-            ((moderators.hasOwnProperty(moderator_steamid)) && (botCommands[command].permission >= moderators[moderator_steamid].permission) ||
-                    (botCommands[command].permission === 3))) {
+        ((moderators.hasOwnProperty(moderator_steamid)) && (botCommands[command].permission >= moderators[moderator_steamid].permission) ||
+        (botCommands[command].permission === 3))) {
         var pass_additional = false;
         var pass_callback = false;
         if (botCommands[command].hasOwnProperty("callback") && botCommands[command].callback) {
@@ -1249,7 +1259,7 @@ botCommands = {
                     myStructure = myStructure[selectors[x]];
                     stringStructure += "." + selectors[x];
                 } else {
-                    return{message: "Cannot read property " + selectors[x] + " of " + stringStructure};
+                    return {message: "Cannot read property " + selectors[x] + " of " + stringStructure};
                 }
             }
             var stringified = JSON.stringify(myStructure, null, "\t");
@@ -1338,12 +1348,20 @@ botCommands = {
                 flag_status = "error";
             }
             if (flag_status === "available") {
-                botCommands.chat.chats[moderator_steamid] = {modID: moderator_steamid, partnerID: argument, status: "active"};
+                botCommands.chat.chats[moderator_steamid] = {
+                    modID: moderator_steamid,
+                    partnerID: argument,
+                    status: "active"
+                };
                 message = "You are now chatting with user " + sfr.users[argument].personaname + ", to close the chat: #closeChat";
                 keepAliveChat(moderator_steamid);
             }
             if (flag_status === "passive") {
-                botCommands.chat.chats[moderator_steamid] = {modID: moderator_steamid, partnerID: argument, status: "passive"};
+                botCommands.chat.chats[moderator_steamid] = {
+                    modID: moderator_steamid,
+                    partnerID: argument,
+                    status: "passive"
+                };
                 message = "You are now in passive mode, you will receive all messages sent to the bot";
             }
             return {message: message};
@@ -1499,8 +1517,10 @@ botCommands = {
                         callback({message: "But got problems updating tf2outpost: " + response.message});
                     }
                 });
-                return {message: "Updated key price! Now is " + finalRefinedPrice + " (" + newKeyPrice + " scrap). "
-                            + "Price changed by " + ((deltaPrice >= 0) ? "+" : "") + deltaPrice + " scrap"};
+                return {
+                    message: "Updated key price! Now is " + finalRefinedPrice + " (" + newKeyPrice + " scrap). "
+                    + "Price changed by " + ((deltaPrice >= 0) ? "+" : "") + deltaPrice + " scrap"
+                };
             } else {
                 return {message: "Given price is not a valid scrap price"};
             }
@@ -1656,8 +1676,8 @@ SteamTrade.prototype.loadPersonInventory = function (steamid, callback) {
             return;
         }
         inventory = inventory
-                .concat(mergeWithDescriptions(body.rgInventory, body.rgDescriptions, contextid))
-                .concat(mergeWithDescriptions(body.rgCurrency, body.rgDescriptions, contextid));
+            .concat(mergeWithDescriptions(body.rgInventory, body.rgDescriptions, contextid))
+            .concat(mergeWithDescriptions(body.rgCurrency, body.rgDescriptions, contextid));
         if (body.more) {
             this.emit('debug', 'loading my inventory: continuing from ' + body.more_start);
             this._request.get({
@@ -1726,9 +1746,9 @@ function updateOutpostKeyPrice(keyPrice, callback) {
     outpost.setCookie("uhash=331bfaba3e70706cc5eb9666d149e6fd");
     outpost.setHeader("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:12.0) Gecko/20100101 Firefox/21.0");
     var notes = "[color=#00CCFF][b]Buying for " + keyPrice + " ref each[/b][/color] \n\n"
-            + "If you want you can use my bot: http://steamcommunity.com/id/axefish \n"
-            + "Type in the chat '#magic []' (replacing [] with the number of keys you want to sell) \n"
-            + "bot will leave you a trade offer.";
+        + "If you want you can use my bot: http://steamcommunity.com/id/axefish \n"
+        + "Type in the chat '#magic []' (replacing [] with the number of keys you want to sell) \n"
+        + "bot will leave you a trade offer.";
     var options = {
         action: "trade.notes_edit",
         hash: "331bfaba3e70706cc5eb9666d149e6fd",
