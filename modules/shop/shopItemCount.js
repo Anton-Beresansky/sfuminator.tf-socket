@@ -1,6 +1,8 @@
 module.exports = ShopItemCount;
 
 var Logs = require("../../lib/logs.js");
+var ShopItem = require("../../modules/shop/inventory/shopItem.js");
+var TF2Item = require("../../modules/tf2/tf2Item.js");
 
 /**
  * Keeps count of the items available in the shop
@@ -28,27 +30,35 @@ ShopItemCount.prototype.update = function (toAdd, toRemove) {
 
 /**
  * Will add item to the counter
- * @param {ShopItem} item
+ * @param {TF2Item|ShopItem} _item
  */
-ShopItemCount.prototype.add = function (item) {
+ShopItemCount.prototype.add = function (_item) {
+    var item = _item;
+    if (_item instanceof ShopItem) {
+        item = _item.getItem();
+    }
     this._inject(item, "increase");
 };
 
 /**
  * Will remove item from the counter
- * @param {ShopItem} item
+ * @param {TF2Item|ShopItem} _item
  */
-ShopItemCount.prototype.remove = function (item) {
+ShopItemCount.prototype.remove = function (_item) {
+    var item = _item;
+    if (_item instanceof ShopItem) {
+        item = _item.getItem();
+    }
     this._inject(item, "decrease");
 };
 
 /**
- * Inject ShopItem and action in order to change count
- * @param {ShopItem} item
+ * Inject TF2Item and action in order to change count
+ * @param {TF2Item} item
  * @param {String} action (increase, decrease)
  */
 ShopItemCount.prototype._inject = function (item, action) {
-    if (item.getSectionID() !== "") {
+    if (item.shopType !== "") {
         var index = this.getIndex(item);
         if (index >= 0) {
             this._counters[index][action]();
@@ -62,7 +72,7 @@ ShopItemCount.prototype._inject = function (item, action) {
 
 /**
  * Get counter of a given item
- * @param {ShopItem} item
+ * @param {TF2Item} item
  * @returns {ShopItemCounter}
  */
 ShopItemCount.prototype.get = function (item) {
@@ -75,36 +85,13 @@ ShopItemCount.prototype.get = function (item) {
 };
 
 /**
- * Get counter of a given item
- * @param {TF2Item} item
- * @returns {ShopItemCounter}
- */
-ShopItemCount.prototype.getForTF2 = function (item) {
-    var index = this.getTF2Index(item);
-    if (index >= 0) {
-        return this._counters[index];
-    } else {
-        return new ShopItemCounter({defindex: item.getDefindex(), quality: item.getQuality()});
-    }
-};
-
-/**
  * Get index from counter list given item
- * @param {ShopItem} item
+ * @param {TF2Item} item
  * @returns {Number}
  */
 ShopItemCount.prototype.getIndex = function (item) {
     for (var i = 0; i < this._counters.length; i += 1) {
-        if (this._counters[i].canAddAsTF2(item.getItem())) {
-            return i;
-        }
-    }
-    return -1;
-};
-
-ShopItemCount.prototype.getTF2Index = function (item) {
-    for (var i = 0; i < this._counters.length; i += 1) {
-        if (this._counters[i].canAddAsTF2(item)) {
+        if (this._counters[i].canAdd(item)) {
             return i;
         }
     }
@@ -113,13 +100,11 @@ ShopItemCount.prototype.getTF2Index = function (item) {
 
 /**
  * Make a new Shop Item Counter
- * @param {ShopItem} item
+ * @param {TF2Item} item
  * @returns {ShopItemCounter}
  */
 ShopItemCount.prototype.makeCounter = function (item) {
-    if (item.isTF2Item()) {
-        return new ShopItemCounter({defindex: item.getItem().getDefindex(), quality: item.getItem().getQuality()});
-    }
+    return new ShopItemCounter({defindex: item.defindex, quality: item.quality});
 };
 
 /**
@@ -162,7 +147,7 @@ ShopItemCounter.prototype.valueOf = function () {
  * @param {TF2Item} item
  * @returns {Boolean}
  */
-ShopItemCounter.prototype.canAddAsTF2 = function (item) {
+ShopItemCounter.prototype.canAdd = function (item) {
     for (var property in this.identifiers) {
         if (this.identifiers[property] !== item[property]) {
             return false;
