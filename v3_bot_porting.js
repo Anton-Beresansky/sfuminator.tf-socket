@@ -5,7 +5,7 @@ var API = require("./lib/api.js");
 var Versioning = require("./lib/dataVersioning.js");
 
 /**
- * Bot porting class<br>
+ * Bot porting class
  * Compatibility layer interface for bot v3 and server v4
  * @param {Sfuminator} sfuminator
  * @returns {BotPorting}
