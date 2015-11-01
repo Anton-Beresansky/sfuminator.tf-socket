@@ -187,6 +187,9 @@ function ShopItemDataStructure(shopItem) {
     if (shopItem.isMineItem() && shopItem.item.isPainted()) {
         this.paint_color = shopItem.item.getPaintColor();
     }
+    if (this.id !== shopItem.getItem().getID()) {
+        this.real_id = shopItem.getItem().getID();
+    }
 }
 
 /**
@@ -210,10 +213,13 @@ ShopItem.prototype.getCompressed = function () {
     for (property in CompressionLookup.schema) {
         if (itemValue.hasOwnProperty(property) && itemValue[property]) {
             if (!CompressionLookup.values.hasOwnProperty(property)) {
+                //Schema - Direct compression lookup
                 compressedItem[CompressionLookup.schema[property]] = itemValue[property];
             } else if (typeof CompressionLookup.values[property] === "function") {
+                //Schema - Compression lookup via function
                 compressedItem[CompressionLookup.schema[property]] = CompressionLookup.values[property](itemValue[property]);
             } else {
+                //Schema - Compression lookup via set of values
                 compressedItem[CompressionLookup.schema[property]] = CompressionLookup.values[property][itemValue[property]];
             }
         }
@@ -221,7 +227,16 @@ ShopItem.prototype.getCompressed = function () {
     var compressedAttributes = {};
     for (property in CompressionLookup.unique_identifiers) {
         if (itemValue.hasOwnProperty(property) && itemValue[property]) {
-            compressedAttributes[CompressionLookup.unique_identifiers[property]] = itemValue[property];
+            if (!CompressionLookup.values.hasOwnProperty(property)) {
+                //Item - Direct compression lookup
+                compressedAttributes[CompressionLookup.unique_identifiers[property]] = itemValue[property];
+            } else if (typeof CompressionLookup.values[property] === "function") {
+                //Item - Compression lookup via function
+                compressedAttributes[CompressionLookup.unique_identifiers[property]] = CompressionLookup.values[property](itemValue[property]);
+            } else {
+                //Item - Compression lookup via set of values
+                compressedAttributes[CompressionLookup.unique_identifiers[property]] = CompressionLookup.values[property][itemValue[property]];
+            }
         }
     }
     compressedItem[CompressionLookup.items_group] = [compressedAttributes];

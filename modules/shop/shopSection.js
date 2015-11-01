@@ -94,7 +94,10 @@ Section.prototype.itemExist = function (id) {
 Section.prototype.getCompressedItems = function () {
     for (var i = 0; i < this.compressedItems.length; i += 1) {
         for (var j = 0; j < this.compressedItems[i][CompressionLookup.items_group].length; j += 1) {
-            this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.reserved_to] = this.shop.reservations.get(this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.id]).getHolder();
+            var holder = this.shop.reservations.get(this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.id]).getHolder();
+            if (holder) {
+                this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.reserved_to] = holder;
+            }
         }
     }
     return this.compressedItems;
