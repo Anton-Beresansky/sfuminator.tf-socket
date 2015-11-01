@@ -22,7 +22,8 @@ function CompressionLookup() {
         paint_color: "v",
         reserved_to: "w",
         relative_price: "f",
-        currency: "g"
+        currency: "g",
+        real_id: "m"
     };
     this.values = {
         currency: {
