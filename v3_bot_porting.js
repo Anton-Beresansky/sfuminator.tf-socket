@@ -177,7 +177,7 @@ BotPorting.prototype._anticipateItemRemoval = function (shopTrade) {
         var toRemove = [], toAdd = [];
         var assets = shopTrade.getAssets();
         for (var i = 0; i < assets.length; i += 1) {
-            if (assets[i].ownedBySfuminator()) {
+            if (!assets[i].isMineItem()) {
                 toRemove.push(assets[i].getItem());
             } else {
                 toAdd.push(assets[i].getItem());
