@@ -29,6 +29,9 @@ function Shop(sfuminator) {
     this.tf2Currency.setCloud(this.cloud);
     this.bots = this.getBots();
     this.inventory = new ShopInventory(this);
+    /**
+     * @type {Reservations}
+     */
     this.reservations = new Reservations(this.db);
     this.instanceID = new Date().getTime();
     this.countLimit = {Strange: 0, Vintage: 3, Genuine: 3, Haunted: 3, _any: 5, _price: {over: 6, limit: 3}};
@@ -37,7 +40,10 @@ function Shop(sfuminator) {
      */
     this.count = new ItemCount();
     this.search = new Search(this, this.sfuminator.responses);
-    this.sections = {}; //{type: Section()}
+    /**
+     * @type {Section[]}
+     */
+    this.sections = {};
     this.hiddenSections = ["currency"];
 
     events.EventEmitter.call(this);

@@ -1,18 +1,7 @@
 module.exports = TF2Item;
 
 var Price = require("../price.js");
-var CurrenciesDefindex = {
-    ScrapMetal: 5000,
-    ReclaimedMetal: 5001,
-    RefinedMetal: 5002,
-    MannCoKey: 5021
-};
-var Qualities = [
-    "Normal", "Genuine", "rarity2", "Vintage", "rarity3",
-    "Unusual", "Unique", "Community", "Valve", "Self-Made",
-    "Customized", "Strange", "Completed", "Haunted",
-    "Collector's", "Decorated Weapon"
-];
+var TF2Constants = require("./tf2Constants.js");
 
 /**
  * General purpose TF2Item class
@@ -70,7 +59,7 @@ TF2Item.prototype.getName = function () {
  * @returns {String}
  */
 TF2Item.prototype.getQualityName = function () {
-    return Qualities[this.getQuality()];
+    return TF2Constants.qualities[this.getQuality()];
 };
 
 /**
@@ -134,10 +123,10 @@ TF2Item.prototype.isHat = function () {
  * @returns {boolean}
  */
 TF2Item.prototype.isCurrency = function () {
-    return (this.defindex === CurrenciesDefindex.ScrapMetal
-    || this.defindex === CurrenciesDefindex.ReclaimedMetal
-    || this.defindex === CurrenciesDefindex.RefinedMetal
-    || this.defindex === CurrenciesDefindex.MannCoKey);
+    return (this.defindex === TF2Constants.defindexes.ScrapMetal
+    || this.defindex === TF2Constants.defindexes.ReclaimedMetal
+    || this.defindex === TF2Constants.defindexes.RefinedMetal
+    || this.defindex === TF2Constants.defindexes.MannCoKey);
 };
 
 /**

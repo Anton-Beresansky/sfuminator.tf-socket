@@ -101,6 +101,10 @@ BotCredentials.prototype.getPassword = function () {
     return this.botCredentials.password;
 };
 
+BotCredentials.prototype.getApiKey = function () {
+    return this.botCredentials.steamApiKey;
+};
+
 BotCredentials.prototype.hasSteamGuardCode = function () {
     return this.botCredentials.hasOwnProperty("steamGuardCode");
 };

@@ -2,6 +2,7 @@ module.exports = TradingController;
 
 var Logs = require('./../../lib/logs.js');
 var TradeConstants = require('./../trade/tradeConstants.js');
+var TraderBot = require('./../../bots/traderBot.js');
 
 /**
  * @class TradingController
@@ -18,15 +19,15 @@ function TradingController(sfuminator) {
  * @param {ShopTrade} newShopTrade
  */
 TradingController.prototype.startOffNewShopTrade = function (newShopTrade) {
-    //var assignedBot = this.getBestAvailableBot();
-    //if (!assignedBot) {
-    //    this.log.error("Wasn't able to assign bot");
-    //} else {
-    //    assignedBot.assignShopTrade(newShopTrade);
-    newShopTrade.setBot(this.sfuminator.users.get(this.sfuminator.shop.getBots()[0].getSteamid())); //temp
-    newShopTrade.reserveItems();
-    newShopTrade.setAsSending();
-    //}
+    var assignedBot = this.getBestAvailableBot();
+    if (!assignedBot) {
+        this.log.error("Wasn't able to assign bot");
+    } else {
+        assignedBot.assignShopTrade(newShopTrade);
+        newShopTrade.setBot(this.sfuminator.users.get(this.sfuminator.shop.getBots()[0].getSteamid())); //temp
+        newShopTrade.reserveItems();
+        newShopTrade.setAsSending();
+    }
 };
 
 /**

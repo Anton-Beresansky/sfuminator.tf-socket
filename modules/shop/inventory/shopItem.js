@@ -41,6 +41,12 @@ ShopItem.prototype.getGameCode = function () {
     return this.game.getID();
 };
 
+ShopItem.prototype.getContextID = function () {
+    if (this.isTF2Item()) {
+        return SteamGames.CONTEXT.GAME_ITEM;
+    }
+};
+
 ShopItem.prototype.isTF2Item = function () {
     return this.game.getID() === SteamGames.TF2.getID();
 };
@@ -76,7 +82,7 @@ ShopItem.prototype.getType = function () {
                 if (this.getPrice().toMetal() <= this.shop.ratio.hats.weSell.maximum) {
                     return "hats";
                 }
-            } else if (this.item.isCurrency()) {
+            } else if (this.isCurrency()) {
                 return "currency";
             }
         }
@@ -108,12 +114,20 @@ ShopItem.prototype.isMineItem = function () {
 };
 
 /**
+ * Item used as currency
+ * @returns {Boolean}
+ */
+ShopItem.prototype.isCurrency = function () {
+    return this.item.isCurrency();
+};
+
+/**
  * Get Shop Section Item price.
  * Price is related to shop section.
  * @returns {Price}
  */
 ShopItem.prototype.getPrice = function () {
-    if (this.isMineItem()) {
+    if (this.isMineItem() && !this.isCurrency()) {
         return this.getMinePrice();
     }
     return this.item.getPrice();
@@ -151,6 +165,15 @@ ShopItem.prototype.getMinePrice = function () {
     }
     this.minePrice = finalPrice;
     return finalPrice;
+};
+
+ShopItem.prototype.getTradeOfferAsset = function () {
+    return {
+        appid: this.getGameCode(),
+        contextid: this.getContextID(),
+        amount: 1,
+        assetid: this.getItem().getID().toString()
+    }
 };
 
 /**

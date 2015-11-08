@@ -119,6 +119,9 @@ Backpack.prototype.getItem = function (itemID) {
     return false;
 };
 
+/**
+ * @returns {TF2Item[]}
+ */
 Backpack.prototype.getItems = function () {
     if (this.items instanceof Array) {
         return this.items;
