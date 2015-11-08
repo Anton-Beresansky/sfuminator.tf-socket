@@ -6,6 +6,7 @@ var Logs = require("../lib/logs.js");
 var Steam = require("steam");
 var SteamGames = require("../lib/steamGames.js");
 var SteamTradeOffers = require('steam-tradeoffers');
+var SteamWebLogOn = require('steam-weblogon');
 
 /**
  * @class SteamClient
@@ -19,6 +20,7 @@ function SteamClient(steamid) {
     this.client = new Steam.SteamClient();
     this.user = new Steam.SteamUser(this.client);
     this.friends = new Steam.SteamFriends(this.client);
+    this.tradeOffers = new SteamTradeOffers();
 
     this.loggingIn = false;
     this.lastLoginSucceded = false;
@@ -27,6 +29,7 @@ function SteamClient(steamid) {
     this.tradeOffersCount = 0;
     this.gamePlayed = null;
 
+    this.steamWebLogOn = new SteamWebLogOn(this.client, this.user);
     this.log = new Logs({applicationName: "Steam " + this.steamid, color: "yellow", dim: true});
     events.EventEmitter.call(this);
 
@@ -40,6 +43,7 @@ SteamClient.prototype._bindHandlers = function () {
     this.on('loggedIn', function () {
         self.lastLoginSucceded = true;
         self.attemptsSinceLastSuccessfulLogin = 0;
+        self.webLogin();
     });
     this.client.on('error', function () {
         if (!self.isLogged()) {
@@ -92,6 +96,18 @@ SteamClient.prototype.login = function () {
 
 SteamClient.prototype.isLoggingIn = function () {
     return this.loggingIn;
+};
+
+SteamClient.prototype.webLogin = function () {
+    var self = this;
+    this.steamWebLogOn.webLogOn(function (webSessionID, cookies) {
+        self.log.debug("WebLogged!");
+        self.tradeOffers.setup({
+            sessionID: webSessionID,
+            webCookie: cookies,
+            APIKey: self.credentials.getApiKey()
+        });
+    });
 };
 
 SteamClient.prototype.getTradeOffersCount = function () {
