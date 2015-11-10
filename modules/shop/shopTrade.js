@@ -311,7 +311,9 @@ ShopTrade.prototype.dereserveShopItems = function () {
     this.log.debug("Dereserving items", 3);
     this.logAssets(3);
     for (var i = 0; i < this.assets.length; i += 1) {
+        this.log.debug("Checking if reservation for #" + this.assets[i].getID() + " exist");
         if (this.shop.reservations.exist(this.assets[i].getID())) {
+            this.log.debug("Yes, cancelling");
             this.shop.reservations.cancel(this.assets[i].getID());
         }
     }
