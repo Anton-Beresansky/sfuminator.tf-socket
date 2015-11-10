@@ -4,6 +4,7 @@ var CFG = require('./cfg.js');
 var Logs = require('./lib/logs.js');
 var Users = require('./modules/users.js');
 var Shop = require('./modules/shop.js');
+var TradeConstants = require("./modules/trade/tradeConstants.js");
 var TradingController = require('./modules/controllers/tradingController.js');
 var BotsController = require('./modules/controllers/botsController.js');
 var AjaxResponses = require('./modules/ajaxResponses.js');
@@ -341,7 +342,7 @@ Sfuminator.prototype.requestTrade = function (request, mode, callback) {
         trade.verifyItems(function (success) {
             self.log.debug("Request Trade Offer item verification, success: " + success);
             if (success) {
-                if (trade.getPartnerItemCount() > 0 && trade.getShopItemCount() > 0) {
+                if (trade.getPartnerItemCount() > 0 && trade.getShopItemCount() > 0 && trade.getMode() === TradeConstants.mode.MANUAL_TRADE) {
                     callback(self.responses.denyManualMultiItems);
                 } else {
                     self.tradingController.startOffNewShopTrade(trade);
