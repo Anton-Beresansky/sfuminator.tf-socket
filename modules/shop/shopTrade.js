@@ -282,9 +282,8 @@ ShopTrade.prototype.reserveShopItems = function () {
     this.log.debug("Reserving items", 3);
     this.logAssets(3);
     for (var i = 0; i < this.assets.length; i += 1) {
-        var item = this.assets[i].getItem();
-        if (item.getOwner() !== this.getPartner().getSteamid()) {
-            this.shop.reservations.add(this.getPartner().getSteamid(), item.getID());
+        if (!this.assets[i].isMineItem()) {
+            this.shop.reservations.add(this.getPartner().getSteamid(), this.assets[i].getID());
         }
     }
 };
