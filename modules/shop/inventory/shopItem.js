@@ -11,9 +11,10 @@ var SteamGames = require("../../../lib/steamGames.js");
  * @class ShopItem
  * @param {Shop} shop
  * @param {TF2Item} item
+ * @param {String} mine
  * @returns {ShopItem}
  */
-function ShopItem(shop, item) {
+function ShopItem(shop, item, mine) {
     /**
      * @type {Shop}
      */
@@ -27,6 +28,9 @@ function ShopItem(shop, item) {
     }
     this.id = this.item.getID();
     this.section = this.getType();
+    if(mine && mine === "mine"){
+        this.setAsMineSection();
+    }
 }
 
 ShopItem.prototype.setID = function (id) {
