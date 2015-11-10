@@ -97,6 +97,9 @@ Section.prototype.getCompressedItems = function () {
             var holder = this.shop.reservations.get(this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.id]).getHolder();
             if (holder) {
                 this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.reserved_to] = holder;
+            } else {
+                //OFC! OFC!!!!!!! this.compressedItems doesn't change in time, when dereserving, reservation has to be deleted!
+                delete this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.reserved_to]
             }
         }
     }
