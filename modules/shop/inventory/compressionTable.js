@@ -12,18 +12,18 @@ function CompressionLookup() {
         image_url: "c",
         image_url_large: "d",
         used_by_classes: "e",
+        quality: "f",
         shop: "h"
     };
     this.items_group = "i";
     this.unique_identifiers = {
         id: "x",
         level: "y",
-        quality: "z",
-        paint_color: "v",
+        paint_color: "z",
         reserved_to: "w",
-        relative_price: "f",
-        currency: "g",
-        real_id: "m"
+        relative_price: "m",
+        currency: "n",
+        real_id: "o"
     };
     this.values = {
         currency: {
