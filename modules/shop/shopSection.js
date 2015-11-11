@@ -97,6 +97,9 @@ Section.prototype.getCompressedItems = function () {
             var holder = this.shop.reservations.get(this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.id]).getHolder();
             if (holder) {
                 this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.reserved_to] = holder;
+            } else {
+                //OFC! OFC!!!!!!! this.compressedItems doesn't change in time, when dereserving, reservation has to be deleted!
+                delete this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.reserved_to]
             }
         }
     }
@@ -183,7 +186,7 @@ Section.prototype.commitAdds = function () {
 
     for (var i = 0; i < this.toAdd.length; i += 1) {
         var compressedItem = this.toAdd[i].getCompressed();
-        var index = this.getCompressedSchemaItemIndex(this.toAdd[i].getItem().defindex);
+        var index = this.getCompressedSchemaItemIndex(this.toAdd[i]);
         if (index >= 0) {
             this.compressedItems[index][CompressionLookup.items_group].push(compressedItem[CompressionLookup.items_group][0]);
         } else {
@@ -208,13 +211,18 @@ Section.prototype.getItemIndex = function (id) {
 
 /**
  * Get item schema index from shop section compressed item list
- * @param {Number} defindex
+ * @param {ShopItem} shopItem
  * @returns {Number}
  */
-Section.prototype.getCompressedSchemaItemIndex = function (defindex) {
-    for (var i = 0; i < this.compressedItems.length; i += 1) {
-        if (this.compressedItems[i][CompressionLookup.schema.defindex] === defindex) {
-            return i;
+Section.prototype.getCompressedSchemaItemIndex = function (shopItem) {
+    if (shopItem.isTF2Item()) {
+        for (var i = 0; i < this.compressedItems.length; i += 1) {
+            if (
+                this.compressedItems[i][CompressionLookup.schema.defindex] === shopItem.getItem().getDefindex() &&
+                this.compressedItems[i][CompressionLookup.schema.quality] === shopItem.getItem().getQuality()
+            ) {
+                return i;
+            }
         }
     }
     return -1;
