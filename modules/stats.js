@@ -89,9 +89,9 @@ Stats.prototype.fetchNewItems = function () {
         itemList = itemList.concat(sectionItems.slice(sectionItems.length - this.max_new_items, sectionItems.length));
     }
     itemList.sort(function (a, b) {
-        if (a.id > b.id)
+        if (a.getItem().getID() > b.getItem().getID())
             return -1;
-        if (a.id < b.id)
+        if (a.getItem().getID() < b.getItem().getID())
             return 1;
         return 0;
     });
