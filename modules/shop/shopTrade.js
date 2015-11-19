@@ -69,7 +69,7 @@ ShopTrade.prototype.isClosed = function () {
 ShopTrade.prototype.setAsSending = function () {
     if (!this.getMode()) {
         this.log.error("No trade mode set, can't send trade");
-    } else if (!this.shop.isBot(this.getBot().getSteamid())) {
+    } else if (!this.shop.isBot(this.getAssignedBotUser().getSteamid())) {
         this.log.error("No bot steamid set, can't send trade");
     } else {
         this.setStatus(TradeConstants.status.HOLD);
@@ -144,7 +144,7 @@ ShopTrade.prototype.getClientChanges = function (last_update_date) {
  */
 ShopTrade.prototype.valueOf = function () {
     return {
-        botSteamid: this.getBot().getSteamid(),
+        botSteamid: this.getAssignedBotUser().getSteamid(),
         partnerID: this.getPartner().getSteamid(),
         mode: this.getMode(),
         status: this.getStatus(),
@@ -342,7 +342,7 @@ ShopTrade.prototype.setBot = function (bot) {
  * Get bot steamid assigned to this Shop Trade
  * @returns {User}
  */
-ShopTrade.prototype.getBot = function () {
+ShopTrade.prototype.getAssignedBotUser = function () {
     return this.bot;
 };
 
@@ -689,7 +689,7 @@ TradeDb.prototype._getSaveQuery = function () {
         + "'" + this.trade.getMode() + "',"
         + "'" + this.trade.getStatus() + "',"
         + "'" + this.trade.getStatusInfo() + "',"
-        + "'" + this.trade.getBot().getSteamid() + "'"
+        + "'" + this.trade.getAssignedBotUser().getSteamid() + "'"
         + ");";
 };
 TradeDb.prototype._getSaveItemsQuery = function () {

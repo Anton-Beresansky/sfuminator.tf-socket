@@ -7,6 +7,7 @@ var Steam = require("steam");
 var SteamGames = require("../lib/steamGames.js");
 var SteamTradeOffers = require('steam-tradeoffers');
 var SteamWebLogOn = require('steam-weblogon');
+var TeamFortress2 = require('tf2');
 
 /**
  * @class SteamClient
@@ -21,6 +22,7 @@ function SteamClient(steamid) {
     this.user = new Steam.SteamUser(this.client);
     this.friends = new Steam.SteamFriends(this.client);
     this.tradeOffers = new SteamTradeOffers();
+    this.tf2 = new TeamFortress2(this.user);
 
     this.loggingIn = false;
     this.lastLoginSucceded = false;
@@ -77,6 +79,10 @@ SteamClient.prototype._bindHandlers = function () {
     });
 };
 
+SteamClient.prototype.getSteamid = function () {
+    return this.steamid;
+};
+
 SteamClient.prototype.login = function () {
     var self = this;
     if (this.isLogged()) {
@@ -94,10 +100,6 @@ SteamClient.prototype.login = function () {
     }
 };
 
-SteamClient.prototype.isLoggingIn = function () {
-    return this.loggingIn;
-};
-
 SteamClient.prototype.webLogin = function () {
     var self = this;
     this.steamWebLogOn.webLogOn(function (webSessionID, cookies) {
@@ -108,6 +110,18 @@ SteamClient.prototype.webLogin = function () {
             APIKey: self.credentials.getApiKey()
         });
     });
+};
+
+SteamClient.prototype.isConnected = function () {
+    return this.client.connected;
+};
+
+SteamClient.prototype.isLogged = function () {
+    return this.client.loggedOn;
+};
+
+SteamClient.prototype.isLoggingIn = function () {
+    return this.loggingIn;
 };
 
 SteamClient.prototype.getTradeOffersCount = function () {
@@ -146,16 +160,27 @@ SteamClient.prototype.getPlayingGame = function () {
     return this.gamePlayed;
 };
 
-SteamClient.prototype.isConnected = function () {
-    return this.client.connected;
-};
-
-SteamClient.prototype.isLogged = function () {
-    return this.client.loggedOn;
-};
-
-SteamClient.prototype.getSteamid = function () {
-    return this.steamid;
+/**
+ * @param {TF2Item[]} tf2Items
+ * @param {Function} callback
+ */
+SteamClient.prototype.craftTF2Items = function (tf2Items, callback) {
+    if (!this.isPlayingGame() || this.getPlayingGame().getID() === SteamGames.TF2.getID()) {
+        this.playGame(SteamGames.TF2);
+    }
+    var itemIDs = [];
+    for (var i = 0; i < tf2Items.length; i += 1) {
+        itemIDs.push(tf2Items[i].getID());
+    }
+    this.log.debug("Crafting: " + JSON.stringify(itemIDs));
+    this.tf2.craft(itemIDs);
+    setTimeout(function () {
+        callback();
+    }, 3000);
+    /*this.tf2.on('craftingComplete', function (recipe, itemsGained) {
+     callback();
+     callback = null;
+     });*/
 };
 
 SteamClient.prototype._fireLogOn = function () {

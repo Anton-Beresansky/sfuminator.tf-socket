@@ -251,7 +251,7 @@ Shop.prototype.isBot = function (steamid) {
  * @param {String} steamid
  * @returns {User|Boolean} Will return false if bot doesn't exist
  */
-Shop.prototype.getBot = function (steamid) {
+Shop.prototype.getBotUser = function (steamid) {
     if (this.isBot(steamid)) {
         return this.users.get(steamid);
     }
