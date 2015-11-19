@@ -13,6 +13,9 @@ var TradeConstants = require("../modules/trade/tradeConstants.js");
 function TraderBot(user) {
     this.user = user;
     this.steamid = user.getSteamid();
+    /**
+     * @type {SteamClient}
+     */
     this.steamClient = new SteamClient(this.steamid);
     this.steamClient.login();
 
@@ -89,7 +92,7 @@ TraderBot.prototype.makeTrade = function (shopTrade) {
         itemsFromThem: itemsFromThem,
         message: "Here you go ;)"
     };
-
+    console.log(options, null, "\t");
     var self = this;
     this.steamClient.tradeOffers.makeOffer(options, function (tradeOfferID) {
         self.steamClient.sendMessage(shopTrade.getPartner().getSteamid(), "BUYA! " + tradeOfferID);

@@ -180,7 +180,7 @@ ShopInventory.prototype._parseTF2ItemsToRemove = function (newItems) {
                 }
             }
 
-            if (!item_exist && !this.shop.getBot(this.items[i].getItem().getOwner()).getTF2Backpack().hasErrored()) {
+            if (!item_exist && !this.shop.getBotUser(this.items[i].getItem().getOwner()).getTF2Backpack().hasErrored()) {
                 itemsToRemove.push(this.items[i]);
                 this.ids.unlink(this.items[i]);
             }

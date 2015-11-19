@@ -18,7 +18,19 @@ function BotsController(sfuminator) {
 BotsController.prototype.loadBots = function () {
     var tradeBotSteamids = this.sfuminator.getCFG().getTradeBotSteamids();
     for (var i = 0; i < tradeBotSteamids.length; i += 1) {
-        this.tradeBots.push(new TraderBot(this.sfuminator.shop.getBot(tradeBotSteamids[i])));
+        this.tradeBots.push(new TraderBot(this.sfuminator.shop.getBotUser(tradeBotSteamids[i])));
+    }
+};
+
+/**
+ * @param {String} steamid
+ * @returns {TraderBot}
+ */
+BotsController.prototype.getBot = function (steamid) {
+    for (var i = 0; i < this.tradeBots.length; i += 1) {
+        if (this.tradeBots[i].getSteamid() === steamid) {
+            return this.tradeBots[i];
+        }
     }
 };
 
