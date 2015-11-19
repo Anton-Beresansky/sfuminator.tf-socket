@@ -87,7 +87,7 @@ function Sfuminator(steamid, tf2Instance, steamTradeInstance) {
     usersFileName = 'sfr_users_' + mySteamID + '.txt';
     socket.setBot(mySteamID);
     this.mySteamid = mySteamID;
-    
+
     this.busy = false;
     this.in_trade = false;
     this.logging = false;
@@ -481,26 +481,44 @@ Sfuminator.prototype.onTradeChange = function (added, _item, themAssets) {
                                 var flagTooMany;
                                 flagTooMany = false;
                                 if (selfie.backpack.itemsCount[item.defindex] > 1) {
-                                    selfie.emit("steamMessage", {steamid: selfie.thisTrade.partnerID, message: "Sorry, I can't accept your: " + item.name + ", I have already too many"});
+                                    selfie.emit("steamMessage", {
+                                        steamid: selfie.thisTrade.partnerID,
+                                        message: "Sorry, I can't accept your: " + item.name + ", I have already too many"
+                                    });
                                     selfie.thisTrade.wrongItems.push(item);
                                 } else {
-                                    selfie.emit("steamMessage", {steamid: selfie.thisTrade.partnerID, message: "Ok, I can accept your: " + item.name});
+                                    selfie.emit("steamMessage", {
+                                        steamid: selfie.thisTrade.partnerID,
+                                        message: "Ok, I can accept your: " + item.name
+                                    });
                                     selfie.thisTrade.hisItems.craftableHats.push(item);
                                 }
                             } else {
-                                selfie.emit("steamMessage", {steamid: selfie.thisTrade.partnerID, message: "Sorry, I can't accept your: " + item.name + ", it is not craftable"});
+                                selfie.emit("steamMessage", {
+                                    steamid: selfie.thisTrade.partnerID,
+                                    message: "Sorry, I can't accept your: " + item.name + ", it is not craftable"
+                                });
                                 selfie.thisTrade.wrongItems.push(item);
                             }
                         } else {
                             if (item.flag_cannot_craft) {
-                                selfie.emit("steamMessage", {steamid: selfie.thisTrade.partnerID, message: "Sorry, I can't accept your: " + item.name + ", it is not craftable"});
+                                selfie.emit("steamMessage", {
+                                    steamid: selfie.thisTrade.partnerID,
+                                    message: "Sorry, I can't accept your: " + item.name + ", it is not craftable"
+                                });
                             } else {
-                                selfie.emit("steamMessage", {steamid: selfie.thisTrade.partnerID, message: "Sorry, I can't accept your: " + item.name});
+                                selfie.emit("steamMessage", {
+                                    steamid: selfie.thisTrade.partnerID,
+                                    message: "Sorry, I can't accept your: " + item.name
+                                });
                             }
                             selfie.thisTrade.wrongItems.push(item);
                         }
                     } else {
-                        selfie.emit("steamMessage", {steamid: selfie.thisTrade.partnerID, message: "Sorry, I can't accept your: " + item.name + ", it is not an hat"});
+                        selfie.emit("steamMessage", {
+                            steamid: selfie.thisTrade.partnerID,
+                            message: "Sorry, I can't accept your: " + item.name + ", it is not an hat"
+                        });
                         selfie.thisTrade.wrongItems.push(item);
                     }
                 });
@@ -650,7 +668,10 @@ Sfuminator.prototype.onTradeReady = function (themAssets) {
                 }
                 if (unexpectedItem) {
                     console.log("Warning: unexpected item: " + offer[x].name);
-                    selfie.emit("steamMessage", {steamid: selfie.thisTrade.partnerID, message: "Wait a second, I'm checking your items, unready and ready again"});
+                    selfie.emit("steamMessage", {
+                        steamid: selfie.thisTrade.partnerID,
+                        message: "Wait a second, I'm checking your items, unready and ready again"
+                    });
                     flagError = true;
                 }
             }
@@ -680,11 +701,16 @@ Sfuminator.prototype.onTradeReady = function (themAssets) {
                     }
                 } else {
                     if (hisHatsCount < selfie.thisTrade.iNeed) {
-                        selfie.emit("steamMessage", {steamid: selfie.thisTrade.partnerID,
+                        selfie.emit("steamMessage", {
+                            steamid: selfie.thisTrade.partnerID,
                             message: "You didn't put enough hats, remember you selected Hat Exchange mode, this means that I trade any Hat for any Hat + Scrap Metal, You have to add "
-                                    + (selfie.thisTrade.iNeed - hisHatsCount) + " hat"});
+                            + (selfie.thisTrade.iNeed - hisHatsCount) + " hat"
+                        });
                     } else {
-                        selfie.emit("steamMessage", {steamid: selfie.thisTrade.partnerID, message: "You added too many hats!"});
+                        selfie.emit("steamMessage", {
+                            steamid: selfie.thisTrade.partnerID,
+                            message: "You added too many hats!"
+                        });
                     }
                 }
             } else {
@@ -693,7 +719,10 @@ Sfuminator.prototype.onTradeReady = function (themAssets) {
                     mxgData += selfie.thisTrade.wrongItems[x].name + ",";
                 }
                 mxgData = mxgData.slice(0, mxgData.length - 1);
-                selfie.emit("steamMessage", {steamid: selfie.thisTrade.partnerID, message: "You have to remove the following items first: " + mxgData});
+                selfie.emit("steamMessage", {
+                    steamid: selfie.thisTrade.partnerID,
+                    message: "You have to remove the following items first: " + mxgData
+                });
             }
         }
     }
@@ -913,12 +942,18 @@ Sfuminator.prototype.tradeOfferStep = function (tradeOffer, status) {
                 selfie.loadPersonBackpack(steamid, function (backpack) {
                     if (backpack === "private") {
                         selfie.endTradeOfferSession(steamid, "private");
-                        selfie.emit("steamMessage", {steamid: steamid, message: "I can't retrive your inventory, is your profile or backpack set to public? You can check here: http://steamcommunity.com/my/edit/settings"});
+                        selfie.emit("steamMessage", {
+                            steamid: steamid,
+                            message: "I can't retrive your inventory, is your profile or backpack set to public? You can check here: http://steamcommunity.com/my/edit/settings"
+                        });
                         return;
                     }
                     if (backpack === "error") {
                         selfie.endTradeOfferSession(steamid, "inventory_error");
-                        selfie.emit("steamMessage", {steamid: steamid, message: "There was an error retriving your inventory, you might have to check your privacy settings."});
+                        selfie.emit("steamMessage", {
+                            steamid: steamid,
+                            message: "There was an error retriving your inventory, you might have to check your privacy settings."
+                        });
                         return;
                     }
                     var response = selfie.verifyTradeOfferItems(tradeOffer, backpack);
@@ -928,12 +963,18 @@ Sfuminator.prototype.tradeOfferStep = function (tradeOffer, status) {
                             selfie.tradeOffer(steamid, tradeItems.myItems, tradeItems.hisItems, "Here you go ;)");
                         } else {
                             selfie.emit("error", "Ohhh shittt! FIX THIS NOW", 1002);
-                            selfie.emit("steamMessage", {steamid: steamid, message: "Unknown error #81, cancelling trade offer, please report this to an admin thanks"});
+                            selfie.emit("steamMessage", {
+                                steamid: steamid,
+                                message: "Unknown error #81, cancelling trade offer, please report this to an admin thanks"
+                            });
                             selfie.endTradeOfferSession(steamid, "error_81");
                         }
                     } else {
                         if (response.result === "fail") {
-                            selfie.emit("steamMessage", {steamid: steamid, message: "Unknown error #82, cancelling trade offer, please report this to an admin thanks"});
+                            selfie.emit("steamMessage", {
+                                steamid: steamid,
+                                message: "Unknown error #82, cancelling trade offer, please report this to an admin thanks"
+                            });
                         } else {
                             selfie.message(steamid, response.result);
                         }
@@ -948,7 +989,10 @@ Sfuminator.prototype.tradeOfferStep = function (tradeOffer, status) {
                 tradeOffer.tradeOfferID = selfie.sentTradeOffers[steamid].tradeOfferID;
                 selfie.message(steamid, "tradeOffer_sent");
             } else {
-                selfie.emit("steamMessage", {steamid: steamid, message: "Unknown error #83, cancelling trade offer, please report this to an admin thanks"});
+                selfie.emit("steamMessage", {
+                    steamid: steamid,
+                    message: "Unknown error #83, cancelling trade offer, please report this to an admin thanks"
+                });
                 selfie.endTradeOfferSession(steamid, "error_83");
             }
         },
@@ -1148,7 +1192,12 @@ Sfuminator.prototype.tradeOffer = function (partnerID, myItems, hisItems, messag
         selfie.tradeOffer(partnerID, message, myItems, hisItems);
         return;
     }
-    selfie.users[partnerID].tradeOffer = {partnerSteamId: partnerID, itemsFromMe: [], itemsFromThem: [], message: message};
+    selfie.users[partnerID].tradeOffer = {
+        partnerSteamId: partnerID,
+        itemsFromMe: [],
+        itemsFromThem: [],
+        message: message
+    };
     selfie.users[partnerID].tradeOffer_flags = {itemsFromMe: false, itemsFromThem: false, pendingTradeOffer: true};
     if (myItems === null) {
         selfie.users[partnerID].tradeOffer.itemsFromMe = [];
@@ -1225,7 +1274,7 @@ Sfuminator.prototype.tradeOffer = function (partnerID, myItems, hisItems, messag
          var hisItemsMetal = hisItems.currency.metal;
          if (hisItemsMetal.hasOwnProperty("quantity") && !isNaN(hisItemsMetal.quantity)) {
          var org_quantity = metal_convertToOrganic(hisItemsMetal.quantity);
-         
+
          for (var x in metals) {
          for (var y in selfie.backpack.metal[metals[x]]) {
          if (selfie.backpack.metal[metals[x]][y].reserved && (selfie.backpack.metal[metals[x]][y].to === partnerID)) {
@@ -1235,7 +1284,7 @@ Sfuminator.prototype.tradeOffer = function (partnerID, myItems, hisItems, messag
          }
          selfie.users[partnerID].tradeOffer_flags.itemsFromThem = true;
          selfie.triggerTradeOffer(partnerID);
-         
+
          } else {
          selfie.emit("error", "tradeOffer: unspecified metal quantity", 29);
          return;
@@ -1282,10 +1331,9 @@ Sfuminator.prototype.endTradeOfferSession = function (steamid, statusinfo) {
 Sfuminator.prototype.triggerTradeOffer = function (steamid) {
     selfie.emit("debug", "Triggering trade offer to " + steamid + "\n" + JSON.stringify(selfie.users[steamid].tradeOffer_flags));
     if (selfie.users[steamid].hasOwnProperty("tradeOffer_flags")
-            && selfie.users[steamid].tradeOffer_flags.pendingTradeOffer
-            && selfie.users[steamid].tradeOffer_flags.itemsFromMe
-            && selfie.users[steamid].tradeOffer_flags.itemsFromThem)
-    {
+        && selfie.users[steamid].tradeOffer_flags.pendingTradeOffer
+        && selfie.users[steamid].tradeOffer_flags.itemsFromMe
+        && selfie.users[steamid].tradeOffer_flags.itemsFromThem) {
         selfie.emit("sendTradeOffer", selfie.users[steamid].tradeOffer);
         selfie.users[steamid].tradeOffer_flags = {itemsFromMe: false, itemsFromThem: false, pendingTradeOffer: false};
     }
@@ -1446,7 +1494,13 @@ Sfuminator.prototype.reserveMetal = function (holderID, total_refineds, total_re
     }
     if (selfie.reserving) {
         self.emit("debug", "reserveMetal: metal reservation added in the queue (|||" + total_refineds + ", ||" + total_reclaimeds + ", |" + total_scraps + " @" + holderID + ")");
-        selfie.reserveQueue.push({holderID: holderID, total_refineds: total_refineds, total_reclaimeds: total_reclaimeds, total_scraps: total_scraps, forced: forced});
+        selfie.reserveQueue.push({
+            holderID: holderID,
+            total_refineds: total_refineds,
+            total_reclaimeds: total_reclaimeds,
+            total_scraps: total_scraps,
+            forced: forced
+        });
     } else {
         selfie.tradeMetalReserve(null, holderID); //Safe precaution
         selfie.reserving = true;
@@ -1468,8 +1522,15 @@ Sfuminator.prototype.reserveMetal = function (holderID, total_refineds, total_re
             return;
         }
 
-        lowTierMetalReserve(total_reclaimeds, total_scraps, {reclaimed: [], scrap: []}, function (low_tier_metal_to_reserve) {
-            var metal_to_reserve = {refined: refineds_to_reserve, reclaimed: low_tier_metal_to_reserve.reclaimed, scrap: low_tier_metal_to_reserve.scrap};
+        lowTierMetalReserve(total_reclaimeds, total_scraps, {
+            reclaimed: [],
+            scrap: []
+        }, function (low_tier_metal_to_reserve) {
+            var metal_to_reserve = {
+                refined: refineds_to_reserve,
+                reclaimed: low_tier_metal_to_reserve.reclaimed,
+                scrap: low_tier_metal_to_reserve.scrap
+            };
             if (forced || selfie.users[holderID].in_queue) {
                 if (refineds_to_reserve.length === total_refineds && low_tier_metal_to_reserve.reclaimed.length === total_reclaimeds && low_tier_metal_to_reserve.scrap.length === total_scraps) {
                     for (var x in metals) {
@@ -1488,7 +1549,7 @@ Sfuminator.prototype.reserveMetal = function (holderID, total_refineds, total_re
                     self.emit("metalReservation", holderID);
                 } else {
                     selfie.emit("error", "reserveMetal: Something went wrong with the reservation for " +
-                            holderID + ": (|||" + total_refineds + ",||" + total_reclaimeds + ",|" + total_scraps + ")->(|||" + refineds_to_reserve.length + ",||" + low_tier_metal_to_reserve.reclaimed.length + ",|" + low_tier_metal_to_reserve.scrap.length + ")", 2);
+                        holderID + ": (|||" + total_refineds + ",||" + total_reclaimeds + ",|" + total_scraps + ")->(|||" + refineds_to_reserve.length + ",||" + low_tier_metal_to_reserve.reclaimed.length + ",|" + low_tier_metal_to_reserve.scrap.length + ")", 2);
                     //Be sure to cancel previus metal reservations
                     try {
                         for (var x in metals) {
@@ -1722,8 +1783,10 @@ function get_metal_to_smelt(metal_to_smelt) {
             selfie.emit("debug", "WARNING: no more refineds available, some were not smelted");
         }
     }
-    return {recipe: crafting_recipe, queued_smelting: queued_smelting,
-        metal_instructions: {action: "smelt", refined: 0, reclaimed: total_reclaimeds - reclaimeds_to_smelt}};
+    return {
+        recipe: crafting_recipe, queued_smelting: queued_smelting,
+        metal_instructions: {action: "smelt", refined: 0, reclaimed: total_reclaimeds - reclaimeds_to_smelt}
+    };
 }
 function craftRecipe(recipe, callback) {
     if (recipe.length > 0) {
@@ -1985,21 +2048,30 @@ Sfuminator.prototype.injectPersonBackpack = function (steamid, items, normalized
         selfie.backpacks[steamid].metal.scrap = {};
         for (var x in refined_list) {
             if (old_metal.refined.hasOwnProperty(refined_list[x])) {
-                selfie.backpacks[steamid].metal.refined[refined_list[x]] = {reserved: old_metal.refined[refined_list[x]].reserved, to: old_metal.refined[refined_list[x]].to};
+                selfie.backpacks[steamid].metal.refined[refined_list[x]] = {
+                    reserved: old_metal.refined[refined_list[x]].reserved,
+                    to: old_metal.refined[refined_list[x]].to
+                };
             } else {
                 selfie.backpacks[steamid].metal.refined[refined_list[x]] = {reserved: false, to: null};
             }
         }
         for (var x in reclaimed_list) {
             if (old_metal.reclaimed.hasOwnProperty(reclaimed_list[x])) {
-                selfie.backpacks[steamid].metal.reclaimed[reclaimed_list[x]] = {reserved: old_metal.reclaimed[reclaimed_list[x]].reserved, to: old_metal.reclaimed[reclaimed_list[x]].to};
+                selfie.backpacks[steamid].metal.reclaimed[reclaimed_list[x]] = {
+                    reserved: old_metal.reclaimed[reclaimed_list[x]].reserved,
+                    to: old_metal.reclaimed[reclaimed_list[x]].to
+                };
             } else {
                 selfie.backpacks[steamid].metal.reclaimed[reclaimed_list[x]] = {reserved: false, to: null};
             }
         }
         for (var x in scrap_list) {
             if (old_metal.scrap.hasOwnProperty(scrap_list[x])) {
-                selfie.backpacks[steamid].metal.scrap[scrap_list[x]] = {reserved: old_metal.scrap[scrap_list[x]].reserved, to: old_metal.scrap[scrap_list[x]].to};
+                selfie.backpacks[steamid].metal.scrap[scrap_list[x]] = {
+                    reserved: old_metal.scrap[scrap_list[x]].reserved,
+                    to: old_metal.scrap[scrap_list[x]].to
+                };
             } else {
                 selfie.backpacks[steamid].metal.scrap[scrap_list[x]] = {reserved: false, to: null};
             }
@@ -2108,21 +2180,30 @@ Sfuminator.prototype.injectBackpack = function (items, normalized) {
         selfie.backpack.metal.scrap = {};
         for (var x in refined_list) {
             if (old_metal.refined.hasOwnProperty(refined_list[x])) {
-                selfie.backpack.metal.refined[refined_list[x]] = {reserved: old_metal.refined[refined_list[x]].reserved, to: old_metal.refined[refined_list[x]].to};
+                selfie.backpack.metal.refined[refined_list[x]] = {
+                    reserved: old_metal.refined[refined_list[x]].reserved,
+                    to: old_metal.refined[refined_list[x]].to
+                };
             } else {
                 selfie.backpack.metal.refined[refined_list[x]] = {reserved: false, to: null};
             }
         }
         for (var x in reclaimed_list) {
             if (old_metal.reclaimed.hasOwnProperty(reclaimed_list[x])) {
-                selfie.backpack.metal.reclaimed[reclaimed_list[x]] = {reserved: old_metal.reclaimed[reclaimed_list[x]].reserved, to: old_metal.reclaimed[reclaimed_list[x]].to};
+                selfie.backpack.metal.reclaimed[reclaimed_list[x]] = {
+                    reserved: old_metal.reclaimed[reclaimed_list[x]].reserved,
+                    to: old_metal.reclaimed[reclaimed_list[x]].to
+                };
             } else {
                 selfie.backpack.metal.reclaimed[reclaimed_list[x]] = {reserved: false, to: null};
             }
         }
         for (var x in scrap_list) {
             if (old_metal.scrap.hasOwnProperty(scrap_list[x])) {
-                selfie.backpack.metal.scrap[scrap_list[x]] = {reserved: old_metal.scrap[scrap_list[x]].reserved, to: old_metal.scrap[scrap_list[x]].to};
+                selfie.backpack.metal.scrap[scrap_list[x]] = {
+                    reserved: old_metal.scrap[scrap_list[x]].reserved,
+                    to: old_metal.scrap[scrap_list[x]].to
+                };
             } else {
                 selfie.backpack.metal.scrap[scrap_list[x]] = {reserved: false, to: null};
             }
@@ -2208,7 +2289,10 @@ Sfuminator.prototype.loadUsers = function () {
                 z += 1;
             }
             sPlayerSummariesTemp.push(friendList[x].steamid);
-            sfrFriendList[friendList[x].steamid] = {relationship: friendList[x].relationship, friend_since: friendList[x].friend_since};
+            sfrFriendList[friendList[x].steamid] = {
+                relationship: friendList[x].relationship,
+                friend_since: friendList[x].friend_since
+            };
         }
         sPlayerSummaries.push(sPlayerSummariesTemp);
         selfie.friends = sfrFriendList;
@@ -2354,9 +2438,9 @@ Sfuminator.prototype.loadAllKeywordsCombinations = function () {
 };
 Sfuminator.prototype.getStatus = function () {
     console.log("Current status: " + "\n" +
-            "- in_trade: " + this.in_trade + "\n" +
-            "- logging: " + this.logging + "\n" +
-            "- trade partner: " + this.thisTrade.partnerID + "");
+        "- in_trade: " + this.in_trade + "\n" +
+        "- logging: " + this.logging + "\n" +
+        "- trade partner: " + this.thisTrade.partnerID + "");
 };
 Sfuminator.prototype.isFirstInQueue = function (steamid) {
     if (selfie.firstInQueue.steamid === steamid) {
@@ -2773,7 +2857,11 @@ function answer_understand(original_message) {
                 old_affinity[klt] = new_affinity[klt];
             }
         }
-        result.push({type: klt, affinity: parseInt(old_affinity[klt] * priority_coefficent), priority: priority_coefficent});
+        result.push({
+            type: klt,
+            affinity: parseInt(old_affinity[klt] * priority_coefficent),
+            priority: priority_coefficent
+        });
     }
     result.sort(function (a, b) {
         if (a.affinity > b.affinity) {
@@ -3144,7 +3232,10 @@ var message_senteces = {
             if (type === "boolean_answer_yes") {
                 selfie.raw_message(steamid, "Okay, if there is a supervisor available, you should be contacted soon, if not, maybe the website FAQ could help you");
                 for (var x in MODERATORS) {
-                    selfie.emit("steamMessage", {steamid: MODERATORS[x], message: "User " + selfie.users[steamid].personaname + " is asking for help, contact: #chat " + steamid + "\nFast message: Hello! You are now talking with a sfuminator.tf staff member, how can I help you?"});
+                    selfie.emit("steamMessage", {
+                        steamid: MODERATORS[x],
+                        message: "User " + selfie.users[steamid].personaname + " is asking for help, contact: #chat " + steamid + "\nFast message: Hello! You are now talking with a sfuminator.tf staff member, how can I help you?"
+                    });
                 }
                 return true;
             } else if (type === "boolean_answer_no") {
@@ -3493,30 +3584,30 @@ var message_senteces = {
             }
             number_of_trades -= 1; //Needed to be compatible with array index
             var message = [[
-                    "Yay! Thanks a lot! Hope that all went nice and easy also for you.",
-                    "Thanks a lot! Everything went well? I hope so!",
-                    "Thank you! If you didn't already, you can join our group to keep in touch with the community and get notified for the incoming events http://steamcommunity.com/groups/tf2sfuminator"
-                ], [
-                    "Thanks a lot! It has been a pleasure to trade with you, if you want, remember that you can join our group! http://steamcommunity.com/groups/tf2sfuminator",
-                    "Thank you very much! Hope to trade with you again, meanwhile if you didn't already, you might want to join our group!  http://steamcommunity.com/groups/tf2sfuminator",
-                    "Thanks a lot!! Hope to trade with you again",
-                    "Thank you! Enjoy your new items!"
-                ], [
-                    "Thanks!",
-                    "Thank you!",
-                    "Thanks a lot!"
-                ]];
+                "Yay! Thanks a lot! Hope that all went nice and easy also for you.",
+                "Thanks a lot! Everything went well? I hope so!",
+                "Thank you! If you didn't already, you can join our group to keep in touch with the community and get notified for the incoming events http://steamcommunity.com/groups/tf2sfuminator"
+            ], [
+                "Thanks a lot! It has been a pleasure to trade with you, if you want, remember that you can join our group! http://steamcommunity.com/groups/tf2sfuminator",
+                "Thank you very much! Hope to trade with you again, meanwhile if you didn't already, you might want to join our group!  http://steamcommunity.com/groups/tf2sfuminator",
+                "Thanks a lot!! Hope to trade with you again",
+                "Thank you! Enjoy your new items!"
+            ], [
+                "Thanks!",
+                "Thank you!",
+                "Thanks a lot!"
+            ]];
             if (number_of_trades > 0 && number_of_trades < 10) {
                 number_of_trades = 1;
             }
             if (number_of_trades >= 10) {
                 number_of_trades = 2;
             }
-            /*if (!user.behavior.hasOwnProperty("repped")) {
-             setTimeout(function () {
-             selfie.message(user.steamid, "ask_rep");
-             }, 2000);
-             }*/
+            if (!user.behavior.hasOwnProperty("repped")) {
+                setTimeout(function () {
+                    selfie.message(user.steamid, "ask_rep");
+                }, 2000);
+            }
             return randomElement(message[number_of_trades]);
         },
         pending_answer: ["thanks"]
@@ -3890,7 +3981,7 @@ function getNiceDateTime(mode, myDate) {
 function getMonday(d) {
     d = new Date(d);
     var day = d.getDay(),
-            diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+        diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
     return new Date(d.setDate(diff));
 }
 function isFunction(functionToCheck) {
