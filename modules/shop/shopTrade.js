@@ -97,7 +97,7 @@ ShopTrade.prototype.setAsSending = function () {
     } else {
         this.setStatus(TradeConstants.status.HOLD);
         this.setStatusInfo("open"); //Are you sure this is needed?
-        this.database.save();
+        this.commit();
         this.log.debug("Sending trade...");
     }
 };
@@ -106,6 +106,7 @@ ShopTrade.prototype.setAsSent = function (tradeOfferID) {
     this.tradeOfferID = tradeOfferID;
     this.setStatus(TradeConstants.status.SENT);
     this.setStatusInfo(tradeOfferID);
+    this.commit();
 };
 
 /**
