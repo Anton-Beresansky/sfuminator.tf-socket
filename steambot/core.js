@@ -1,5 +1,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 STEAMBOT_DIRECTORY = './'; // windows directory
+AUTOMATIC_MOBILE_CONFIRMATION_INTERVAL = 8000;
+MAX_CHECK_TENTATIVI = 40;
+CONFIRMATIONS_COUNTER = 0;
+
 ACCOUNTS = {
     "76561198045065602": {username: "axe_fish", password: "emvalerio?", steamid: "76561198045065602"},
     "76561198189662807": {username: "sfumin", password: "Error36ismadeup", steamid: "76561198189662807"},
@@ -14,10 +18,13 @@ ACCOUNTS = {
     "76561198195909649": {username: "sfuminator3", password: "theStadiumIsShort", steamid: "76561198195909649"},
     "76561198195946391": {username: "sfuminator4", password: "fuckYourTightThumb", steamid: "76561198195946391"}
 };
-var CFG = JSON.parse(require("fs").readFileSync("../socket_config.json"));
+var CFG = require("./cfg.js");
+
 for (var steamid in CFG.sfuminator.bots.trading) {
     myAccount = ACCOUNTS[steamid];
 }
+var accountCredentials = CFG.getBotCredentials(steamid);
+
 console.log("My account: " + JSON.stringify(myAccount));
 
 var SOFTWARE_VERSION = "v4 beta";
@@ -28,6 +35,8 @@ var tradeOffers = new SteamTradeOffers();
 var fs = require('fs');
 var Steam = require('steam');
 var steam = new Steam.SteamClient();
+var SteamCommunity = require("steamcommunity");
+var community = new SteamCommunity();
 var TeamFortress2 = require('./teamFortress.js');
 var tf2 = new TeamFortress2(steam);
 var Sfuminator = require("./sfuminator.js");
@@ -38,6 +47,7 @@ var outpost = new api("www.tf2outpost.com");
 var cheerio = require("cheerio");
 var IncomingOffers = require("./incomingOffers.js");
 var incomingOffers = new IncomingOffers(steam, tradeOffers, sfr);
+
 sfr.on('debug', function (msg, level) {
     if (typeof level === "undefined") {
         level = 2;
@@ -78,22 +88,36 @@ cookie903 = "steamLoginSecure=76561198195936315%7C%7C1AD0EC6C3F97C8DEE74E3CFC8AF
 cookie904 = "webTradeEligibility=%7B%22allowed%22%3A0%2C%22reason%22%3A32%2C%22allowed_at_time%22%3A1441658160%2C%22steamguard_required_days%22%3A15%2C%22sales_this_year%22%3A0%2C%22max_sales_per_year%22%3A200%2C%22forms_requested%22%3A0%2C%22new_device_cooldown_days%22%3A7%7D";
 ///////////////////////////////////////////////////////////////////////////////
 // if we've saved a server list, use it
+function LOGON() {
+    if (accountCredentials.hasMobileAuth()) {
+        steam.logOn({
+            accountName: username,
+            password: password,
+            shaSentryfile: sentryhash,
+            twoFactorCode: accountCredentials.getTwoFactorCode()
+        });
+    } else {
+        steam.logOn({
+            accountName: username,
+            password: password,
+            shaSentryfile: sentryhash
+        });
+    }
+}
+
 if (fs.existsSync('servers')) {
     Steam.servers = JSON.parse(fs.readFileSync('servers'));
 }
 try {
     sentryhash = require('fs').readFileSync(STEAMBOT_DIRECTORY + '/sentryfile_' + username);
-    steam.logOn({
-        accountName: username,
-        password: password,
-        shaSentryfile: sentryhash
-    });
+    LOGON();
 } catch (e) {
     debugmsg("WARNING: Could not open sentryfile, will generate a new one", {level: 1});
     steam.logOn({
         accountName: username,
         password: password,
-        authCode: steamguard
+        authCode: steamguard,
+        twoFactorCode: accountCredentials.getTwoFactorCode()
     });
 }
 steam.on('loggedOn', function (result) {
@@ -130,6 +154,7 @@ steam.on('webSessionID', function (sessionID) {
         steamTrade.setCookie(cookies[2]);
         browser.setCookie(cookies);
         browser.setCookie(webTradeEligibilityCookie);
+        community.setCookies(cookies);
         tradeOffers.setup({sessionID: sessionID, webCookie: cookies}, function () {
             debugmsg("Alright, logged on steam for trade!", {level: 1});
             if (firstLogin) {
@@ -140,6 +165,8 @@ steam.on('webSessionID', function (sessionID) {
                 sfr.updateCurrency();
             }
         });
+        setAutomaticMobileTradingConfirmation();
+        //community.startConfirmationChecker(5000);
     });
     if (sfr.in_trade) {
         steamTrade.open(steamTrade.tradePartnerSteamID);
@@ -149,10 +176,27 @@ steam.on('relationships', function () {
     for (var friend in steam.friends) {
         if (steam.friends[friend] === Steam.EFriendRelationship.PendingInvitee) {
             steam.addFriend(friend);
-            debugmsg('SteamID ' + friend + ' accepted!', {level: 1});
+            debugmsg('SteamID ' + friend + ' accepted!', {level: 1})
         }
     }
 });
+
+community.on('confKeyNeeded', function (tag, callback) {
+    debugmsg("confKeyNeeded: " + tag);
+    callback(null, Math.floor(Date.now() / 1000), accountCredentials.getConfirmationKey(tag));
+});
+
+community.on('newConfirmation', function (confirmation) {
+    debugmsg("new confirmation for " + confirmation.offerID);
+    confirmation.respond(Math.floor(Date.now() / 1000), accountCredentials.getConfirmationKey("allow"), true, function (error) {
+        if (error) {
+            debugmsg("ERROR WHEN CONFIRMING: " + error);
+        } else {
+            debugmsg("TRADE CONFIRMED");
+        }
+    });
+});
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -249,6 +293,7 @@ sfr.on("tradeNextPerson", function (steamid, firstInvite) { // sfr.thisTrade OBJ
     sfr.informSocket("invited_to_trade");
     if (sfr.startTradeProcedure(steamid)) {
         if (firstInvite) {
+            steam.sendMessage(steamid, "Remember that you need a Steam Guard Mobile Authenticator enabled on your account for at least 7 days in order to receive items instantly, or they will be held for 3 days by Steam.");
             sfr.message(steamid, "trade_hello");
         }
         startTrade(steamid);
@@ -277,40 +322,55 @@ sfr.on("steamMessage", function (obj) {
 sfr.on("sendTradeOffer", function (offer) {
     debugmsg("Making trade offer to " + offer.partnerSteamId);
     tradeOffers.makeOffer(offer, function (error, result) {
-        if (typeof result !== "undefined") {
-            sfr.appendTradeOffer(offer.partnerSteamId, result.tradeofferid);
-        } else {
-            debugmsg("Error sending trade offer to " + offer.partnerSteamId + " (relation: " + steam.friends[offer.partnerId] + "): " + error);
-            if (offer.hasOwnProperty("makeAttempts")) {
-                offer.makeAttempts += 1;
+            if (typeof result !== "undefined") {
+                var checkRetries = 0;
+                var checkConfirmation = function () {
+                    var oldConfirmationCounter = CONFIRMATIONS_COUNTER;
+                    setTimeout(function () {
+                        if (oldConfirmationCounter !== CONFIRMATIONS_COUNTER) {
+                            sfr.appendTradeOffer(offer.partnerSteamId, result.tradeofferid);
+                        } else {
+                            if (checkRetries < MAX_CHECK_TENTATIVI) {
+                                checkRetries += 1;
+                                checkConfirmation();
+                            }
+                        }
+                    }, 400);
+                };
+                checkConfirmation();
             } else {
-                offer.makeAttempts = 1;
-            }
-            if (offer.makeAttempts > 5) {
-                sfr.endTradeOfferSession(offer.partnerSteamId);
-                steam.sendMessage(offer.partnerSteamId, "Oh no, there was an error :( steam returned the following message:\n" + error + "\n I'm cancelling this trade. If you want, you can also retry using manual trade");
-            } else {
-                if (offer.makeAttempts === 2) {
-                    if (ERROR26.check(error.toString())) {
-                        console.log("Recognised error 26, pushing to stack");
-                        ERROR26.add(offer.partnerSteamId);
-                        debugmsg("Trying to unbug trade offer from error 26 by starting game");
-                        steam.gamesPlayed([440]);
-                    }
-                    if (ERROR26.exceeded()) {
-                        console.log("ERROR 26 HAS EXCEEDED, RESTARTING");
-                        process.exit(1);
-                    } else {
-                        webRelog(function () {
-                            retryTradeOffer(offer);
-                        });
-                    }
+                debugmsg("Error sending trade offer to " + offer.partnerSteamId + " (relation: " + steam.friends[offer.partnerId] + "): " + error);
+                if (offer.hasOwnProperty("makeAttempts")) {
+                    offer.makeAttempts += 1;
                 } else {
-                    retryTradeOffer(offer);
+                    offer.makeAttempts = 1;
+                }
+                if (offer.makeAttempts > 5) {
+                    sfr.endTradeOfferSession(offer.partnerSteamId);
+                    steam.sendMessage(offer.partnerSteamId, "Oh no, there was an error :( steam returned the following message:\n" + error + "\n I'm cancelling this trade. If you want, you can also retry using manual trade");
+                } else {
+                    if (offer.makeAttempts === 2) {
+                        if (ERROR26.check(error.toString())) {
+                            console.log("Recognised error 26, pushing to stack");
+                            ERROR26.add(offer.partnerSteamId);
+                            debugmsg("Trying to unbug trade offer from error 26 by starting game");
+                            steam.gamesPlayed([440]);
+                        }
+                        if (ERROR26.exceeded()) {
+                            console.log("ERROR 26 HAS EXCEEDED, RESTARTING");
+                            process.exit(1);
+                        } else {
+                            webRelog(function () {
+                                retryTradeOffer(offer);
+                            });
+                        }
+                    } else {
+                        retryTradeOffer(offer);
+                    }
                 }
             }
         }
-    });
+    );
 });
 function Error26() {
     this.time_decay = 10000;
@@ -445,11 +505,7 @@ sfr.on("cancelTradeOffer", function (tradeofferid) {
 });
 function steam_relog() {
     sfr.logging = true;
-    steam.logOn({
-        accountName: username,
-        password: password,
-        shaSentryfile: sentryhash
-    });
+    LOGON();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -464,7 +520,33 @@ function steam_relog() {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-
+function setAutomaticMobileTradingConfirmation() {
+    setInterval(function () {
+        community.getConfirmations(getUnixTimestamp(), accountCredentials.getConfirmationKey("conf"), function (error, confirmations) {
+                if (error) {
+                    debugmsg(error);
+                } else {
+                    var confRetry = 0;
+                    debugmsg("Pending confirmations: " + confirmations.length);
+                    var doConfirmation = function (confirmation) {
+                        confirmation.respond(getUnixTimestamp(), accountCredentials.getConfirmationKey("allow"), true, function (error) {
+                            if (error) {
+                                debugmsg("ERROR CONFIRMING TRADE: " + error + ", will retry");
+                            } else {
+                                debugmsg("TRADE CONFIRMED");
+                            }
+                            CONFIRMATIONS_COUNTER += 1;
+                        });
+                    };
+                    for (var i = 0; i < confirmations.length; i += 1) {
+                        console.log(confirmations[i].title);
+                        doConfirmation(confirmations[i]);
+                    }
+                }
+            }
+        )
+    }, AUTOMATIC_MOBILE_CONFIRMATION_INTERVAL);
+}
 function keepLoginAlive() { // Fires every 15 minutes
     sfr.timeout.keepLoginAlive = setTimeout(function () {
         debugmsg("keepLoginAlive fired", {level: 5});
@@ -491,7 +573,7 @@ steam.on('friend', function (steamid, relation) {//Fires on friend invite from m
         sfr.newFriend(steamid);
     }
     if (relation === Steam.EFriendRelationship.Friend) {//Basically after bot invite if the other accepts/already friend
-//Happen when someone else accept the friend invite and also if already friend
+        //Happen when someone else accept the friend invite and also if already friend
         debugmsg(steamid + " has accepted my friend request");
         sfr.trackEvent(steamid);
         sfr.users[steamid].pendingFriendRequest = false;
@@ -826,7 +908,7 @@ function startHoldQueueProcedure(tradeInfo) {
     var hisFirstID = tradeInfo.hisItems[0].id;
     sfr.emit("steamMessage", {
         steamid: steamid,
-        message: "I'll keep the items for you another minute, waiting your mail confirmation."
+        message: "I'll keep the items for you another minute, waiting your confirmation."
     });
     sfr.pendingMailVerifications.push(tradeInfo.partnerID);
     sfr.lockPendingMailVerificationChanges();
@@ -1118,11 +1200,7 @@ steamTrade.on('error', function (err) {
         sfr.raw_message(sfr.firstInQueue.steamid, "Wait a second, I've got some problems with my steam, let me relog");
         sfr.emit("cancelTrade");
         setTimeout(function () {
-            steam.logOn({
-                accountName: username,
-                password: password,
-                shaSentryfile: sentryhash
-            });
+            LOGON();
         }, 2000);
         setTimeout(function () {
             sfr.raw_message(sfr.firstInQueue, "Ok, let's try this again.");
@@ -1491,6 +1569,14 @@ botCommands = {
             return {message: "relogging"};
         }
     },
+    "c": {
+        command: "c",
+        description: "Get steam guard authentication code",
+        permission: 1,
+        method: function () {
+            return {message: accountCredentials.getTwoFactorCode()};
+        }
+    },
     "setKeyPrice": {
         command: "setKeyPrice",
         description: "Set new key scrap price",
@@ -1703,19 +1789,23 @@ function mergeWithDescriptions(items, descriptions, contextid) {
 }
 
 function webRelog(callback) {
-    steam.webLogOn(function (cookies) {
+    /*steam.webLogOn(function (cookies) {
         debugmsg("Got cookies: " + JSON.stringify(cookies) + ", configuring trade...", {level: 2});
         steamTrade.setCookie(cookies[0]);
         steamTrade.setCookie(cookies[1]);
         steamTrade.setCookie(cookies[2]);
         browser.setCookie(cookies);
+        community.setCookies(cookies);
         tradeOffers.setup({sessionID: steamTrade.sessionID, webCookie: cookies}, function () {
             debugmsg("Alright, web logged!", {level: 1});
             if (callback) {
                 callback(true);
             }
         });
-    });
+    });*/
+    if (callback) {
+        callback(true);
+    }
 }
 
 function convert_refined_string_to_scrap(_ref) {
@@ -1758,4 +1848,7 @@ function updateOutpostKeyPrice(keyPrice, callback) {
     outpost.post("http://www.tf2outpost.com/api/core", options, function (result) {
         console.log(JSON.stringify(result));
     });
+}
+function getUnixTimestamp() {
+    return parseInt(new Date().getTime() / 1000);
 }

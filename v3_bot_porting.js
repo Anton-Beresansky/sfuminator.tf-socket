@@ -106,7 +106,7 @@ BotPorting.prototype.increaseHatTradeCount = function (steamid) {
     this.log.debug("Appending trade for " + steamid);
     var trade = this.users.get(steamid).getShopTrade();
     if (trade.getMode() === "manual") {
-        trade.accepted();
+        trade.setAsAccepted();
     }
     var assets = trade.getAssets();
     var compatible_trades = [];

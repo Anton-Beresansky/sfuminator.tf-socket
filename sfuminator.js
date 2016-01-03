@@ -336,7 +336,7 @@ Sfuminator.prototype.requestTrade = function (request, mode, callback) {
     if (!user.hasActiveShopTrade()) {
         var trade = user.makeShopTrade(data.items);
         trade.setMode(mode);
-        trade.on("response", function (response) {
+        trade.on("verificationResponse", function (response) {
             callback(response);
         });
         trade.verifyItems(function (success) {

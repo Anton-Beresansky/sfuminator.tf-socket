@@ -8,6 +8,7 @@ var User = require("./user/user.js");
  * General purpose Users class
  * @param {Sfuminator} sfuminator The Sfuminator instance
  * @returns {Users}
+ * @construct
  */
 function Users(sfuminator) {
     this.sfuminator = sfuminator;

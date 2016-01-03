@@ -908,6 +908,9 @@ Sfuminator.prototype.tradeOfferStep = function (tradeOffer, status) {
         },
         "active": function (tradeOffer) {
             var steamid = tradeOffer.steamid;
+
+            selfie.emit("steamMessage", {steamid: steamid, message: "Remember that you need a Steam Guard Mobile Authenticator enabled on your account for at least 7 days in order to receive items instantly, or they will be held for 3 days by Steam."});
+
             selfie.message(steamid, "tradeOffer_hello");
             selfie.loadBackpack(function () {
                 selfie.loadPersonBackpack(steamid, function (backpack) {
@@ -3774,8 +3777,8 @@ var message_senteces = {
     },
     pendingMail_afk_kick: {
         message: [
-            "Sorry but it seems that you didn't confirm the mail yet. You have been removed from the queue",
-            "Sorry but your mail confirmation took too much. You have been removed from the queue"
+            "Sorry but it seems that you didn't confirm the trade yet. You have been removed from the queue",
+            "Sorry but your trade confirmation took too much. You have been removed from the queue"
         ]
     }
 };

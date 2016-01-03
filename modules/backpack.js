@@ -20,10 +20,6 @@ function Backpack(steamid, game, cloud) {
     this.decayTime = 90000; // 1:30min
     this.last_update_date = new Date(0);
     events.EventEmitter.call(this);
-    var self = this;
-    this.on("expired", function () {
-        self.items = null;
-    });
 }
 
 require("util").inherits(Backpack, events.EventEmitter);
@@ -72,7 +68,7 @@ Backpack.prototype.getCached = function (callback) {
 Backpack.prototype.get = function (callback) {
     var self = this;
     this.cloud.send("getBackpack", {steamid: this.getOwner(), game: this.game.getID()}, function (result) {
-        //self.log.debug(JSON.stringify(result).slice(0, 300));
+        var backpackWillChange = self._willChange(result.items);
         for (var i in result) {
             self[i] = result[i];
         }
@@ -89,9 +85,11 @@ Backpack.prototype.get = function (callback) {
         } else if (error_code) {
             self.log.warning("Fetching has errored: " + error_code);
         }
-
         if (typeof callback === "function") {
             callback(self);
+        }
+        if (backpackWillChange) {
+            self.emit("newItems", self.items);
         }
     });
 };
@@ -186,6 +184,41 @@ Backpack.prototype._encodeFetchingError = function (newBackpack) {
             this._error_code = "#backpack_status_" + newBackpack.status;
             this.error_message = "Sorry, but we couldn't retrive your backpack. It seems that your backpack is set to private, you can set it to public in your steam privacy settings.";
         }
+    }
+};
+
+/**
+ * Procedure to check if backpack will change, fired right after a new fetch request
+ * @param {Object[]} newItems
+ * @returns {boolean}
+ * @private
+ */
+Backpack.prototype._willChange = function (newItems) {
+    if (newItems instanceof Array) {
+        if (this.items instanceof Array) {
+            if (newItems.length !== this.items.length) {
+                this.log.debug("Length is different, it will change");
+                return true;
+            } else {
+                for (var p = 0; p < newItems.length; p += 1) {
+                    var found = false;
+                    for (var i = 0; i < this.items.length; i += 1) {
+                        if (this.items[i].getID() === newItems[p].id) {
+                            found = true;
+                        }
+                    }
+                    if (!found) {
+                        this.log.debug("There's a different item, it will change");
+                        return true;
+                    }
+                }
+                return false;
+            }
+        } else {
+            return true;
+        }
+    } else {
+        return false;
     }
 };
 

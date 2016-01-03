@@ -4,15 +4,20 @@ var Logs = require("../../lib/logs.js");
 var ShopItem = require("./inventory/shopItem.js");
 var Price = require("../price.js");
 var ItemCount = require("./shopItemCount.js");
-var TradeConstants = require("./../trade/tradeConstants.js");
+var TradeConstants = require("../trade/tradeConstants.js");
+var SteamTradeOffer = require("../../lib/steamTradeOffer.js");
+var SteamTradeError = require("../../lib/steamTradeError.js");
 var ShopTradeCurrency = require("./shopTradeCurrency.js");
 //Shop Trade Status: hold -> (noFriend) -> active -> sent -> closed/accepted/declined
 
 /**
  * Generic purpose class for Shop Trades
+ * @event verificationResponse
+ * @event itemsReserved
  * @param {Sfuminator} sfuminator The sfuminator instance
  * @param {User} partner Shop trade partner
  * @returns {ShopTrade}
+ * @constructor
  */
 function ShopTrade(sfuminator, partner) {
     this.partner = partner;
@@ -31,10 +36,28 @@ function ShopTrade(sfuminator, partner) {
     this._available_modes = ["offer", "manual"];
     this.last_update_date = new Date();
     this.assets_limit = {partner: 20, shop: 20};
+    this.steamToken = "";
+    this.onItemsReservedCallbacks = [];
     events.EventEmitter.call(this);
+
+    this._bindHandlers();
 }
 
 require("util").inherits(ShopTrade, events.EventEmitter);
+
+ShopTrade.prototype._bindHandlers = function () {
+    var self = this;
+    this.on("itemsReserved", function () {
+        self.itemsReserved = true;
+        for (var i = 0; i < self.onItemsReservedCallbacks.length; i += 1) {
+            self.onItemsReservedCallbacks[i]();
+        }
+        self.onItemsReservedCallbacks = [];
+    });
+    this.on("itemsDereserved", function () {
+        self.itemsReserved = false;
+    });
+};
 
 /**
  * Establish if Shop Trade has been accepted
@@ -75,8 +98,14 @@ ShopTrade.prototype.setAsSending = function () {
         this.setStatus(TradeConstants.status.HOLD);
         this.setStatusInfo("open"); //Are you sure this is needed?
         this.database.save();
-        this.log.debug("Sent trade: " + JSON.stringify(this.valueOf()));
+        this.log.debug("Sending trade...");
     }
+};
+
+ShopTrade.prototype.setAsSent = function (tradeOfferID) {
+    this.tradeOfferID = tradeOfferID;
+    this.setStatus(TradeConstants.status.SENT);
+    this.setStatusInfo(tradeOfferID);
 };
 
 /**
@@ -84,6 +113,10 @@ ShopTrade.prototype.setAsSending = function () {
  */
 ShopTrade.prototype.cancel = function () {
     this.dereserveShopItems();
+    if (this.hasSteamTrade()) {
+        this.steamTrade.cancel();
+        this.unsetSteamTrade();
+    }
     this.setStatus(TradeConstants.status.CLOSED);
     this.setStatusInfo(TradeConstants.statusInfo.closed.CANCELLED);
     this.commit();
@@ -93,7 +126,8 @@ ShopTrade.prototype.cancel = function () {
 /**
  * Mark Shop Trade as accepted
  */
-ShopTrade.prototype.accepted = function () {
+ShopTrade.prototype.setAsAccepted = function () {
+    this.unsetSteamTrade();
     this.setStatus(TradeConstants.status.CLOSED);
     this.setStatusInfo(TradeConstants.statusInfo.closed.ACCEPTED);
     this.commit();
@@ -111,6 +145,35 @@ ShopTrade.prototype.commit = function (callback) {
     } else {
         this.database.update(callback);
     }
+};
+
+/**
+ * @param {SteamTradeOffer} steamTrade
+ */
+ShopTrade.prototype.injectSteamTrade = function (steamTrade) {
+    this.steamTrade = steamTrade;
+    for (var i = 0; i < this.assets.length; i += 1) {
+        if (this.assets[i].isMineItem()) {
+            this.steamTrade.addThemItem(this.assets[i].getTradeOfferAsset());
+        } else {
+            this.steamTrade.addMyItem(this.assets[i].getTradeOfferAsset());
+        }
+    }
+};
+
+/**
+ * @returns {SteamTradeOffer|*}
+ */
+ShopTrade.prototype.getSteamTrade = function () {
+    return this.steamTrade;
+};
+
+ShopTrade.prototype.hasSteamTrade = function () {
+    return this.steamTrade instanceof SteamTradeOffer;
+};
+
+ShopTrade.prototype.unsetSteamTrade = function () {
+    this.steamTrade = null;
 };
 
 /**
@@ -188,7 +251,7 @@ ShopTrade.prototype.load = function (callback) {
             }
             if (!success) {
                 self.log.warning("Assets list is empty, considering trade as accepted");
-                self.accepted();
+                self.setAsAccepted();
                 self.log.warning("Cancelling reservations...");
                 for (var section in items) {
                     for (var i = 0; i < items[section].length; i += 1) {
@@ -221,14 +284,14 @@ ShopTrade.prototype.verifyItems = function (callback) {
             }
         } else if (section !== "mine") {
             this.response = this.ajaxResponses.sectionNotFound;
-            this.emit("response", this.response);
+            this.emit("verificationResponse", this.response);
             callback(false);
             return;
         }
     }
     if (this.getShopItemCount() > this.assets_limit.shop) {
         this.response = this.ajaxResponses.shopAssetsLimit(this.assets_limit.shop);
-        this.emit("response", this.response);
+        this.emit("verificationResponse", this.response);
         callback(false);
         return;
     }
@@ -265,6 +328,10 @@ ShopTrade.prototype.getShopItemCount = function () {
     return this.assets.length - this.getPartnerItemCount();
 };
 
+ShopTrade.prototype.areItemsReserved = function () {
+    return this.itemsReserved === true;
+};
+
 ShopTrade.prototype.reserveItems = function () {
     var self = this;
     this.currency.on("reserved", function () {
@@ -273,6 +340,10 @@ ShopTrade.prototype.reserveItems = function () {
 
     this.reserveShopItems();
     this.currency.reserve();
+};
+
+ShopTrade.prototype.onItemsReserved = function (callback) {
+    this.onItemsReservedCallbacks.push(callback);
 };
 
 /**
@@ -302,6 +373,7 @@ ShopTrade.prototype.dereserveShopItems = function () {
             this.shop.reservations.cancel(this.assets[i].getID());
         }
     }
+    this.emit("itemsDereserved");
 };
 
 /**
@@ -312,12 +384,14 @@ ShopTrade.prototype.dereserveShopItems = function () {
 ShopTrade.prototype.getPlate = function () {
     var plate = {me: [], them: [], full_list: []};
     for (var i = 0; i < this.assets.length; i += 1) {
-        if (this.assets[i].isMineItem()) {
-            plate.them.push(new ShopTradeAssetDataStructure(this.assets[i]));
-        } else {
-            plate.me.push(new ShopTradeAssetDataStructure(this.assets[i]));
+        if (!this.assets[i].isCurrency()) {
+            if (this.assets[i].isMineItem()) {
+                plate.them.push(new ShopTradeAssetDataStructure(this.assets[i]));
+            } else {
+                plate.me.push(new ShopTradeAssetDataStructure(this.assets[i]));
+            }
+            plate.full_list.push(this.assets[i].valueOf());
         }
-        plate.full_list.push(this.assets[i].valueOf());
     }
     return plate;
 };
@@ -488,12 +562,12 @@ ShopTrade.prototype.getLastUpdateDate = function () {
 ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
     if (!this.shop.sections[section].itemExist(idToCheck)) {
         this.response = this.ajaxResponses.itemsSelectedNotFound;
-        this.emit("response", this.response);
+        this.emit("verificationResponse", this.response);
         return false;
     }
     if (this.shop.reservations.exist(idToCheck) && this.shop.reservations.get(idToCheck).getHolder() !== this.getPartner().getSteamid()) {
         this.response = this.ajaxResponses.itemIsAlreadyReserved;
-        this.emit("response", this.response);
+        this.emit("verificationResponse", this.response);
         return false;
     }
     return true;
@@ -514,12 +588,12 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
             var item = backpack.getItem(itemID);
             if (!backpack.itemExist(itemID)) {
                 self.response = self.ajaxResponses.itemNotFound;
-                self.emit("response", self.response);
+                self.emit("verificationResponse", self.response);
                 callback(false);
                 return;
             } else if (!self.shop.canBeSold(item)) {
                 self.response = self.ajaxResponses.itemCantBeSold;
-                self.emit("response", self.response);
+                self.emit("verificationResponse", self.response);
                 callback(false);
                 return;
             } else {
@@ -528,7 +602,7 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
                 var netCount = (itemCount.get(item) + self.shop.count.get(item)) - self.shop.getLimit(item);
                 if (netCount > 0) {
                     self.response = self.ajaxResponses.itemExceedCount(item, netCount);
-                    self.emit("response", self.response);
+                    self.emit("verificationResponse", self.response);
                     callback(false);
                     return;
                 }
@@ -536,7 +610,7 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
         }
         if (self.getPartnerItemCount() > self.assets_limit.partner) {
             self.response = self.ajaxResponses.partnerAssetsLimit(self.assets_limit.partner);
-            self.emit("response", self.response);
+            self.emit("verificationResponse", self.response);
             callback(false);
             return;
         }
@@ -586,6 +660,24 @@ ShopTrade.prototype.logAssets = function (level) {
             }
             return result;
         }()), level);
+};
+
+/**
+ * @returns {String}
+ */
+ShopTrade.prototype.getSteamToken = function () {
+    return this.steamToken;
+};
+
+/**
+ * @param {String} token
+ */
+ShopTrade.prototype.setSteamToken = function (token) {
+    this.steamToken = token;
+};
+
+ShopTrade.prototype.hasSteamToken = function () {
+    return this.steamToken !== "";
 };
 
 /**

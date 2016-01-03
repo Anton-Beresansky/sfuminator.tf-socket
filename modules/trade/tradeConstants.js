@@ -51,5 +51,5 @@ function TradeConstants() {
             ERROR: "error",
             AFK: "afk"
         }
-    }
+    };
 }

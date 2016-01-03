@@ -28,7 +28,7 @@ function ShopItem(shop, item, mine) {
     }
     this.id = this.item.getID();
     this.section = this.getType();
-    if(mine && mine === "mine"){
+    if (mine && mine === "mine") {
         this.setAsMineSection();
     }
 }
@@ -171,14 +171,23 @@ ShopItem.prototype.getMinePrice = function () {
     return finalPrice;
 };
 
+/**
+ * @returns {SteamTradeOfferItemStructure}
+ */
 ShopItem.prototype.getTradeOfferAsset = function () {
-    return {
-        appid: this.getGameCode(),
-        contextid: this.getContextID(),
-        amount: 1,
-        assetid: this.getItem().getID().toString()
-    }
+    return new SteamTradeOfferItemStructure(this);
 };
+
+/**
+ * @param {ShopItem} shopItem
+ * @returns {SteamTradeOfferItemStructure}
+ */
+function SteamTradeOfferItemStructure(shopItem) {
+    this.appid = shopItem.getGameCode();
+    this.contextid = shopItem.getContextID();
+    this.amount = 1;
+    this.assetid = shopItem.getItem().getID().toString();
+}
 
 /**
  * Get Shop Item object structure
