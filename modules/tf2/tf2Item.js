@@ -126,7 +126,7 @@ TF2Item.prototype.isCurrency = function () {
     return (this.defindex === TF2Constants.defindexes.ScrapMetal
     || this.defindex === TF2Constants.defindexes.ReclaimedMetal
     || this.defindex === TF2Constants.defindexes.RefinedMetal
-    || this.defindex === TF2Constants.defindexes.MannCoKey);
+    || this.defindex === TF2Constants.defindexes.MannCoKey) && this.isTradable();
 };
 
 /**

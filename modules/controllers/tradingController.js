@@ -23,8 +23,7 @@ TradingController.prototype.startOffNewShopTrade = function (newShopTrade) {
     if (!assignedBot) {
         this.log.error("Wasn't able to assign bot");
     } else {
-        assignedBot.assignShopTrade(newShopTrade);
-        newShopTrade.setBot(this.sfuminator.users.get(this.sfuminator.shop.getBots()[0].getSteamid())); //temp
+        assignedBot.sendShopTrade(newShopTrade);
         newShopTrade.reserveItems();
         newShopTrade.setAsSending();
     }

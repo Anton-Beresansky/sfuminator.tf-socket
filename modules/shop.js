@@ -51,6 +51,7 @@ function Shop(sfuminator) {
     this.init();
     this.inventory.on("new", function (changes) {
         self.update(changes);
+        self.emit("sectionItemsUpdated", changes.toAdd);
     });
 }
 

@@ -5,7 +5,7 @@ var SENTRYFILES_PATH = './sentryFiles/';
 var fs = require("fs");
 var crypto = require("crypto");
 var SteamTotp = require('steam-totp');
-var Logs = require("./lib/logs.js");
+var Logs = require("../lib/logs.js");
 
 /**
  * Class for socket configuration and loading cfg
@@ -161,7 +161,7 @@ BotCredentials.prototype.getTwoFactorCode = function () {
 
 BotCredentials.prototype.getConfirmationKey = function (tag) {
     if (this.hasMobileAuth()) {
-        return SteamTotp.getConfirmationKey(this.getIdentitySecret(), parseInt(new Date().getTime() / 1000), tag);
+        return SteamTotp.getConfirmationKey(this.getIdentitySecret(), Math.floor(Date.now() / 1000), tag);
     }
 };
 
