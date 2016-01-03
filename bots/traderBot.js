@@ -35,7 +35,7 @@ function TraderBot(user) {
 
 TraderBot.prototype.onLogin = function () {
     this.steamClient.setAutomaticMobileTradingConfirmation();
-
+    this.steamClient.startTradeOffersManagerPolling();
 };
 
 TraderBot.prototype.getSteamid = function () {
