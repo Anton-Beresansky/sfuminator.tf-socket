@@ -37,7 +37,7 @@ function Sfuminator(cloud, db) {
     this.responses = new AjaxResponses(this);
     this.users = new Users(this);
     this.shop = new Shop(this);
-    //this.tradingController = new TradingController(this);
+    this.tradingController = new TradingController(this);
     //this.botsController = new BotsController(this);
     this.stats = new Stats(this);
     this.status = new TradeStatus(this);

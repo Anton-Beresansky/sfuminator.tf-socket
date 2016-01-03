@@ -19,14 +19,18 @@ function TradingController(sfuminator) {
  * @param {ShopTrade} newShopTrade
  */
 TradingController.prototype.startOffNewShopTrade = function (newShopTrade) {
-    var assignedBot = this.getBestAvailableBot();
-    if (!assignedBot) {
-        this.log.error("Wasn't able to assign bot");
-    } else {
-        assignedBot.sendShopTrade(newShopTrade);
-        newShopTrade.reserveItems();
-        newShopTrade.setAsSending();
-    }
+    /*var assignedBot = this.getBestAvailableBot();
+     if (!assignedBot) {
+     this.log.error("Wasn't able to assign bot");
+     } else {
+     assignedBot.sendShopTrade(newShopTrade);
+     newShopTrade.reserveItems();
+     newShopTrade.setAsSending();
+     }*/
+
+    newShopTrade.setBot(this.sfuminator.users.get(this.sfuminator.shop.getBots()[0].getSteamid())); //temp
+    newShopTrade.reserveItems();
+    newShopTrade.setAsSending();
 };
 
 /**
