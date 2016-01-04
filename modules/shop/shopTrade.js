@@ -37,7 +37,7 @@ function ShopTrade(sfuminator, partner) {
     this.last_update_date = new Date();
     this.assets_limit = {partner: 20, shop: 20};
     this.steamToken = "";
-    this.onItemsReservedCallbacks = [];
+    this.onceItemsReservedCallbacks = [];
     events.EventEmitter.call(this);
 
     this._bindHandlers();
@@ -49,10 +49,10 @@ ShopTrade.prototype._bindHandlers = function () {
     var self = this;
     this.on("itemsReserved", function () {
         self.itemsReserved = true;
-        for (var i = 0; i < self.onItemsReservedCallbacks.length; i += 1) {
-            self.onItemsReservedCallbacks[i]();
+        for (var i = 0; i < self.onceItemsReservedCallbacks.length; i += 1) {
+            self.onceItemsReservedCallbacks[i]();
         }
-        self.onItemsReservedCallbacks = [];
+        self.onceItemsReservedCallbacks = [];
     });
     this.on("itemsDereserved", function () {
         self.itemsReserved = false;
@@ -115,6 +115,7 @@ ShopTrade.prototype.setAsSent = function (tradeOfferID) {
 ShopTrade.prototype.cancel = function () {
     this.dereserveShopItems();
     if (this.hasSteamTrade()) {
+        this.log.debug("Found steamTrade associated, cancelling");
         this.steamTrade.cancel();
         this.unsetSteamTrade();
     }
@@ -340,12 +341,12 @@ ShopTrade.prototype.reserveItems = function () {
     });
 
     this.reserveShopItems();
-    //this.currency.reserve(); //Used for botsController
-    self.emit("itemsReserved"); //Used only for core.js
+    this.currency.reserve(); //Used for botsController
+    //self.emit("itemsReserved"); //Used only for core.js
 };
 
-ShopTrade.prototype.onItemsReserved = function (callback) {
-    this.onItemsReservedCallbacks.push(callback);
+ShopTrade.prototype.onceItemsReserved = function (callback) {
+    this.onceItemsReservedCallbacks.push(callback);
 };
 
 /**
@@ -369,9 +370,9 @@ ShopTrade.prototype.dereserveShopItems = function () {
     this.log.debug("Dereserving items", 3);
     this.logAssets(3);
     for (var i = 0; i < this.assets.length; i += 1) {
-        this.log.debug("Checking if reservation for #" + this.assets[i].getID() + " exist");
+        this.log.debug("Checking if reservation for #" + this.assets[i].getID() + " exist", 1);
         if (this.shop.reservations.exist(this.assets[i].getID())) {
-            this.log.debug("Yes, cancelling");
+            this.log.debug("Yes, cancelling", 1);
             this.shop.reservations.cancel(this.assets[i].getID());
         }
     }

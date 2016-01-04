@@ -15,6 +15,7 @@ var Search = require('./shop/shopSearch.js');
  * General purpose Shop class
  * @param {Sfuminator} sfuminator The Sfuminator instance
  * @returns {Shop}
+ * @construct
  */
 function Shop(sfuminator) {
     this.sfuminator = sfuminator;
@@ -46,12 +47,15 @@ function Shop(sfuminator) {
     this.sections = {};
     this.hiddenSections = ["currency"];
 
+    this._onceSectionItemsUpdatedHandlers = [];
+
     events.EventEmitter.call(this);
     var self = this;
     this.init();
     this.inventory.on("new", function (changes) {
         self.update(changes);
         self.emit("sectionItemsUpdated", changes.toAdd);
+        self._manageOnceSectionItemsUpdatedHandlers(changes.toAdd);
     });
 }
 
@@ -298,6 +302,10 @@ Shop.prototype.getActiveTrades = function (callback) {
     });
 };
 
+Shop.prototype.onceSectionItemsUpdated = function (callback) {
+    this._onceSectionItemsUpdatedHandlers.push(callback);
+};
+
 Shop.prototype._getActivePartnersQuery = function () {
     return "SELECT id,steamid FROM shop_trades WHERE (status!='closed' OR last_update_date>='"
         + new Date(new Date() - this.sfuminator.shopTrade_decay).toMysqlFormat() + "') " + this._getActivePartnersBotComponentQuery()
@@ -309,4 +317,11 @@ Shop.prototype._getActivePartnersBotComponentQuery = function () {
         query += "'" + this.bots[i].getSteamid() + "'";
     }
     return query + ")";
+};
+
+Shop.prototype._manageOnceSectionItemsUpdatedHandlers = function (newItems) {
+    for (var i = 0; i < this._onceSectionItemsUpdatedHandlers.length; i += 1) {
+        this._onceSectionItemsUpdatedHandlers[i](newItems);
+    }
+    this._onceSectionItemsUpdatedHandlers = [];
 };

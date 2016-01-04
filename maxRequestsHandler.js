@@ -46,6 +46,7 @@ MaxRequestsHandler.prototype.cleanOldRequests = function () {
             if (this.requests[ip].date[i] < limit) {
                 this.requests[ip].date.splice(i, 1);
                 length -= 1;
+                i -= 1;
             }
         }
         if (length === 0) {

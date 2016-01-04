@@ -48,7 +48,7 @@ ShopItemIDs.prototype.make = function (shopItem) {
 ShopItemIDs.prototype.link = function (shopItem) {
     var unique_id = shopItem.getUniqueItemID();
     var game_code = shopItem.getGameCode();
-    this.log.debug("Linking unique_id: " + unique_id + ", game: " + game_code);
+    this.log.debug("Linking unique_id: " + unique_id + ", game: " + game_code, 1);
     this._linkLocal(unique_id, game_code);
     this._saveLink(unique_id, game_code);
 };
@@ -60,7 +60,7 @@ ShopItemIDs.prototype.link = function (shopItem) {
 ShopItemIDs.prototype.unlink = function (shopItem) {
     var unique_id = shopItem.getUniqueItemID();
     var game_code = shopItem.getGameCode();
-    this.log.debug("Unlinking unique_id: " + unique_id + ", game: " + game_code);
+    this.log.debug("Unlinking unique_id: " + unique_id + ", game: " + game_code, 1);
     this._unlinkLocal(unique_id, game_code);
     this._saveUnlink(shopItem.getID());
 };

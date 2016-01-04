@@ -11,6 +11,7 @@ var SteamGames = require('../../lib/steamGames.js');
  * @param {String} steamid User steamid
  * @param {Sfuminator} sfuminator The sfuminator instance
  * @returns {User}
+ * @constructor
  */
 function User(steamid, sfuminator) {
     this.steamid = steamid;
