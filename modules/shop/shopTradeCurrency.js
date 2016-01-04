@@ -92,22 +92,25 @@ ShopTradeCurrency.prototype.reserve = function () {
             var bot = this.shop.sfuminator.getBotsController().getBot(smeltingItemOwner);
             bot.steamClient.craftTF2Items([this.getSmeltingItem().getItem()]);
             //Detect new Items, and be sure to check that they are the crafted ones
-            var checkIfCrafted = function (newItems) {
-                self.log.debug("Detected new items");
-                self.log.debug(bot.steamClient.lastCraftedItems);
-                for (var i = 0; i < newItems.length; i += 1) {
-                    self.log.debug(newItems[i].getItem().getID());
-                    for (var p = 0; p < bot.steamClient.lastCraftedItems.length; p += 1) {
-                        if (newItems[i].getItem().getID() === bot.steamClient.lastCraftedItems[p]) {
-                            self.iSmelted += 1;
-                            self.reserve();
-                            checkIfCrafted = null;
-                            return;
+            var checkIfCrafted = function () {
+                self.shop.onceSectionItemsUpdated(function (newItems) {
+                    self.log.debug("Detected new items");
+                    self.log.debug(bot.steamClient.lastCraftedItems);
+                    for (var i = 0; i < newItems.length; i += 1) {
+                        self.log.debug(newItems[i].getItem().getID());
+                        for (var p = 0; p < bot.steamClient.lastCraftedItems.length; p += 1) {
+                            if (newItems[i].getItem().getID() === bot.steamClient.lastCraftedItems[p]) {
+                                self.iSmelted += 1;
+                                self.reserve();
+                                return;
+                            }
                         }
                     }
-                }
-                self.log.warning("It wasn't the newly crafted item!");
+                    self.log.warning("It wasn't the newly crafted item!");
+                    checkIfCrafted();
+                });
             };
+            checkIfCrafted();
             this.shop.on("sectionItemsUpdated", checkIfCrafted);
         } else {
             this.log.error("We already smelt metal twice (ref>rec>scrap). Got request to smelt again?!");
@@ -120,9 +123,12 @@ ShopTradeCurrency.prototype.loadAssets = function () {
 };
 
 ShopTradeCurrency.prototype.cleanAssets = function () {
-    for (var i = 0; i < this.shopTrade.assets.length; i += 1) {
+    var assetsLength = this.shopTrade.assets.length;
+    for (var i = 0; i < assetsLength; i += 1) {
         if (this.shopTrade.assets[i].isCurrency()) {
             this.shopTrade.assets.splice(i, 1);
+            assetsLength -= 1;
+            i -= 1;
         }
     }
 };
@@ -139,13 +145,11 @@ ShopTradeCurrency.prototype.reserveAssets = function () {
  * @returns {ShopItem[]}
  */
 ShopTradeCurrency.prototype.getPartnerCurrencyItems = function () {
-    if (!this.partnerCurrencyItems) {
-        this.partnerCurrencyItems = [];
-        var partnerItems = this.shopTrade.getPartner().getTF2Backpack().getItems();
-        for (var i = 0; i < partnerItems.length; i += 1) {
-            if (partnerItems[i].isCurrency()) {
-                this.partnerCurrencyItems.push(new ShopItem(this.shop, partnerItems[i], "mine"));
-            }
+    this.partnerCurrencyItems = [];
+    var partnerItems = this.shopTrade.getPartner().getTF2Backpack().getItems();
+    for (var i = 0; i < partnerItems.length; i += 1) {
+        if (partnerItems[i].isCurrency()) {
+            this.partnerCurrencyItems.push(new ShopItem(this.shop, partnerItems[i], "mine"));
         }
     }
     return this.partnerCurrencyItems;
@@ -182,11 +186,14 @@ ShopTradeCurrency.prototype.balanceAssets = function (currencyGiverItems, curren
     }
     //Removing items that would just add extra shit that can't reach compensation while the ourExtraChangeCurrency would be enough
     if (this.getTradeBalance() < 0) {
-        for (i = this.assets.length - 1; i > 0; i -= 1) {
+        var assetsLength = this.assets.length;
+        for (i = 0; i < assetsLength; i += 1) {
             if (this.assets[i].isCurrency()) {
                 currencyGiverItem = this.assets[i];
                 if (this.getTradeBalance() + extraChangeCurrency.getPrice() - currencyGiverItem.getPrice() > 0) {
                     this.assets.splice(i, 1);
+                    assetsLength -= 1;
+                    i -= 1;
                 }
             }
         }

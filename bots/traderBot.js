@@ -26,6 +26,8 @@ function TraderBot(user) {
      */
     this.assignedShopTrades = [];
 
+    this.friendListLimit = 170;
+
     this.log = new Logs({applicationName: "Trader bot " + this.steamid, color: "grey", dim: true});
     var self = this;
     this.steamClient.on('loggedIn', function () {
@@ -34,8 +36,21 @@ function TraderBot(user) {
 }
 
 TraderBot.prototype.onLogin = function () {
+    var self = this;
     this.steamClient.setAutomaticMobileTradingConfirmation();
     this.steamClient.startTradeOffersManagerPolling();
+    this.steamClient.on("newFriend", function (friend) {
+        self.log.debug("I'm now friend with " + friend.getSteamid());
+        if (self.steamClient.getNumberOfFriends() > self.friendListLimit) {
+            self.steamClient.getOldestFriend().remove();
+        }
+    });
+    this.steamClient.on("friendList", function () {
+        self.log.debug("My friend list have " + self.steamClient.getNumberOfFriends() + " friends");
+        while (self.steamClient.getNumberOfFriends() > self.friendListLimit) {
+            self.steamClient.getOldestFriend().remove();
+        }
+    });
 };
 
 TraderBot.prototype.getSteamid = function () {
@@ -74,24 +89,24 @@ TraderBot.prototype.assignShopTrade = function (shopTrade) {
 TraderBot.prototype.sendShopTrade = function (shopTrade) {
     var self = this;
     var partnerSteamid = shopTrade.getPartner().getSteamid();
-    var partner = this.steamClient.getFriend(partnerSteamid);
     this.assignShopTrade(shopTrade);
     shopTrade.setBot(this.getUser());
 
     if (!shopTrade.hasSteamToken() && !this.steamClient.isFriend(partnerSteamid)) {
         this.steamClient.addFriend(partnerSteamid);
         this.steamClient.onFriendWith(partnerSteamid, function () {
-            partner.sendMessage("Let's trade");
+            self.steamClient.getFriend(partnerSteamid).sendMessage("Let's trade");
             if (shopTrade.areItemsReserved()) {
                 self.sendTrade(shopTrade);
             } else {
-                shopTrade.onItemsReserved(function () {
+                shopTrade.onceItemsReserved(function () {
                     self.sendTrade(shopTrade);
                 });
             }
         });
     } else {
-        shopTrade.onItemsReserved(function () {
+        shopTrade.onceItemsReserved(function () {
+            self.steamClient.getFriend(partnerSteamid).sendMessage("Let's trade");
             self.sendTrade(shopTrade);
         });
     }
@@ -124,6 +139,19 @@ TraderBot.prototype._bindTrade = function (shopTrade) {
     var partnerSteamid = shopTrade.getPartner().getSteamid();
     var partner = this.steamClient.getFriend(partnerSteamid);
     var steamTradeOffer = shopTrade.getSteamTrade();
+    steamTradeOffer.on("itemsRevoked", function () {
+        steamTradeOffer.pauseAutoRetry();
+        self.log.warning("Items have been revoked, will retry currency reservation");
+        shopTrade.getPartner().getTF2Backpack().get(function () {
+            shopTrade.currency.cleanAssets();
+            shopTrade.onceItemsReserved(function () {
+                steamTradeOffer.resetItems();
+                shopTrade.injectSteamTrade(steamTradeOffer);
+                steamTradeOffer.continueAutoRetry();
+            });
+            shopTrade.reserveItems();
+        });
+    });
     steamTradeOffer.on("tradeError", function (error) {
         shopTrade.cancel();
         self.log.warning("Error sending offer: " + error);
@@ -141,9 +169,8 @@ TraderBot.prototype._bindTrade = function (shopTrade) {
         partner.sendMessage("Oh, it seems you declined the trade offer...");
     });
     steamTradeOffer.on("partnerCancelled", function () {
-        shopTrade.cancel();
         self.log.debug("Offer to " + partnerSteamid + " has been cancelled");
-        partner.sendMessage("Oh... you cancelled the trade");
+        partner.sendMessage("Oh... okay, trade has been cancelled");
     });
     steamTradeOffer.on("partnerIsAFK", function () {
         shopTrade.cancel();
