@@ -340,7 +340,8 @@ ShopTrade.prototype.reserveItems = function () {
     });
 
     this.reserveShopItems();
-    this.currency.reserve();
+    //this.currency.reserve(); //Used for botsController
+    self.emit("itemsReserved"); //Used only for core.js
 };
 
 ShopTrade.prototype.onItemsReserved = function (callback) {
