@@ -2,6 +2,7 @@ module.exports = Backpack;
 
 var events = require("events");
 var Logs = require('../lib/logs.js');
+var Price = require("../modules/price.js");
 var TF2Item = require("./tf2/tf2Item.js");
 var SteamGames = require('../lib/steamGames.js');
 
@@ -11,6 +12,7 @@ var SteamGames = require('../lib/steamGames.js');
  * @param {SteamGame} game
  * @param {Cloud} cloud Cloud connection
  * @returns {Backpack}
+ * @construct
  */
 function Backpack(steamid, game, cloud) {
     this.cloud = cloud;
@@ -125,6 +127,28 @@ Backpack.prototype.getItems = function () {
         return this.items;
     }
     return [];
+};
+
+Backpack.prototype.getCurrencyItems = function () {
+    var currencyItems = [];
+    for (var i = 0; i < this.items.length; i += 1) {
+        if (this.items[i].isCurrency()) {
+            currencyItems.push(this.items[i]);
+        }
+    }
+    return currencyItems;
+};
+
+/**
+ * @returns {Price}
+ */
+Backpack.prototype.getCurrencyAmount = function () {
+    var currencyItems = this.getCurrencyItems();
+    var value = 0;
+    for (var i = 0; i < currencyItems.length; i += 1) {
+        value += currencyItems[i].getPrice();
+    }
+    return new Price(value, "scrap");
 };
 
 Backpack.prototype.hasTF2Items = function () {

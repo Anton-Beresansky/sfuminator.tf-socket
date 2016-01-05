@@ -298,11 +298,28 @@ ShopTrade.prototype.verifyItems = function (callback) {
         return;
     }
     if (this.items.hasOwnProperty("mine") && this.items.mine instanceof Array) {
-        this.verifyMineItems(callback, function (item) {
+        this.verifyMineItems(function (success) {
+            if (success) {
+                self._verifyItemsFinalStep(callback);
+            } else {
+                callback(false);
+            }
+        }, function (item) {
             var shopItem = new ShopItem(self.shop, item);
             shopItem.setAsMineSection();
             self.assets.push(shopItem);
         });
+    } else {
+        this._verifyItemsFinalStep(callback);
+    }
+};
+
+ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
+    this.currency.loadAssets(); //If I don't put this it will think balance is still 0 :(
+    if (this.getPartner().getTF2Backpack().getCurrencyAmount() < (-this.currency.getTradeBalance())) {
+        this.response = this.ajaxResponses.notEnoughCurrency;
+        this.emit("verificationResponse", this.response);
+        callback(false);
     } else {
         callback(true);
     }
