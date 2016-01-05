@@ -134,6 +134,10 @@ ShopTrade.prototype.setAsAccepted = function () {
     this.setStatusInfo(TradeConstants.statusInfo.closed.ACCEPTED);
     this.commit();
     this.log.debug("Trade " + this.getID() + " has been accepted");
+
+    //Old interface porting
+    this.sfuminator.botPorting.increaseHatTradeCount(this.getPartner().getSteamid());
+    this.sfuminator.botPorting._anticipateItemRemoval(this);
 };
 
 /**

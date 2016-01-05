@@ -113,10 +113,12 @@ BotPorting.prototype.increaseHatTradeCount = function (steamid) {
     var now = parseInt(new Date().getTime() / 1000);
     for (var i = 0; i < assets.length; i += 1) {
         var item = assets[i].getItem();
-        if (item.getOwner() === steamid) {
-            compatible_trades.push({steamid: steamid, my_defindex: 5002, his_defindex: item.defindex, date: now});
-        } else {
-            compatible_trades.push({steamid: steamid, my_defindex: item.defindex, his_defindex: 5002, date: now});
+        if (!item.isCurrency()) {
+            if (item.getOwner() === steamid) {
+                compatible_trades.push({steamid: steamid, my_defindex: 5002, his_defindex: item.defindex, date: now});
+            } else {
+                compatible_trades.push({steamid: steamid, my_defindex: item.defindex, his_defindex: 5002, date: now});
+            }
         }
     }
     if (compatible_trades.length > 0) {
@@ -156,10 +158,6 @@ BotPorting.prototype.setTradeOfferStatus = function (steamid, status, status_inf
     shopTrade.setStatusInfo(status_info);
     shopTrade.commit();
     if (shopTrade.isClosed()) {
-        if (shopTrade.hasBeenAccepted()) {
-            this.increaseHatTradeCount(steamid);
-            this._anticipateItemRemoval(shopTrade);
-        }
         shopTrade.dereserveShopItems();
     }
     callback({result: "success", steamid: steamid, status: status});
