@@ -131,9 +131,11 @@ Backpack.prototype.getItems = function () {
 
 Backpack.prototype.getCurrencyItems = function () {
     var currencyItems = [];
-    for (var i = 0; i < this.items.length; i += 1) {
-        if (this.items[i].isCurrency()) {
-            currencyItems.push(this.items[i]);
+    if (this.items instanceof Array) {
+        for (var i = 0; i < this.items.length; i += 1) {
+            if (this.items[i].isCurrency()) {
+                currencyItems.push(this.items[i]);
+            }
         }
     }
     return currencyItems;

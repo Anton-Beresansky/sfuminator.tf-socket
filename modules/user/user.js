@@ -23,7 +23,9 @@ function User(steamid, sfuminator) {
     this.log = new Logs({applicationName: "User " + JSON.stringify(steamid), color: "cyan"});
     this.decayTime = 1000 * 60 * 60 * 8; // 8hrs
     this.last_use_date = new Date();
+    this.databaseHasBeenLoaded = false;
     this.update();
+    this.loadDatabaseInfo();
     this.tf2Backpack.getCached();
     events.EventEmitter.call(this);
 }
@@ -41,7 +43,7 @@ User.prototype.getSteamid = function () {
  * Get name
  * @returns {String}
  */
-User.prototype.getName = function(){
+User.prototype.getName = function () {
     return this.personaname;
 };
 
@@ -49,8 +51,40 @@ User.prototype.getName = function(){
  * Get avatar url (biggest size available)
  * @returns {String}
  */
-User.prototype.getAvatar = function(){
+User.prototype.getAvatar = function () {
     return this.avatarfull;
+};
+
+User.prototype.getFirstLogin = function () {
+    if (this._canGetDatabaseParameter()) {
+        return this.first_login;
+    } else {
+        return new Date();
+    }
+};
+
+User.prototype.getLastLogin = function () {
+    if (this._canGetDatabaseParameter()) {
+        return this.last_login;
+    } else {
+        return new Date();
+    }
+};
+
+User.prototype.getLastVisit = function () {
+    if (this._canGetDatabaseParameter()) {
+        return this.last_visit;
+    } else {
+        return new Date();
+    }
+};
+
+User.prototype.getNumberOfTrades = function () {
+    if (this._canGetDatabaseParameter()) {
+        return this.numberOfTrades;
+    } else {
+        return 0;
+    }
 };
 
 /**
@@ -79,7 +113,7 @@ User.prototype.hasActiveShopTrade = function () {
 
 /**
  * Get user Shop Trade
- * @returns {ShopTrade} 
+ * @returns {ShopTrade}
  */
 User.prototype.getShopTrade = function () {
     return this.shopTrade;
@@ -131,6 +165,20 @@ User.prototype._startDecay = function () {
     }, this.decayTime);
 };
 
+User.prototype.loadDatabaseInfo = function () {
+    var self = this;
+    this.db.connect(function (connection) {
+        connection.beginTransaction(function () {
+            self._loadUserInfoFromDatabase(connection, function () {
+                self._loadNumberOfTrades(connection, function () {
+                    connection.commitRelease();
+                    self.databaseHasBeenLoaded = true;
+                });
+            });
+        });
+    });
+};
+
 /**
  * Update user data set (Name, Avatar)
  */
@@ -170,9 +218,47 @@ User.prototype.fetchInfo = function (callback) {
 User.prototype.updateDatabase = function () {
     var self = this;
     this.db.connect(function (connection) {
-        connection.query(self.getUpdateUserQuery(connection), function () {
+        connection.query(self._getUpdateUserQuery(connection), function () {
             connection.release();
         });
+    });
+};
+
+User.prototype._canGetDatabaseParameter = function () {
+    if (this.databaseHasBeenLoaded) {
+        return true;
+    } else {
+        this.log.error("Requesting parameter that hasn't been loaded from database yet")
+    }
+};
+
+User.prototype._loadUserInfoFromDatabase = function (connection, callback) {
+    var self = this;
+    connection.query(this._getFetchUserInfoQuery(), function (result, isEmpty) {
+        if (!isEmpty) {
+            var dbUser = result[0];
+            self.first_login = new Date(dbUser.first_login);
+            self.last_login = new Date(dbUser.last_login);
+            self.last_visit = new Date(dbUser.last_visit);
+        } else {
+            self.first_login = new Date();
+            self.last_login = new Date();
+            self.last_visit = new Date();
+        }
+        callback();
+    });
+};
+
+User.prototype._loadNumberOfTrades = function (connection, callback) {
+    var self = this;
+    connection.query(this._getFetchNumberOfTradesQuery(), function (result, isEmpty) {
+        if (!isEmpty) {
+            self.numberOfTrades = result[0].numberOfTrades;
+        } else {
+            self.numberOfTrades = 0;
+        }
+        console.log(self.numberOfTrades);
+        callback();
     });
 };
 
@@ -181,6 +267,14 @@ User.prototype.updateDatabase = function () {
  * @param {DatabaseConnection} connection
  * @returns {String}
  */
-User.prototype.getUpdateUserQuery = function (connection) {
+User.prototype._getUpdateUserQuery = function (connection) {
     return "UPDATE `users` SET `name`=" + (connection.c.escape(this.personaname.toString())) + ", `avatar`='" + this.avatarfull.toString() + "' WHERE steam_id='" + this.steamid + "' LIMIT 1";
+};
+
+User.prototype._getFetchUserInfoQuery = function () {
+    return "SELECT first_login,last_login,last_visit FROM `users` where `steam_id`='" + this.steamid + "'";
+};
+
+User.prototype._getFetchNumberOfTradesQuery = function () {
+    return "SELECT count(*) AS numberOfTrades FROM shop_trades WHERE steamid='" + this.steamid + "' AND status_info='accepted'";
 };
