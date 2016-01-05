@@ -257,7 +257,6 @@ User.prototype._loadNumberOfTrades = function (connection, callback) {
         } else {
             self.numberOfTrades = 0;
         }
-        console.log(self.numberOfTrades);
         callback();
     });
 };
