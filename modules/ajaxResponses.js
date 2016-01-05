@@ -17,8 +17,16 @@ function AjaxResponses(sfuminator) {
     this.itemCantBeSold = {result: "error", message: "Selected item can't be sold"};
     this.alreadyInTrade = {result: "error", message: "You are already in trade"};
     this.notInTrade = {result: "error", message: "You are not in trade"};
+    this.notEnoughCurrency = {result: "error", message: "Sorry, but it seems you don't have enough metal"};
+    this.denyManualMultiItems = {
+        result: "error",
+        message: "Sorry, in manual trade you can only sell or only buy items"
+    };
     this.shopTradeCooldown = function (last_update_date) {
-        return {result: "error", message: "You have to wait " + (parseInt((this.sfuminator.shopTrade_decay - (new Date() - last_update_date)) / 1000) + 1) + " seconds before another trade"};
+        return {
+            result: "error",
+            message: "You have to wait " + (parseInt((this.sfuminator.shopTrade_decay - (new Date() - last_update_date)) / 1000) + 1) + " seconds before another trade"
+        };
     };
     this.tradeRequestSuccess = function (trade) {
         return {result: "success", trade: trade.valueOf()};
@@ -31,19 +39,27 @@ function AjaxResponses(sfuminator) {
         return {result: "error", message: "Sorry, you can sell only " + limit + " items per trade"};
     };
     this.itemExceedCount = function (item, excess) {
-        return {result: "error", message: "Sorry, you have to remove " + ((excess > 1) ? (excess + " ") : "") + '"' + item.getFullName() + '", there are too many in the shop right now'};
+        return {
+            result: "error",
+            message: "Sorry, you have to remove " + ((excess > 1) ? (excess + " ") : "") + '"' + item.getFullName() + '", there are too many in the shop right now'
+        };
     };
     this.itemNotFound = {result: "error", message: "No item found in the shop"};
     this.cannotTrade = function (steam_status) {
         if (steam_status === "steam_down") {
-            return {result: "error", message: "Sorry, steam is not working properly at the moment, come back in a few minutes."};
+            return {
+                result: "error",
+                message: "Sorry, steam is not working properly at the moment, come back in a few minutes."
+            };
         } else if (steam_status === "maintenance") {
-            return {result: "error", message: "Sorry, bots are down for maintenance at the moment, come back in a few minutes."};
+            return {
+                result: "error",
+                message: "Sorry, bots are down for maintenance at the moment, come back in a few minutes."
+            };
         } else {
             return {result: "error", message: "Sorry, trading is disabled, come back in a few minutes."};
         }
     };
-    this.denyManualMultiItems = {result: "error", message: "Sorry, in manual trade you can only sell or only buy items"};
 }
 
 /**

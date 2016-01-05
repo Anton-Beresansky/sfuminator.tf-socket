@@ -59,14 +59,9 @@ ShopTradeCurrency.prototype.reserve = function () {
     this.log.debug("Reserving currency...");
     this.loadAssets();
 
-    var partnerCurrencyItems = this.getPartnerCurrencyItems();
+    var partnerCurrencyItems = this.getPartnerCurrencyShopItems();
     var ourCurrencyItems = this.shop.sections["currency"].getItems();
-
-    var value = 0;
-    for (var i = 0; i < partnerCurrencyItems.length; i += 1) {
-        value += partnerCurrencyItems[i].getPrice();
-    }
-    this.log.debug("Partner currency accounts to: " + (new Price(value, "scrap")).toMetal());
+    this.log.debug("Partner currency accounts to: " + this.shopTrade.getPartner().getTF2Backpack().getCurrencyAmount().toMetal() + "ref");
 
     // > Getting currency items
     if (this.getSignedTradeBalance() > 0) { //We have to receive currency, our items worth more
@@ -144,15 +139,13 @@ ShopTradeCurrency.prototype.reserveAssets = function () {
 /**
  * @returns {ShopItem[]}
  */
-ShopTradeCurrency.prototype.getPartnerCurrencyItems = function () {
-    this.partnerCurrencyItems = [];
-    var partnerItems = this.shopTrade.getPartner().getTF2Backpack().getItems();
-    for (var i = 0; i < partnerItems.length; i += 1) {
-        if (partnerItems[i].isCurrency()) {
-            this.partnerCurrencyItems.push(new ShopItem(this.shop, partnerItems[i], "mine"));
-        }
+ShopTradeCurrency.prototype.getPartnerCurrencyShopItems = function () {
+    this.partnerCurrencyShopItems = [];
+    var partnerCurrencyItems = this.shopTrade.getPartner().getTF2Backpack().getCurrencyItems();
+    for (var i = 0; i < partnerCurrencyItems.length; i += 1) {
+        this.partnerCurrencyShopItems.push(new ShopItem(this.shop, partnerCurrencyItems[i], "mine"));
     }
-    return this.partnerCurrencyItems;
+    return this.partnerCurrencyShopItems;
 };
 
 ShopTradeCurrency.prototype.balanceAssets = function (currencyGiverItems, currencyReceiverItems) {

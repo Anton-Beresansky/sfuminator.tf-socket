@@ -117,7 +117,7 @@ Reservations.prototype.load = function (callback) {
  */
 Reservations.prototype.saveChange = function (action, reservation, callback) {
     var self = this;
-    this.log.debug("Saving, " + action + " - " + reservation.getID());
+    this.log.debug("Saving, " + action + " - " + reservation.getID(), 1);
     this.db.connect(function (connection) {
         connection.query(self._saveChangeQuery(action, reservation), function () {
             connection.release();
