@@ -209,7 +209,7 @@ ShopTradeCurrency.prototype.balanceAssets = function (currencyGiverItems, curren
                         receiverCurrencyBalancing.push(currencyReceiverItem);
                         currencyTradeBalanceTest -= currencyReceiverItem.getPrice();
                     } else if (!extraChangeCurrency.isMineItem()) {
-                        this.setSmeltingItem(currencyReceiverItem);
+                        this.setSmeltingItem(extraChangeCurrency);
                     }
                 }
             }
