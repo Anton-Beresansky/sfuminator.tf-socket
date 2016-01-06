@@ -320,7 +320,7 @@ ShopTrade.prototype.verifyItems = function (callback) {
 
 ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
     this.currency.loadAssets(); //If I don't put this it will think balance is still 0 :(
-    if (this.getPartner().getTF2Backpack().getCurrencyAmount() < (-this.currency.getTradeBalance())) {
+    if (this.getPartner().getTF2Backpack().getCurrencyAmount() < this.currency.getSignedTradeBalance()) {
         this.response = this.ajaxResponses.notEnoughCurrency;
         this.emit("verificationResponse", this.response);
         callback(false);

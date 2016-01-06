@@ -340,7 +340,7 @@ Sfuminator.prototype.requestTrade = function (request, mode, callback) {
             callback(response);
         });
         trade.verifyItems(function (success) {
-            self.log.debug("Request Trade Offer item verification, success: " + success);
+            self.log.debug("Request Trade Offer item verification, response: " + (success ? "success" : trade.response.code));
             if (success) {
                 if (trade.getPartnerItemCount() > 0 && trade.getShopItemCount() > 0 && trade.getMode() === TradeConstants.mode.MANUAL_TRADE) {
                     callback(self.responses.denyManualMultiItems);
