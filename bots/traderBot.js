@@ -66,6 +66,7 @@ TraderBot.prototype.onLogin = function () {
         self.steamClient.sendMessage(steamid, message);
     });
     this.interactions.on('postComment', function (steamid, message) {
+        self.log.debug("Leaving a +rep comment on " + steamid + " profile");
         self.steamClient.getFriend(steamid).postProfileComment(message, function (success) {
             if (!success) {
                 self.steamClient.sendMessage(steamid, "There was a problem when leaving the comment, I guess we will try this later, sorry :(");
