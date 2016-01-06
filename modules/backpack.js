@@ -111,9 +111,11 @@ Backpack.prototype.itemExist = function (itemID) {
  * @returns {TF2Item|Boolean} False if item does not exist
  */
 Backpack.prototype.getItem = function (itemID) {
-    for (var i = 0; i < this.items.length; i += 1) {
-        if (this.items[i].getID() === itemID) {
-            return this.items[i];
+    if (this.items instanceof Array) {
+        for (var i = 0; i < this.items.length; i += 1) {
+            if (this.items[i].getID() === itemID) {
+                return this.items[i];
+            }
         }
     }
     return false;
