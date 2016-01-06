@@ -7,57 +7,62 @@ module.exports = AjaxResponses;
  */
 function AjaxResponses(sfuminator) {
     this.sfuminator = sfuminator;
-    this.error = {result: "error", message: "Error"};
-    this.methodNotRecognised = {result: "error", message: "Method not recognised"};
-    this.notLogged = {result: "error", message: "You are not logged in"};
-    this.noItems = {result: "error", message: "No items selected"};
-    this.itemsSelectedNotFound = {result: "error", message: "One or more selected items were not found"};
-    this.itemIsAlreadyReserved = {result: "error", message: "One or more selected items have been already reserved"};
-    this.sectionNotFound = {result: "error", message: "Shop section not found"};
-    this.itemCantBeSold = {result: "error", message: "Selected item can't be sold"};
-    this.alreadyInTrade = {result: "error", message: "You are already in trade"};
-    this.notInTrade = {result: "error", message: "You are not in trade"};
-    this.notEnoughCurrency = {result: "error", message: "Sorry, but it seems you don't have enough metal"};
+    this.error = {result: "error", message: "Error", code: "error"};
+    this.methodNotRecognised = {result: "error", message: "Method not recognised", code: "method_not_recognised"};
+    this.notLogged = {result: "error", message: "You are not logged in", code: "not_logged"};
+    this.noItems = {result: "error", message: "No items selected", code: "no_items_selected"};
+    this.itemsSelectedNotFound = {result: "error", message: "One or more selected items were not found", code: "no_items_found"};
+    this.itemIsAlreadyReserved = {result: "error", message: "One or more selected items have been already reserved", code: "items_already_reserved"};
+    this.sectionNotFound = {result: "error", message: "Shop section not found", code: "section_not_found"};
+    this.itemCantBeSold = {result: "error", message: "Selected item can't be sold", code: "cant_sell_item"};
+    this.alreadyInTrade = {result: "error", message: "You are already in trade", code: "already_in_trade"};
+    this.notInTrade = {result: "error", message: "You are not in trade", code: "not_in_trade"};
+    this.notEnoughCurrency = {result: "error", message: "Sorry, but it seems you don't have enough metal", code: "not_enough_metal"};
     this.denyManualMultiItems = {
         result: "error",
-        message: "Sorry, in manual trade you can only sell or only buy items"
+        message: "Sorry, in manual trade you can only sell or only buy items",
+        code: "cant_do_manual"
     };
     this.shopTradeCooldown = function (last_update_date) {
         return {
             result: "error",
-            message: "You have to wait " + (parseInt((this.sfuminator.shopTrade_decay - (new Date() - last_update_date)) / 1000) + 1) + " seconds before another trade"
+            message: "You have to wait " + (parseInt((this.sfuminator.shopTrade_decay - (new Date() - last_update_date)) / 1000) + 1) + " seconds before another trade",
+            code: "trade_cooldown"
         };
     };
     this.tradeRequestSuccess = function (trade) {
-        return {result: "success", trade: trade.valueOf()};
+        return {result: "success", trade: trade.valueOf(), code: "success"};
     };
-    this.tradeCancelled = {result: "success", message: "Trade has been cancelled"};
+    this.tradeCancelled = {result: "success", message: "Trade has been cancelled", code: "trade_cancelled"};
     this.shopAssetsLimit = function (limit) {
-        return {result: "error", message: "Sorry, you can buy only " + limit + " items per trade"};
+        return {result: "error", message: "Sorry, you can buy only " + limit + " items per trade", code: "hat_limit"};
     };
     this.partnerAssetsLimit = function (limit) {
-        return {result: "error", message: "Sorry, you can sell only " + limit + " items per trade"};
+        return {result: "error", message: "Sorry, you can sell only " + limit + " items per trade", code: "hat_limit"};
     };
     this.itemExceedCount = function (item, excess) {
         return {
             result: "error",
-            message: "Sorry, you have to remove " + ((excess > 1) ? (excess + " ") : "") + '"' + item.getFullName() + '", there are too many in the shop right now'
+            message: "Sorry, you have to remove " + ((excess > 1) ? (excess + " ") : "") + '"' + item.getFullName() + '", there are too many in the shop right now',
+            code: "single_hat_limit"
         };
     };
-    this.itemNotFound = {result: "error", message: "No item found in the shop"};
+    this.itemNotFound = {result: "error", message: "No item found in the shop", code: ""};
     this.cannotTrade = function (steam_status) {
         if (steam_status === "steam_down") {
             return {
                 result: "error",
-                message: "Sorry, steam is not working properly at the moment, come back in a few minutes."
+                message: "Sorry, steam is not working properly at the moment, come back in a few minutes.",
+                code: "steam_down"
             };
         } else if (steam_status === "maintenance") {
             return {
                 result: "error",
-                message: "Sorry, bots are down for maintenance at the moment, come back in a few minutes."
+                message: "Sorry, bots are down for maintenance at the moment, come back in a few minutes.",
+                code: "bot_maintenance"
             };
         } else {
-            return {result: "error", message: "Sorry, trading is disabled, come back in a few minutes."};
+            return {result: "error", message: "Sorry, trading is disabled, come back in a few minutes.", code: "trading_disabled"};
         }
     };
 }
