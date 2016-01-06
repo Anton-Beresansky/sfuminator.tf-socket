@@ -180,7 +180,7 @@ TraderBot.prototype._bindTrade = function (shopTrade) {
         shopTrade.cancel();
         self.log.warning("Error sending offer: " + error);
         partner.sendMessage("Oh no! Steam returned an error when sending the offer: " + error);
-
+        logSteamError(shopTrade, error);
     });
     steamTradeOffer.on("tradeSent", function (tradeOfferID) {
         shopTrade.setAsSent(tradeOfferID);
@@ -209,3 +209,26 @@ TraderBot.prototype._bindTrade = function (shopTrade) {
         partner.sendMessage(self.interactions.getMessage("trade_complete", sfuminatorUser));
     });
 };
+
+/**
+ * @param {ShopTrade} shopTrade
+ * @param {Number} error
+ */
+function logSteamError(shopTrade, error) {
+    console.log("Couldn't fix error: " + error);
+    console.log("-- Trade info --");
+    console.log("Assets balance: " + shopTrade.currency.getSignedTradeBalance());
+    console.log("Trade items: " + JSON.stringify(shopTrade.items));
+    console.log("-- Trade assets --");
+    var assets = shopTrade.getAssets();
+    for (var i = 0; i < assets.length; i += 1) {
+        var ass = assets[i];
+        var itm = assets[i].getItem();
+        console.log(""
+            + "Owner: " + itm.getOwner() + ", "
+            + "Mine: " + ass.isMineItem() + ", "
+            + "ItemID: " + itm.getID() + ", "
+            + "ItemName: " + itm.getFullName()
+        );
+    }
+}
