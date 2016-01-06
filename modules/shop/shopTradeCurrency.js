@@ -208,7 +208,7 @@ ShopTradeCurrency.prototype.balanceAssets = function (currencyGiverItems, curren
                     if (currencyTradeBalanceTest + extraChangeCurrency.getPrice() - currencyReceiverItem.getPrice() >= 0) {
                         receiverCurrencyBalancing.push(currencyReceiverItem);
                         currencyTradeBalanceTest -= currencyReceiverItem.getPrice();
-                    } else if (extraChangeCurrency.isMineItem()) {
+                    } else if (!extraChangeCurrency.isMineItem()) {
                         this.setSmeltingItem(currencyReceiverItem);
                     }
                 }
