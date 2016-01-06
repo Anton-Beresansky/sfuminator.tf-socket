@@ -40,12 +40,6 @@ BotsController.prototype._bindBotHandler = function (bot) {
         self.log.debug("Loading user " + friend.getSteamid());
         self.sfuminator.users.get(friend.getSteamid());
     });
-    bot.steamClient.on('message', function (steamid, message) {
-        var answer = bot.interactions.getAnswer(message, self.sfuminator.users.get(steamid));
-        if (answer) {
-            bot.steamClient.sendMessage(steamid, answer);
-        }
-    });
 };
 
 BotsController.prototype.loadBots = function () {

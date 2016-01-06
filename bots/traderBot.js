@@ -56,8 +56,21 @@ TraderBot.prototype.onLogin = function () {
             self.steamClient.getOldestFriend([self.sfuminator.admin]).remove();
         }
     });
+    this.steamClient.on('message', function (steamid, message) {
+        var answer = self.interactions.getAnswer(message, self.sfuminator.users.get(steamid));
+        if (answer) {
+            self.steamClient.sendMessage(steamid, answer);
+        }
+    });
     this.interactions.on('sendMessage', function (steamid, message) {
         self.steamClient.sendMessage(steamid, message);
+    });
+    this.interactions.on('postComment', function (steamid, message) {
+        self.steamClient.getFriend(steamid).postProfileComment(message, function (success) {
+            if (!success) {
+                self.steamClient.sendMessage(steamid, "There was a problem when leaving the comment, I guess we will try this later, sorry :(");
+            }
+        });
     });
 };
 
