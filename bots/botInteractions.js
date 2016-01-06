@@ -503,7 +503,7 @@ function BotInteractions() {
             need_answer: true,
             onAnswer: function (user, type) {
                 if (type === "boolean_answer_yes") {
-                    self.emit("postProfileComment", user.getSteamid(), getRandomElement(this.message_senteces.rep_comment.message));
+                    self.emit("postProfileComment", user.getSteamid(), getRandomElement(self.message_senteces.rep_comment.message));
                     return self.getMessage("yes_rep", user);
                 } else if (type === "boolean_answer_no") {
                     return self.getMessage("no_rep", user);
