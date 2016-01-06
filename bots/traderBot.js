@@ -166,6 +166,7 @@ TraderBot.prototype._bindTrade = function (shopTrade) {
         shopTrade.cancel();
         self.log.warning("Error sending offer: " + error);
         partner.sendMessage("Oh no! Steam returned an error when sending the offer: " + error);
+
     });
     steamTradeOffer.on("tradeSent", function (tradeOfferID) {
         shopTrade.setAsSent(tradeOfferID);

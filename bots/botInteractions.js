@@ -297,7 +297,7 @@ function BotInteractions() {
                 if (number_of_trades >= 10) {
                     number_of_trades = 2;
                 }
-                if (!self.getInteraction(user).canBeRepped()) {
+                if (self.getInteraction(user).canBeRepped()) {
                     setTimeout(function () {
                         self.emit("sendMessage", user.getSteamid(), self.getMessage("ask_rep", user));
                     }, 2000);
