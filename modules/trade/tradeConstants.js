@@ -29,7 +29,8 @@ function TradeConstants() {
         HOLD: "hold",
         ACTIVE: "active",
         SENT: "sent",
-        CLOSED: "closed"
+        CLOSED: "closed",
+        NO_FRIEND: "noFriend"
     };
     /**
      * Legend:
@@ -41,9 +42,6 @@ function TradeConstants() {
      * @type {{hold: {NO_FRIEND: string}, closed: {ACCEPTED: string, CANCELLED: string, DECLINED: string, ERROR: string, AFK: string}}}
      */
     this.statusInfo = {
-        hold: {
-            NO_FRIEND: "noFriend"
-        },
         closed: {
             ACCEPTED: "accepted",
             CANCELLED: "cancelled",

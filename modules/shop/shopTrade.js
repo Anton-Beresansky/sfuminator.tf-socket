@@ -45,6 +45,8 @@ function ShopTrade(sfuminator, partner) {
 
 require("util").inherits(ShopTrade, events.EventEmitter);
 
+ShopTrade.addFriendTimeoutTime = 1000 * 60 * 2; //2 min
+
 ShopTrade.prototype._bindHandlers = function () {
     var self = this;
     this.on("itemsReserved", function () {
@@ -100,6 +102,19 @@ ShopTrade.prototype.setAsSending = function () {
         this.database.save();
         this.log.debug("Sending trade...");
     }
+};
+
+ShopTrade.prototype.setAsWaitingForFriendRelation = function () {
+    this.setStatus(TradeConstants.status.NO_FRIEND);
+    this.setStatusInfo("");
+    this.commit();
+    var self = this;
+    setTimeout(function () {
+        //If not friend on steam.............
+        if (!self.sfuminator.getBotsController().getBot(self.getAssignedBotUser().getSteamid()).steamClient.isFriend(self.getPartner().getSteamid())) {
+            self.emit("friendRequestTimeout");
+        }
+    }, ShopTrade.addFriendTimeoutTime);
 };
 
 ShopTrade.prototype.setAsSent = function (tradeOfferID) {

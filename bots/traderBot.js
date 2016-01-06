@@ -117,6 +117,12 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
 
     if (!shopTrade.hasSteamToken() && !this.steamClient.isFriend(partnerSteamid)) {
         this.steamClient.addFriend(partnerSteamid);
+        shopTrade.setAsWaitingForFriendRelation();
+        shopTrade.on('friendRequestTimeout', function () {
+            self.log.debug("Friend request timeout, removing and cancelling");
+            self.steamClient.removeFriend(partnerSteamid);
+            shopTrade.cancel();
+        });
         this.steamClient.onFriendWith(partnerSteamid, function () {
             self.steamClient.getFriend(partnerSteamid).sendMessage(self.interactions.getMessage("tradeOffer_hello", sfuminatorUser));
             if (shopTrade.areItemsReserved()) {
