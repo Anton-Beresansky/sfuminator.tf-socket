@@ -102,11 +102,12 @@ ShopTradeCurrency.prototype.reserve = function () {
                         }
                     }
                     self.log.warning("It wasn't the newly crafted item!");
-                    checkIfCrafted();
+                    setTimeout(function () { //UnClosure
+                        checkIfCrafted();
+                    }, 0);
                 });
             };
             checkIfCrafted();
-            this.shop.on("sectionItemsUpdated", checkIfCrafted);
         } else {
             this.log.error("We already smelt metal twice (ref>rec>scrap). Got request to smelt again?!");
         }

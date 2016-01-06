@@ -53,7 +53,7 @@ TraderBot.prototype.onLogin = function () {
     this.steamClient.on("friendList", function () {
         self.log.debug("My friend list have " + self.steamClient.getNumberOfFriends() + " friends");
         while (self.steamClient.getNumberOfFriends() > self.friendListLimit) {
-            self.steamClient.getOldestFriend().remove();
+            self.steamClient.getOldestFriend([self.sfuminator.admin]).remove();
         }
     });
     this.interactions.on('sendMessage', function (steamid, message) {
