@@ -131,11 +131,13 @@ ShopTrade.prototype.setAsSent = function (tradeOfferID) {
  * Cancel Shop Trade
  */
 ShopTrade.prototype.cancel = function () {
+    var self = this;
     this.dereserveShopItems();
     if (this.hasSteamTrade()) {
         this.log.debug("Found steamTrade associated, cancelling");
-        this.steamTrade.cancel();
-        this.unsetSteamTrade();
+        this.steamTrade.cancel(function () {
+            self.unsetSteamTrade();
+        });
     }
     this.setStatus(TradeConstants.status.CLOSED);
     this.setStatusInfo(TradeConstants.statusInfo.closed.CANCELLED);
