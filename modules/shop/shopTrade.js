@@ -378,6 +378,7 @@ ShopTrade.prototype.areItemsReserved = function () {
 ShopTrade.prototype.reserveItems = function () {
     var self = this;
     this.currency.on("reserved", function () {
+        self.log.debug("Items have been reserved");
         self.emit("itemsReserved");
     });
 
