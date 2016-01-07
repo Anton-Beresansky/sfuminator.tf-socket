@@ -2,6 +2,7 @@ module.exports = BotsController;
 
 var Logs = require('./../../lib/logs.js');
 var TraderBot = require('./../../bots/traderBot.js');
+var BotCommands = require('./../../bots/botCommands.js');
 
 /**
  * @class BotsController
@@ -18,6 +19,7 @@ function BotsController(sfuminator) {
      */
     this.tradeBots = [];
 
+    this.commands = new BotCommands(this.sfuminator);
     this.log = new Logs({applicationName: "Bots Controller", color: "blue", dim: true});
 
     this.loadBots();
@@ -39,6 +41,9 @@ BotsController.prototype._bindBotHandler = function (bot) {
     bot.steamClient.on('newFriend', function (friend) {
         self.log.debug("Loading user " + friend.getSteamid());
         self.sfuminator.users.get(friend.getSteamid());
+    });
+    bot.steamClient.on('message', function (steamid, message) {
+        self.commands.execute(steamid, message);
     });
 };
 

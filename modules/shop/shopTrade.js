@@ -30,6 +30,9 @@ function ShopTrade(sfuminator, partner) {
      * @type {ShopItem[]}
      */
     this.assets = [];
+    /**
+     * @type {ShopTradeCurrency}
+     */
     this.currency = new ShopTradeCurrency(this);
 
     this.log = new Logs({applicationName: "Shop Trade " + this.partner.getSteamid(), color: "green"});
@@ -457,6 +460,13 @@ ShopTrade.prototype.setBot = function (bot) {
  */
 ShopTrade.prototype.getAssignedBotUser = function () {
     return this.bot;
+};
+
+/**
+ * @returns {ShopTradeCurrency}
+ */
+ShopTrade.prototype.getCurrencyHandler = function () {
+    return this.currency;
 };
 
 /**

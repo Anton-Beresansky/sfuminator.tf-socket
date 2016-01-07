@@ -43,7 +43,11 @@ ShopTradeCurrency.prototype.getTradeBalance = function () {
 };
 
 ShopTradeCurrency.prototype.getSignedTradeBalance = function () {
-    this.currencyTradeBalance = new Price(0);
+    if (!isNaN(this.forcedBalance)) {
+        this.currencyTradeBalance = this.forcedBalance;
+    } else {
+        this.currencyTradeBalance = 0;
+    }
     for (var i = 0; i < this.assets.length; i += 1) {
         var asset = this.assets[i];
         if (this.assets[i].isMineItem()) {
@@ -53,6 +57,13 @@ ShopTradeCurrency.prototype.getSignedTradeBalance = function () {
         }
     }
     return this.currencyTradeBalance;
+};
+
+/**
+ * @param {Price} price
+ */
+ShopTradeCurrency.prototype.forceStartingBalance = function (price) {
+    this.forcedBalance = price.toScrap();
 };
 
 ShopTradeCurrency.prototype.reserve = function () {
@@ -65,10 +76,10 @@ ShopTradeCurrency.prototype.reserve = function () {
 
     // > Getting currency items
     if (this.getSignedTradeBalance() > 0) { //We have to receive currency, our items worth more
-        this.log.debug("We have to receive currency");
+        this.log.debug("We have to receive currency " + this.getTradeBalance());
         this.balanceAssets(partnerCurrencyItems, ourCurrencyItems);
-    } else { //We have to give currency, their items worth more
-        this.log.debug("We have to give currency");
+    } else if (this.getSignedTradeBalance() < 0) { //We have to give currency, their items worth more
+        this.log.debug("We have to give currency " + this.getTradeBalance());
         this.balanceAssets(ourCurrencyItems, partnerCurrencyItems);
     }
     //So are we okay now?

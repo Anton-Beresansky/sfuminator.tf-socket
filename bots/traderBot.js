@@ -126,17 +126,17 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
         this.steamClient.onFriendWith(partnerSteamid, function () {
             self.steamClient.getFriend(partnerSteamid).sendMessage(self.interactions.getMessage("tradeOffer_hello", sfuminatorUser));
             if (shopTrade.areItemsReserved()) {
-                self.sendTrade(shopTrade);
+                self.finalizeSendShopTrade(shopTrade);
             } else {
                 shopTrade.onceItemsReserved(function () {
-                    self.sendTrade(shopTrade);
+                    self.finalizeSendShopTrade(shopTrade);
                 });
             }
         });
     } else {
         shopTrade.onceItemsReserved(function () {
             self.steamClient.getFriend(partnerSteamid).sendMessage(self.interactions.getMessage("tradeOffer_hello", sfuminatorUser));
-            self.sendTrade(shopTrade);
+            self.finalizeSendShopTrade(shopTrade);
         });
     }
 };
@@ -144,7 +144,17 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
 /**
  * @param {ShopTrade} shopTrade
  */
-TraderBot.prototype.sendTrade = function (shopTrade) {
+TraderBot.prototype.finalizeSendShopTrade = function (shopTrade) {
+    this.createSteamTrade(shopTrade);
+    this._bindShopTrade(shopTrade);
+    shopTrade.steamTrade.make();
+};
+
+/**
+ * @param {ShopTrade} shopTrade
+ * @returns {SteamTradeOffer}
+ */
+TraderBot.prototype.createSteamTrade = function (shopTrade) {
     var partnerSteamid = shopTrade.getPartner().getSteamid();
     var steamTrade = new SteamTradeOffer(this.steamClient, partnerSteamid);
 
@@ -155,15 +165,14 @@ TraderBot.prototype.sendTrade = function (shopTrade) {
     }
 
     shopTrade.injectSteamTrade(steamTrade);
-    shopTrade.steamTrade.make();
-    this._bindTrade(shopTrade);
+    return steamTrade;
 };
 
 /**
  * @param {ShopTrade} shopTrade
  * @private
  */
-TraderBot.prototype._bindTrade = function (shopTrade) {
+TraderBot.prototype._bindShopTrade = function (shopTrade) {
     var self = this;
     var partnerSteamid = shopTrade.getPartner().getSteamid();
     var partner = this.steamClient.getFriend(partnerSteamid);
