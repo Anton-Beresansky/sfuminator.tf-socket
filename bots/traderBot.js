@@ -192,6 +192,9 @@ TraderBot.prototype._bindShopTrade = function (shopTrade) {
             shopTrade.reserveItems();
         });
     });
+    steamTradeOffer.on("wrongItemIDs", function () {
+        self._tryToFixItemsIDs();
+    });
     steamTradeOffer.on("tradeError", function (steamTradeError) {
         shopTrade.cancel(TradeConstants.statusInfo.closed.ERROR);
         self.log.warning("Error sending offer: " + steamTradeError.getCode());
@@ -230,6 +233,10 @@ TraderBot.prototype._bindShopTrade = function (shopTrade) {
         self.log.debug("Offer to " + partnerSteamid + " has been accepted");
         partner.sendMessage(self.interactions.getMessage("trade_complete", sfuminatorUser));
     });
+};
+
+TraderBot.prototype._tryToFixItemsIDs = function () {
+
 };
 
 /**

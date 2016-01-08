@@ -43,7 +43,7 @@ BotsController.prototype._bindBotHandler = function (bot) {
         self.sfuminator.users.get(friend.getSteamid());
     });
     bot.steamClient.on('message', function (steamid, message) {
-        self.commands.execute(steamid, message);
+        self.commands.execute(steamid, message, bot);
     });
 };
 
