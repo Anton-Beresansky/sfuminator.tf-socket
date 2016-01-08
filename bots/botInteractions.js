@@ -542,6 +542,12 @@ function BotInteractions() {
                 "Sorry but it seems that you didn't confirm the trade yet. You have been removed from the queue",
                 "Sorry but your trade confirmation took too much. You have been removed from the queue"
             ]
+        },
+        steamTradeError: {
+            generic: "Oh no! Steam returned an error when sending the offer: ",
+            not_available_for_trade: "Sorry, but I had problems sending you the trade. It seems that your account " +
+            "is not available for trade. It's possible that you don't have Steam Guard enabled on your account " +
+            "or that you are on a trade cool down period because you recently logged on a new device."
         }
     };
 }

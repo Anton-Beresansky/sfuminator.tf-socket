@@ -129,8 +129,9 @@ ShopTrade.prototype.setAsSent = function (tradeOfferID) {
 
 /**
  * Cancel Shop Trade
+ * @param {String} [statusInfo]
  */
-ShopTrade.prototype.cancel = function () {
+ShopTrade.prototype.cancel = function (statusInfo) {
     var self = this;
     this.dereserveShopItems();
     if (this.hasSteamTrade()) {
@@ -140,7 +141,11 @@ ShopTrade.prototype.cancel = function () {
         });
     }
     this.setStatus(TradeConstants.status.CLOSED);
-    this.setStatusInfo(TradeConstants.statusInfo.closed.CANCELLED);
+    if (statusInfo) {
+        this.setStatusInfo(statusInfo);
+    } else {
+        this.setStatusInfo(TradeConstants.statusInfo.closed.CANCELLED);
+    }
     this.commit();
     this.log.debug("Trade " + this.getID() + " has been cancelled");
 };
