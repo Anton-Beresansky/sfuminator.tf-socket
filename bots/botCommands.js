@@ -14,7 +14,7 @@ function BotCommands(sfuminator) {
     this.sfuminator = sfuminator;
     var self = this;
     this.commands = {
-        preleva: function (steamid, command) {
+        preleva: function (steamid, command, bot) {
             if (!isNaN(command.getMainParameter())) {
                 var prelievoAmount = new Price(-command.getMainParameter(), "metal");
                 var shopTrade = new ShopTrade(self.sfuminator, self.sfuminator.users.get(steamid));
@@ -26,10 +26,14 @@ function BotCommands(sfuminator) {
                         var steamTrade = tradeBot.createSteamTrade(shopTrade);
                         steamTrade.setMessage("Here's a prelievo of " + (-prelievoAmount.toMetal()) + " refined");
                         steamTrade.make();
+                        bot.steamClient.sendMessage(steamid, "Sending you a prelievo of " + (-prelievoAmount.toMetal()) + " refined");
                     });
                     shopTrade.reserveItems();
                 }
             }
+        },
+        c: function (steamid, command, bot) {
+            bot.steamClient.sendMessage(steamid, bot.steamClient.credentials.getTwoFactorCode());
         }
     }
 }
@@ -37,12 +41,13 @@ function BotCommands(sfuminator) {
 /**
  * @param steamid
  * @param raw_message
+ * @param {TraderBot} bot
  */
-BotCommands.prototype.execute = function (steamid, raw_message) {
+BotCommands.prototype.execute = function (steamid, raw_message, bot) {
     if (this.sfuminator.isAdmin(steamid)) {
         var command = new ChatCommand(raw_message);
         if (command.isValid() && this.commands.hasOwnProperty(command.getInstruction())) {
-            this.commands[command.getInstruction()](steamid, command);
+            this.commands[command.getInstruction()](steamid, command, bot);
         }
     }
 };
@@ -54,7 +59,6 @@ BotCommands.prototype.execute = function (steamid, raw_message) {
 function ChatCommand(raw_message) {
     this.raw_message = raw_message;
     this._parse();
-    console.log(this.instruction, this.parameters);
 }
 
 ChatCommand.BIGGEST_NUMBER = 1000000;
