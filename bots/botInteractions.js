@@ -427,7 +427,7 @@ function BotInteractions() {
                 if (self.getInteraction(user).canGreet()) {
                     hello_message = getRandomElement(self.message_senteces.hello.message) + " ";
                 }
-                return hello_message + getRandomElement(message[number_of_trades]).replace("//", user.getNumberOfTrades);
+                return hello_message + getRandomElement(message[number_of_trades]).replace("//", user.getNumberOfTrades());
             }
         },
         tradeOffer_sent: {
