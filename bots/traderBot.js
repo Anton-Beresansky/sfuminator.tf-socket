@@ -4,6 +4,7 @@ var SteamClient = require("../lib/steamClient.js");
 var SteamGames = require("../lib/steamGames.js");
 var TradeConstants = require("../modules/trade/tradeConstants.js");
 var SteamTradeOffer = require("../lib/steamTradeOffer.js");
+var SteamTradeError = require('../lib/steamTradeError.js');
 var BotInteractions = require("./botInteractions.js");
 var Logs = require("../lib/logs.js");
 
@@ -191,11 +192,15 @@ TraderBot.prototype._bindShopTrade = function (shopTrade) {
             shopTrade.reserveItems();
         });
     });
-    steamTradeOffer.on("tradeError", function (error) {
-        shopTrade.cancel();
-        self.log.warning("Error sending offer: " + error);
-        partner.sendMessage("Oh no! Steam returned an error when sending the offer: " + error);
-        logSteamError(shopTrade, error);
+    steamTradeOffer.on("tradeError", function (steamTradeError) {
+        shopTrade.cancel(TradeConstants.statusInfo.closed.ERROR);
+        self.log.warning("Error sending offer: " + steamTradeError.getCode());
+        if (steamTradeError.getCode() === SteamTradeError.ERROR.NOT_AVAILABLE_FOR_TRADE) {
+            partner.sendMessage(self.interactions.message_senteces.steamTradeError.not_available_for_trade);
+        } else {
+            partner.sendMessage(self.interactions.message_senteces.steamTradeError.generic + steamTradeError.getMessage());
+            logSteamError(shopTrade, steamTradeError);
+        }
     });
     steamTradeOffer.on("tradeSent", function (tradeOfferID) {
         shopTrade.setAsSent(tradeOfferID);
@@ -205,16 +210,18 @@ TraderBot.prototype._bindShopTrade = function (shopTrade) {
             + "It will be available for the next " + parseInt(steamTradeOffer.afkTimeoutInterval / 60000) + " minutes");
     });
     steamTradeOffer.on("partnerDeclined", function () {
-        shopTrade.cancel();
+        shopTrade.cancel(TradeConstants.statusInfo.closed.DECLINED);
         self.log.debug("Offer to " + partnerSteamid + " has been declined");
         partner.sendMessage(self.interactions.getMessage("tradeOffer_declined", sfuminatorUser));
     });
-    steamTradeOffer.on("partnerCancelled", function () {
+    steamTradeOffer.on("cancelled", function () {
         self.log.debug("Offer to " + partnerSteamid + " has been cancelled");
-        partner.sendMessage(self.interactions.getMessage("tradeOffer_cancel", sfuminatorUser));
+        if (shopTrade.getStatusInfo() !== TradeConstants.statusInfo.closed.AFK) {
+            partner.sendMessage(self.interactions.getMessage("tradeOffer_cancel", sfuminatorUser));
+        }
     });
     steamTradeOffer.on("partnerIsAFK", function () {
-        shopTrade.cancel();
+        shopTrade.cancel(TradeConstants.statusInfo.closed.AFK);
         self.log.debug("Offer to " + partnerSteamid + " took too long to accept, partner is AFK");
         partner.sendMessage(self.interactions.getMessage("tradeOffer_afk_kick", sfuminatorUser));
     });
@@ -227,10 +234,10 @@ TraderBot.prototype._bindShopTrade = function (shopTrade) {
 
 /**
  * @param {ShopTrade} shopTrade
- * @param {Number} error
+ * @param {SteamTradeError} error
  */
 function logSteamError(shopTrade, error) {
-    console.log("Couldn't fix error: " + error);
+    console.log("Couldn't fix error: " + error.getCode());
     console.log("-- Trade info --");
     console.log("Assets balance: " + shopTrade.currency.getSignedTradeBalance());
     console.log("Trade items: " + JSON.stringify(shopTrade.items));
