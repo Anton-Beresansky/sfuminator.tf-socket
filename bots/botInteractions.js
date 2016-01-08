@@ -44,7 +44,8 @@ function BotInteractions() {
                 "Aww so sweet, of course I love you too!",
                 "You make me blush ^^",
                 "I love you too!",
-                "010010010010000001101100011011110111011001100101001000000111100101101111011101010010000001110100011011110110111100100001"
+                "010010010010000001101100011011110111011001100101001000000111100101101111011101010010000001110100011011110110111100100001",
+                "Ok, but wear protection please. Just kidding ;o I love you too!"
             ]
         },
         hug: {
@@ -60,7 +61,7 @@ function BotInteractions() {
         },
         i_buy: {
             message: [
-                "If you want to buy or sell hats and misc, please go here: http://sfuminator.tf/ select which one you want and I'll trade you."
+                "If you want to buy or sell hats and misc, please go here: http://sfuminator.tf/hats/ select what you want and I'll trade you."
             ]
         },
         you_best: {
@@ -306,6 +307,40 @@ function BotInteractions() {
             },
             pending_answer: ["thanks"]
         },
+        trade_complete_escrow: {
+            message: function (user) {
+                var number_of_trades = 1;
+                if (user.getNumberOfTrades() > 0) {
+                    number_of_trades = user.getNumberOfTrades();
+                }
+                number_of_trades -= 1; //Needed to be compatible with array index
+                var default_msg = "Thanks a lot for accepting the trade. Remember that items are now in escrow. This means that Steam will keep the items we traded for 3 days. " +
+                    "If the next time you want to trade your items instantly you have to enable mobile confirmations on your smartphone from the steam app for at least 7 days. ";
+                var message = [[
+                    "Hope to see you again!",
+                    "By the way, if you didn't already, you can join our group to keep in touch with the community and get notified for the incoming events http://steamcommunity.com/groups/tf2sfuminator"
+                ], [
+                    "It has been a pleasure trading with you, if you want, remember that you can join our group! http://steamcommunity.com/groups/tf2sfuminator",
+                    "Hope to trade with you again, meanwhile if you didn't already, you might want to join our group!  http://steamcommunity.com/groups/tf2sfuminator",
+                    ""
+                ], [
+                    ""
+                ]];
+                if (number_of_trades > 0 && number_of_trades < 10) {
+                    number_of_trades = 1;
+                }
+                if (number_of_trades >= 10) {
+                    number_of_trades = 2;
+                }
+                if (self.getInteraction(user).canBeRepped()) {
+                    setTimeout(function () {
+                        self.emit("sendMessage", user.getSteamid(), self.getMessage("ask_rep", user));
+                    }, 2000);
+                }
+                return default_msg + getRandomElement(message[number_of_trades]);
+            },
+            pending_answer: ["thanks"]
+        },
         trade_cancel: {
             message: [
                 "Oh, it seems you cancelled the trade...",
@@ -392,7 +427,7 @@ function BotInteractions() {
                 if (self.getInteraction(user).canGreet()) {
                     hello_message = getRandomElement(self.message_senteces.hello.message) + " ";
                 }
-                return hello_message + getRandomElement(message[number_of_trades]).replace("//", number_of_trades);
+                return hello_message + getRandomElement(message[number_of_trades]).replace("//", user.getNumberOfTrades);
             }
         },
         tradeOffer_sent: {

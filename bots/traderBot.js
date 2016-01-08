@@ -228,10 +228,14 @@ TraderBot.prototype._bindShopTrade = function (shopTrade) {
         self.log.debug("Offer to " + partnerSteamid + " took too long to accept, partner is AFK");
         partner.sendMessage(self.interactions.getMessage("tradeOffer_afk_kick", sfuminatorUser));
     });
-    steamTradeOffer.on("partnerAccepted", function () {
+    steamTradeOffer.on("partnerAccepted", function (escrow) {
         shopTrade.setAsAccepted();
         self.log.debug("Offer to " + partnerSteamid + " has been accepted");
-        partner.sendMessage(self.interactions.getMessage("trade_complete", sfuminatorUser));
+        if (escrow) {
+            partner.sendMessage(self.interactions.getMessage("trade_complete_escrow", sfuminatorUser));
+        } else {
+            partner.sendMessage(self.interactions.getMessage("trade_complete", sfuminatorUser));
+        }
     });
 };
 
