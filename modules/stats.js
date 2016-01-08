@@ -6,6 +6,7 @@ var Logs = require("../lib/logs.js");
  * General purpose Stats class
  * @param {Sfuminator} sfuminator The Sfuminator instance
  * @returns {Stats}
+ * @construct
  */
 function Stats(sfuminator) {
     this.sfuminator = sfuminator;
