@@ -85,8 +85,12 @@ ShopTradeCurrency.prototype.reserve = function () {
     //So are we okay now?
     if (this.getTradeBalance() === 0) {
         this.log.debug("Alright, currency is balanced");
-        this.reserveAssets();
-        this.emit("reserved");
+        if (this.reserveAssets()) {
+            this.emit("reserved");
+        } else {
+            this.cleanAssets();
+            this.reserve();
+        }
     } else {
         //Sorry man we can't do much unless we are going to smelt something, so let's do it...
         this.cleanAssets();
@@ -142,10 +146,16 @@ ShopTradeCurrency.prototype.cleanAssets = function () {
 
 ShopTradeCurrency.prototype.reserveAssets = function () {
     for (var i = 0; i < this.shopTrade.assets; i += 1) {
-        if (!this.shopTrade.assets[i].isMineItem() && this.shop.reservations.exist(this.shopTrade.assets[i].getID())) {
-            this.shop.reservations.add(this.shopTrade.getPartner().getSteamid(), this.shopTrade.assets[i].getID());
+        if (!this.shopTrade.assets[i].isMineItem()) {
+            if (!this.shop.reservations.exist(this.shopTrade.assets[i].getID())) {
+                this.shop.reservations.add(this.shopTrade.getPartner().getSteamid(), this.shopTrade.assets[i].getID());
+            } else if (this.shop.reservations.get(this.shopTrade.assets[i].getID()).getHolder() !== this.shopTrade.getPartner().getSteamid()) {
+                this.log.error("Reserving items that are already reserved by someone else!");
+                return false;
+            }
         }
     }
+    return true;
 };
 
 /**
