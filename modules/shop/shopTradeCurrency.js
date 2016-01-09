@@ -157,7 +157,6 @@ ShopTradeCurrency.prototype.reserveAssets = function () {
                 counter += 1;
             } else if (this.shop.reservations.get(this.shopTrade.assets[i].getID()).getHolder() !== this.shopTrade.getPartner().getSteamid()) {
                 this.log.error("Reserving items that are already reserved by someone else!");
-                return false;
             }
         }
     }
