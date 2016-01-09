@@ -34,6 +34,9 @@ function BotCommands(sfuminator) {
         },
         c: function (steamid, command, bot) {
             bot.steamClient.sendMessage(steamid, bot.steamClient.credentials.getTwoFactorCode());
+        },
+        testComment: function (steamid, command, bot) {
+            bot.steamClient.postProfileComment(steamid, "Hum?");
         }
     }
 }
