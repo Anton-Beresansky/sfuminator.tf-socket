@@ -149,16 +149,19 @@ ShopTradeCurrency.prototype.cleanAssets = function () {
 };
 
 ShopTradeCurrency.prototype.reserveAssets = function () {
+    var counter = 0;
     for (var i = 0; i < this.shopTrade.assets.length; i += 1) {
-        if (!this.shopTrade.assets[i].isMineItem()) {
+        if (!this.shopTrade.assets[i].isMineItem() && this.shopTrade.assets[i].isCurrency()) {
             if (!this.shop.reservations.exist(this.shopTrade.assets[i].getID())) {
                 this.shop.reservations.add(this.shopTrade.getPartner().getSteamid(), this.shopTrade.assets[i].getID());
+                counter += 1;
             } else if (this.shop.reservations.get(this.shopTrade.assets[i].getID()).getHolder() !== this.shopTrade.getPartner().getSteamid()) {
                 this.log.error("Reserving items that are already reserved by someone else!");
                 return false;
             }
         }
     }
+    this.log.debug("Reserved " + counter + " currency assets, total assets: " + this.shopTrade.assets.length);
     return true;
 };
 
