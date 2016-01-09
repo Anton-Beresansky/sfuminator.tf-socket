@@ -200,6 +200,7 @@ ShopTradeCurrency.prototype.balanceWeBuy = function (shopCurrencyItems, theirCur
     //If we can't balance perfectly with our items (balance still < 0)
     if (this.getSignedTradeBalance() < 0) {
         //First, remove shit items
+        this.log.test("Ofc balance is negative " + this.getSignedTradeBalance());
         var assetsLength = this.assets.length;
         for (i = 0; i < assetsLength; i += 1) {
             if (this.assets[i].isCurrency()) {
@@ -230,6 +231,7 @@ ShopTradeCurrency.prototype.balanceWeBuy = function (shopCurrencyItems, theirCur
             this.setSmeltingItem(extraChangeCurrency);
         } else {
             this.assets.push(extraChangeCurrency);
+            this.log.test("Ofc by pushing balance is now precise " + this.getSignedTradeBalance());
         }
     }
 };
