@@ -24,8 +24,6 @@ TradingController.prototype.startOffNewShopTrade = function (newShopTrade) {
         this.log.error("Wasn't able to assign bot");
     } else {
         assignedBot.sendShopTrade(newShopTrade);
-        newShopTrade.reserveItems();
-        newShopTrade.setAsSending();
     }
 
     //Comment everything else apart the next 3 lines for core.js

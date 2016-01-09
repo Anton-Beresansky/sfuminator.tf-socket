@@ -115,7 +115,7 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
     var sfuminatorUser = this.sfuminator.users.get(partnerSteamid);
     this.assignShopTrade(shopTrade);
     shopTrade.setBot(this.getUser());
-
+    shopTrade.setAsSending();
     if (!shopTrade.hasSteamToken() && !this.steamClient.isFriend(partnerSteamid)) {
         this.steamClient.addFriend(partnerSteamid);
         shopTrade.setAsWaitingForFriendRelation();
@@ -140,6 +140,7 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
             self.finalizeSendShopTrade(shopTrade);
         });
     }
+    shopTrade.reserveItems();
 };
 
 /**
