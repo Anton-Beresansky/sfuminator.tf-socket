@@ -149,7 +149,7 @@ ShopTradeCurrency.prototype.cleanAssets = function () {
 };
 
 ShopTradeCurrency.prototype.reserveAssets = function () {
-    for (var i = 0; i < this.shopTrade.assets; i += 1) {
+    for (var i = 0; i < this.shopTrade.assets.length; i += 1) {
         if (!this.shopTrade.assets[i].isMineItem()) {
             if (!this.shop.reservations.exist(this.shopTrade.assets[i].getID())) {
                 this.shop.reservations.add(this.shopTrade.getPartner().getSteamid(), this.shopTrade.assets[i].getID());
