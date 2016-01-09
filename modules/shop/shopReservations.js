@@ -13,6 +13,7 @@ function Reservations(db) {
     this.db = db;
     this.log = new Logs({applicationName: "Reservations", color: "green"});
     this.versioning = new ReservationsVersioning(50, "Reservations");
+    this.log.setLevel(1);
     /**
      * Reservation list
      * @type {Reservation[]}
