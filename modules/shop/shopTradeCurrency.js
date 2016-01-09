@@ -42,6 +42,10 @@ ShopTradeCurrency.prototype.getTradeBalance = function () {
     return balance;
 };
 
+/**
+ * If sfuminator has to give currency, balance will be negative
+ * @returns {number}
+ */
 ShopTradeCurrency.prototype.getSignedTradeBalance = function () {
     if (!isNaN(this.forcedBalance)) {
         this.currencyTradeBalance = this.forcedBalance;
@@ -80,7 +84,7 @@ ShopTradeCurrency.prototype.reserve = function () {
         this.balanceAssets(partnerCurrencyItems, ourCurrencyItems);
     } else if (this.getSignedTradeBalance() < 0) { //We have to give currency, their items worth more
         this.log.debug("We have to give currency " + this.getTradeBalance());
-        this.balanceAssets(ourCurrencyItems, partnerCurrencyItems);
+        this.balanceWeBuy(ourCurrencyItems, partnerCurrencyItems);
     }
     //So are we okay now?
     if (this.getTradeBalance() === 0) {
@@ -170,13 +174,70 @@ ShopTradeCurrency.prototype.getPartnerCurrencyShopItems = function () {
     return this.partnerCurrencyShopItems;
 };
 
+
+ShopTradeCurrency.prototype.balanceWeBuy = function (shopCurrencyItems, theirCurrencyItems) {
+    var i, p;
+    for (p = 0; p < this.sortedCurrencyDefindexes.length; p += 1) {
+        for (i = 0; i < shopCurrencyItems.length; i += 1) {
+            var shopCurrencyItem = shopCurrencyItems[i];
+            if (
+                !this.shop.reservations.exist(shopCurrencyItem.getID())
+                && shopCurrencyItem.getItem().getDefindex() === this.sortedCurrencyDefindexes[p]
+            ) {
+                if (this.getSignedTradeBalance() + shopCurrencyItem.getPrice() <= 0) {
+                    this.assets.push(shopCurrencyItem);
+                } else {
+                    var extraChangeCurrency = shopCurrencyItem;
+                    this.log.debug("Save our life: " + extraChangeCurrency);
+                    break;
+                }
+            }
+        }
+    }
+    //If we can't balance perfectly with our items (balance still < 0)
+    if (this.getSignedTradeBalance() < 0) {
+        //First, remove shit items
+        var assetsLength = this.assets.length;
+        for (i = 0; i < assetsLength; i += 1) {
+            if (this.assets[i].isCurrency()) {
+                shopCurrencyItem = this.assets[i];
+                if (this.getSignedTradeBalance() + extraChangeCurrency.getPrice() - shopCurrencyItem.getPrice() > 0) {
+                    this.log.debug("Removing shit has value of " + shopCurrencyItem.getPrice());
+                    this.assets.splice(i, 1);
+                    assetsLength -= 1;
+                    i -= 1;
+                }
+            }
+        }
+
+        //Then try to balance with partner currency
+        for (p = 0; p < this.sortedCurrencyDefindexes.length; p += 1) {
+            for (i = 0; i < theirCurrencyItems.length; i += 1) {
+                var theirCurrencyItem = theirCurrencyItems[i];
+                if (theirCurrencyItem.getItem().getDefindex() === this.sortedCurrencyDefindexes[p]) {
+                    if (this.getSignedTradeBalance() + extraChangeCurrency.getPrice() - theirCurrencyItem.getPrice() >= 0) {
+                        this.assets.push(theirCurrencyItem);
+                    }
+                }
+            }
+        }
+
+        //If after balancing it's still < 0 we need to smelt
+        if (this.getSignedTradeBalance() + extraChangeCurrency.getPrice() > 0) {
+            this.setSmeltingItem(extraChangeCurrency);
+        } else {
+            this.assets.push(extraChangeCurrency);
+        }
+    }
+};
+
+
 ShopTradeCurrency.prototype.balanceAssets = function (currencyGiverItems, currencyReceiverItems) {
     var p, i;
     /**
      * @type {ShopItem}
      */
-    var extraChangeCurrency;
-    this.log.debug("Trying to compensate with currency giver items...", 1);
+    this.log.debug("Trying to compensate with currency giver items...");
     //Trying to compensate with the currency we own
     //This procedure will result in a perfect compensation or something that's slightly less
     for (p = 0; p < this.sortedCurrencyDefindexes.length; p += 1) {
@@ -190,15 +251,17 @@ ShopTradeCurrency.prototype.balanceAssets = function (currencyGiverItems, curren
                     if (this.getTradeBalance() + currencyGiverItem.getPrice() <= 0) {
                         this.assets.push(currencyGiverItem);
                     } else {
-                        //This right item could save our life,   if we discover that our compensation is not precise
-                        extraChangeCurrency = currencyGiverItem;
-                        this.log.debug("Save our life: " + extraChangeCurrency, 1);
+                        //This right item could save our life, if we discover that our compensation is not precise
+                        var extraChangeCurrency = currencyGiverItem;
+                        this.log.debug("Save our life: " + extraChangeCurrency);
                         break;
                     }
                 }
             }
         }
     }
+    //NOW I HAVE 1.33HAT and he has 1ref + 1ref in the extra change currency
+    this.log.debug("After first compensation balance is " + this.getTradeBalance());
     //Removing items that would just add extra shit that can't reach compensation while the ourExtraChangeCurrency would be enough
     if (this.getTradeBalance() < 0) {
         var assetsLength = this.assets.length;
@@ -206,6 +269,7 @@ ShopTradeCurrency.prototype.balanceAssets = function (currencyGiverItems, curren
             if (this.assets[i].isCurrency()) {
                 currencyGiverItem = this.assets[i];
                 if (this.getTradeBalance() + extraChangeCurrency.getPrice() - currencyGiverItem.getPrice() > 0) {
+                    this.log.debug("Removing shit has value of " + currencyGiverItem.getPrice());
                     this.assets.splice(i, 1);
                     assetsLength -= 1;
                     i -= 1;
@@ -213,11 +277,11 @@ ShopTradeCurrency.prototype.balanceAssets = function (currencyGiverItems, curren
             }
         }
     }
-
+    this.log.debug("After second compensation balance is " + this.getTradeBalance());
     //If my currency is not precise (eg there's need to smelt some metal) we try first to compensate with partner currency
     //In this case ourExtraChangeCurrency will be defined
-    if (this.getTradeBalance() < 0 && extraChangeCurrency instanceof ShopItem) {
-        this.log.debug("Giver currency is not precise, looking for receiver change...", 1);
+    if (this.getTradeBalance() < 0) {
+        this.log.debug("Giver currency is not precise, looking for receiver change...");
         var currencyTradeBalanceTest = this.getTradeBalance();
         var receiverCurrencyBalancing = [];
         for (p = 0; p < this.sortedCurrencyDefindexes.length; p += 1) {
