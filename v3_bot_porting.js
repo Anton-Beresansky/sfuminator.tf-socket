@@ -177,8 +177,6 @@ BotPorting.prototype._anticipateItemRemoval = function (shopTrade) {
         for (var i = 0; i < assets.length; i += 1) {
             if (!assets[i].isMineItem()) {
                 toRemove.push(assets[i]);
-            } else {
-                toAdd.push(assets[i]);
             }
         }
         tmpVersioning.add(toAdd, toRemove);
