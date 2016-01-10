@@ -4,6 +4,7 @@ module.exports = AjaxResponses;
  * Generic purpose Ajax Responses class
  * @param {Sfuminator} sfuminator The Sfuminator instance
  * @returns {AjaxResponses}
+ * @construct
  */
 function AjaxResponses(sfuminator) {
     this.sfuminator = sfuminator;
@@ -18,6 +19,7 @@ function AjaxResponses(sfuminator) {
     this.alreadyInTrade = {result: "error", message: "You are already in trade", code: "already_in_trade"};
     this.notInTrade = {result: "error", message: "You are not in trade", code: "not_in_trade"};
     this.notEnoughCurrency = {result: "error", message: "Sorry, but it seems you don't have enough metal", code: "not_enough_metal"};
+    this.botIsNotAvailable = {result: "error", message: "Sorry, bot can't trade right now"};
     this.denyManualMultiItems = {
         result: "error",
         message: "Sorry, in manual trade you can only sell or only buy items",

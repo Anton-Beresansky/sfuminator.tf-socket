@@ -12,7 +12,7 @@ var ShopTradeCurrency = require("./shopTradeCurrency.js");
 
 /**
  * Generic purpose class for Shop Trades
- * @event verificationResponse
+ * @event tradeRequestResponse
  * @event itemsReserved
  * @param {Sfuminator} sfuminator The sfuminator instance
  * @param {User} partner Shop trade partner
@@ -315,14 +315,14 @@ ShopTrade.prototype.verifyItems = function (callback) {
             }
         } else if (section !== "mine") {
             this.response = this.ajaxResponses.sectionNotFound;
-            this.emit("verificationResponse", this.response);
+            this.emit("tradeRequestResponse", this.response);
             callback(false);
             return;
         }
     }
     if (this.getShopItemCount() > this.assets_limit.shop) {
         this.response = this.ajaxResponses.shopAssetsLimit(this.assets_limit.shop);
-        this.emit("verificationResponse", this.response);
+        this.emit("tradeRequestResponse", this.response);
         callback(false);
         return;
     }
@@ -347,7 +347,7 @@ ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
     this.currency.loadAssets(); //If I don't put this it will think balance is still 0 :(
     if (this.getPartner().getTF2Backpack().getCurrencyAmount() < this.currency.getSignedTradeBalance()) {
         this.response = this.ajaxResponses.notEnoughCurrency;
-        this.emit("verificationResponse", this.response);
+        this.emit("tradeRequestResponse", this.response);
         callback(false);
     } else {
         callback(true);
@@ -619,12 +619,12 @@ ShopTrade.prototype.getLastUpdateDate = function () {
 ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
     if (!this.shop.sections[section].itemExist(idToCheck)) {
         this.response = this.ajaxResponses.itemsSelectedNotFound;
-        this.emit("verificationResponse", this.response);
+        this.emit("tradeRequestResponse", this.response);
         return false;
     }
     if (this.shop.reservations.exist(idToCheck) && this.shop.reservations.get(idToCheck).getHolder() !== this.getPartner().getSteamid()) {
         this.response = this.ajaxResponses.itemIsAlreadyReserved;
-        this.emit("verificationResponse", this.response);
+        this.emit("tradeRequestResponse", this.response);
         return false;
     }
     return true;
@@ -645,12 +645,12 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
             var item = backpack.getItem(itemID);
             if (!backpack.itemExist(itemID)) {
                 self.response = self.ajaxResponses.itemNotFound;
-                self.emit("verificationResponse", self.response);
+                self.emit("tradeRequestResponse", self.response);
                 callback(false);
                 return;
             } else if (!self.shop.canBeSold(item)) {
                 self.response = self.ajaxResponses.itemCantBeSold;
-                self.emit("verificationResponse", self.response);
+                self.emit("tradeRequestResponse", self.response);
                 callback(false);
                 return;
             } else {
@@ -659,7 +659,7 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
                 var netCount = (itemCount.get(item) + self.shop.count.get(item)) - self.shop.getLimit(item);
                 if (netCount > 0) {
                     self.response = self.ajaxResponses.itemExceedCount(item, netCount);
-                    self.emit("verificationResponse", self.response);
+                    self.emit("tradeRequestResponse", self.response);
                     callback(false);
                     return;
                 }
@@ -667,7 +667,7 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
         }
         if (self.getPartnerItemCount() > self.assets_limit.partner) {
             self.response = self.ajaxResponses.partnerAssetsLimit(self.assets_limit.partner);
-            self.emit("verificationResponse", self.response);
+            self.emit("tradeRequestResponse", self.response);
             callback(false);
             return;
         }
