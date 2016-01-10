@@ -65,11 +65,11 @@ Sfuminator.prototype.init = function () {
         self.interrupts.startInternals();
         self.interrupts.startGlobals();
         self.bindInterrupts();
-        self.loadActiveTrades(function () {
+        //self.loadActiveTrades(function () {
             self.log.debug("-- Sfuminator socket is ready --", 0);
             self.emit("ready");
             self.stats.load();
-        });
+        //});
     });
 };
 
