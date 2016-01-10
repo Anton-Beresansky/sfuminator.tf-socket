@@ -61,6 +61,7 @@ require("util").inherits(Sfuminator, events.EventEmitter);
 Sfuminator.prototype.init = function () {
     var self = this;
     this.shop.on("ready", function () {
+        self.log.debug("Shop is ready");
         self.interrupts.startInternals();
         self.interrupts.startGlobals();
         self.bindInterrupts();
