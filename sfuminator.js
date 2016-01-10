@@ -20,6 +20,7 @@ var Valve = require("./valve.js");
  * @param {Cloud} cloud
  * @param {Database} db
  * @returns {Sfuminator}
+ * @construct
  */
 function Sfuminator(cloud, db) {
     this.cloud = cloud;
@@ -337,16 +338,16 @@ Sfuminator.prototype.requestTrade = function (request, mode, callback) {
     if (!user.hasActiveShopTrade()) {
         var trade = user.makeShopTrade(data.items);
         trade.setMode(mode);
-        trade.on("verificationResponse", function (response) {
+        trade.on("tradeRequestResponse", function (response) {
+            self.log.debug("Request for trade " + trade.getID() + " rejected, response: " + trade.response.code);
             callback(response);
         });
         trade.verifyItems(function (success) {
-            self.log.debug("Request Trade Offer item verification, response: " + (success ? "success" : trade.response.code));
             if (success) {
                 if (trade.getPartnerItemCount() > 0 && trade.getShopItemCount() > 0 && trade.getMode() === TradeConstants.mode.MANUAL_TRADE) {
                     callback(self.responses.denyManualMultiItems);
-                } else {
-                    self.tradingController.startOffNewShopTrade(trade);
+                } else if (self.tradingController.startOffNewShopTrade(trade)) {
+                    self.log.debug("Trade request approved (id: " + trade.getID() + " ~ " + user.getSteamid() + ")");
                     callback(self.responses.tradeRequestSuccess(trade));
                 }
             }

@@ -22,8 +22,11 @@ TradingController.prototype.startOffNewShopTrade = function (newShopTrade) {
     var assignedBot = this.getBestAvailableBot();
     if (!assignedBot) {
         this.log.error("Wasn't able to assign bot");
+        newShopTrade.emit("tradeRequestResponse", this.sfuminator.responses.botIsNotAvailable);
+        return false;
     } else {
         assignedBot.sendShopTrade(newShopTrade);
+        return true;
     }
 
     //Comment everything else apart the next 3 lines for core.js
