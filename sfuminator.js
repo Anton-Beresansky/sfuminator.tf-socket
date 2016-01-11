@@ -33,7 +33,8 @@ function Sfuminator(cloud, db) {
         {name: "updateShopInventory", delay: 2000, tag: "internal"},
         {name: "updateActiveTrades", delay: 1500, tag: "internal"},
         {name: "updateStats", delay: 1000, tag: "global"},
-        {name: "updateTradeStatus", delay: 1000, tag: "global"}
+        {name: "updateTradeStatus", delay: 1000, tag: "global"},
+        {name: "cleanBuggedReservations_WhyDoIEvenHaveToPutSomethingLikeThis", delay: 900000, tag: "global"}
     ]);
     this.responses = new AjaxResponses(this);
     this.users = new Users(this);
@@ -94,6 +95,9 @@ Sfuminator.prototype.bindInterrupts = function () {
     });
     this.interrupts.on("updateActiveTrades", function () {
         self.updateActiveTrades();
+    });
+    this.interrupts.on("cleanBuggedReservations_WhyDoIEvenHaveToPutSomethingLikeThis", function () {
+        self._cleanBuggedReservations();
     });
 };
 
@@ -395,4 +399,14 @@ Sfuminator.prototype.getTradingController = function () {
  */
 Sfuminator.prototype.getBotsController = function () {
     return this.botsController;
+};
+
+Sfuminator.prototype._cleanBuggedReservations = function () {
+    var self = this;
+    this.db.connect(function (connection) {
+        connection.query("DELETE FROM `shop_reservations` WHERE `reservations_date`<" + (new Date(Date.now() - 6000000).toMysqlFormat()) + "", function (result) {
+            connection.release();
+            self.log.debug("Boh.. io queste di un'ora fa le cancello " + result);
+        });
+    });
 };
