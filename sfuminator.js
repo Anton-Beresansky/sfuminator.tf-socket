@@ -404,7 +404,7 @@ Sfuminator.prototype.getBotsController = function () {
 Sfuminator.prototype._cleanBuggedReservations = function () {
     var self = this;
     this.db.connect(function (connection) {
-        connection.query("DELETE FROM `shop_reservations` WHERE `reservations_date`<" + (new Date(Date.now() - 3000000).toMysqlFormat()) + "", function (result) {
+        connection.query("DELETE FROM `shop_reservations` WHERE `reservations_date`<'" + (new Date(Date.now() - 3000000).toMysqlFormat()) + "'", function (result) {
             connection.release();
             self.log.debug("Boh.. io queste di un'ora fa le cancello " + result);
         });
