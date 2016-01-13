@@ -345,13 +345,16 @@ ShopTrade.prototype.verifyItems = function (callback) {
 
 ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
     this.currency.loadAssets(); //If I don't put this it will think balance is still 0 :(
-    if (this.getPartner().getTF2Backpack().getCurrencyAmount() < this.currency.getSignedTradeBalance()) {
-        this.response = this.ajaxResponses.notEnoughCurrency;
-        this.emit("tradeRequestResponse", this.response);
-        callback(false);
-    } else {
-        callback(true);
-    }
+    var self = this;
+    this.getPartner().getTF2Backpack().getCached(function () {
+        if (self.getPartner().getTF2Backpack().getCurrencyAmount() < self.currency.getSignedTradeBalance()) {
+            self.response = self.ajaxResponses.notEnoughCurrency;
+            self.emit("tradeRequestResponse", self.response);
+            callback(false);
+        } else {
+            callback(true);
+        }
+    });
 };
 
 /**
