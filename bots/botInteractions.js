@@ -523,18 +523,10 @@ function BotInteractions() {
             }
         },
         ask_rep: {
-            message: function (user) {
-                var o = user.getNumberOfTrades();
-                if (o === 0 || o === 1 || o === 10) {
-                    var message = [
-                        "Would you like me to leave a +rep on your profile?",
-                        "Would you like a +rep on your profile?"
-                    ];
-                    return getRandomElement(message);
-                } else {
-                    return "";
-                }
-            },
+            message: [
+                "Would you like me to leave a +rep on your profile?",
+                "Would you like a +rep on your profile?"
+            ],
             need_answer: true,
             onAnswer: function (user, type) {
                 if (type === "boolean_answer_yes") {
@@ -549,8 +541,8 @@ function BotInteractions() {
         },
         yes_rep: {
             message: [
-                "Ok! I left you a +rep comment",
-                "Alright, I just left you a nice +rep"
+                "Ok! I'm leaving you a +rep comment",
+                "Alright, I'm going to give you a nice +rep"
             ]
         },
         no_rep: {
