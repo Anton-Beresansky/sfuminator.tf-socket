@@ -21,6 +21,9 @@ function Backpack(steamid, game, cloud) {
     this.owner = steamid;
     this.decayTime = 90000; // 1:30min
     this.last_update_date = new Date(0);
+    this.fetching = false;
+    this.fetched = false;
+    this._onceHasBeenFetchedHandlers = [];
     events.EventEmitter.call(this);
 }
 
@@ -50,8 +53,14 @@ Backpack.prototype.getOwner = function () {
 Backpack.prototype.getCached = function (callback) {
     var self = this;
     this.log.debug("Getting cached backpack", 1);
-    if (this.isOutdated()) {
+    if (this.isOutdated() || !this.hasBeenFetched()) {
         this.get(function () {
+            if (typeof callback === "function") {
+                callback(self);
+            }
+        });
+    } else if (this.isFetching()) {
+        this.onceHasBeenFetched(function () {
             if (typeof callback === "function") {
                 callback(self);
             }
@@ -69,6 +78,7 @@ Backpack.prototype.getCached = function (callback) {
  */
 Backpack.prototype.get = function (callback) {
     var self = this;
+    this.fetching = true;
     this.cloud.send("getBackpack", {steamid: this.getOwner(), game: this.game.getID()}, function (result) {
         var backpackWillChange = self._willChange(result.items);
         for (var i in result) {
@@ -87,6 +97,11 @@ Backpack.prototype.get = function (callback) {
         } else if (error_code) {
             self.log.warning("Fetching has errored: " + error_code);
         }
+
+        self.fetching = false;
+        self.fetched = true;
+
+        self._manageOnceHasBeenFetchedHandlers();
         if (typeof callback === "function") {
             callback(self);
         }
@@ -94,6 +109,18 @@ Backpack.prototype.get = function (callback) {
             self.emit("newItems", self.items);
         }
     });
+};
+
+Backpack.prototype.onceHasBeenFetched = function (callback) {
+    this._onceHasBeenFetchedHandlers.push(callback);
+};
+
+Backpack.prototype.hasBeenFetched = function () {
+    return this.fetched;
+};
+
+Backpack.prototype.isFetching = function () {
+    return this.fetching;
 };
 
 /**
@@ -259,6 +286,13 @@ Backpack.prototype._createItemsObject = function () {
             this.items[i] = new TF2Item(this.items[i], this.getOwner());
         }
     }
+};
+
+Backpack.prototype._manageOnceHasBeenFetchedHandlers = function () {
+    for (var i = 0; i < this._onceHasBeenFetchedHandlers.length; i += 1) {
+        this._onceHasBeenFetchedHandlers[i]();
+    }
+    this._onceHasBeenFetchedHandlers = [];
 };
 
 /**
