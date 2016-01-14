@@ -50,7 +50,7 @@ Backpack.prototype.getOwner = function () {
  * Will be fetching a new inventory only if current backpack results outdated
  * @param {Function} callback Self is passed
  */
-Backpack.prototype.getCached = function (callback) {
+/*Backpack.prototype.getCached = function (callback) {
     var self = this;
     this.log.debug("Getting cached backpack", 1);
     if (this.isOutdated() || !this.hasBeenFetched()) {
@@ -61,6 +61,21 @@ Backpack.prototype.getCached = function (callback) {
         });
     } else if (this.isFetching()) {
         this.onceHasBeenFetched(function () {
+            if (typeof callback === "function") {
+                callback(self);
+            }
+        });
+    } else {
+        if (typeof callback === "function") {
+            callback(this);
+        }
+    }
+};*/
+Backpack.prototype.getCached = function (callback) {
+    var self = this;
+    this.log.debug("Getting cached backpack", 1);
+    if (this.isOutdated()) {
+        this.get(function () {
             if (typeof callback === "function") {
                 callback(self);
             }
