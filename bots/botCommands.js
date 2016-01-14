@@ -15,21 +15,27 @@ function BotCommands(sfuminator) {
     var self = this;
     this.commands = {
         preleva: function (steamid, command, bot) {
-            if (!isNaN(command.getMainParameter())) {
-                var prelievoAmount = new Price(-command.getMainParameter(), "metal");
-                var shopTrade = new ShopTrade(self.sfuminator, self.sfuminator.users.get(steamid));
-                var tradeBot = self.sfuminator.getTradingController().getBestAvailableBot();
-                if (tradeBot) {
-                    shopTrade.setBot(tradeBot);
-                    shopTrade.getCurrencyHandler().forceStartingBalance(prelievoAmount);
-                    shopTrade.onceItemsReserved(function () {
-                        var steamTrade = tradeBot.createSteamTrade(shopTrade);
-                        steamTrade.setMessage("Here's a prelievo of " + (-prelievoAmount.toMetal()) + " refined");
-                        steamTrade.make();
-                        bot.steamClient.sendMessage(steamid, "Sending you a prelievo of " + (-prelievoAmount.toMetal()) + " refined");
-                    });
+            var prelievoAmount = new Price(100, "metal");
+            if (isNaN(command.getMainParameter())) {
+                prelievoAmount = new Price(-command.getMainParameter(), "metal");
+            }
+            var shopTrade = new ShopTrade(self.sfuminator, self.sfuminator.users.get(steamid));
+            var tradeBot = self.sfuminator.getTradingController().getBestAvailableBot();
+            if (tradeBot) {
+                shopTrade.setBot(tradeBot);
+                shopTrade.getCurrencyHandler().forceStartingBalance(prelievoAmount);
+                shopTrade.onceItemsReserved(function () {
+                    var steamTrade = tradeBot.createSteamTrade(shopTrade);
+                    steamTrade.setMessage("Here's a prelievo of " + (-prelievoAmount.toMetal()) + " refined");
+                    steamTrade.make();
+                    bot.steamClient.sendMessage(steamid, "Sending you a prelievo of " + (-prelievoAmount.toMetal()) + " refined");
+                });
+                shopTrade.on("tradeRequestResponse", function (result) {
+                    bot.steamClient.sendMessage(steamid, "Error: " + result);
+                });
+                shopTrade.verifyItems(function () {
                     shopTrade.reserveItems();
-                }
+                });
             }
         },
         c: function (steamid, command, bot) {

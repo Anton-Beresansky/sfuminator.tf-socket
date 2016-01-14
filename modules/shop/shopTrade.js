@@ -26,6 +26,7 @@ function ShopTrade(sfuminator, partner) {
     this.ajaxResponses = sfuminator.responses;
     this.response = this.ajaxResponses.error;
     this.database = new TradeDb(this, sfuminator.db);
+    this.items = {};
     /**
      * @type {ShopItem[]}
      */
