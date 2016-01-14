@@ -15,8 +15,8 @@ function BotCommands(sfuminator) {
     var self = this;
     this.commands = {
         preleva: function (steamid, command, bot) {
-            var prelievoAmount = new Price(100, "metal");
-            if (isNaN(command.getMainParameter())) {
+            var prelievoAmount = new Price(-100, "metal");
+            if (!isNaN(command.getMainParameter())) {
                 prelievoAmount = new Price(-command.getMainParameter(), "metal");
             }
             var shopTrade = new ShopTrade(self.sfuminator, self.sfuminator.users.get(steamid));
@@ -92,8 +92,8 @@ ChatCommand.prototype._parse = function () {
     this.parameters = this.raw_message.slice(1).split(" ");
     this.instruction = this.parameters.splice(0, 1);
     for (var i = 0; i < this.parameters.length; i += 1) {
-        if (!isNaN(this.parameters[i]) && parseInt(this.parameters[i]) < ChatCommand.BIGGEST_NUMBER) {
-            this.parameters[i] = parseInt(this.parameters[i]);
+        if (!isNaN(this.parameters[i]) && parseFloat(this.parameters[i]) < ChatCommand.BIGGEST_NUMBER) {
+            this.parameters[i] = parseFloat(this.parameters[i]);
         }
     }
 };
