@@ -116,7 +116,7 @@ Backpack.prototype.get = function (callback) {
         self.fetching = false;
         self.fetched = true;
 
-        self._manageOnceHasBeenFetchedHandlers();
+        //self._manageOnceHasBeenFetchedHandlers();
         if (typeof callback === "function") {
             callback(self);
         }
