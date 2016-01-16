@@ -17,6 +17,7 @@ var SteamGames = require('../lib/steamGames.js');
 function Backpack(steamid, game, cloud) {
     this.cloud = cloud;
     this.log = new Logs({applicationName: "Backpack " + steamid});
+    this.log.setLevel(100);
     this.game = game;
     this.owner = steamid;
     this.decayTime = 90000; // 1:30min
