@@ -28,7 +28,7 @@ function TF2Api(db, steam, backpacktf_key, options) {
     });
     this.on("debug", function (message) {
         if (self.debug) {
-            self.log.msg(message);
+            self.log.debug(message);
         }
     });
     this.loadSchema(function () {
