@@ -17,7 +17,6 @@ var SteamGames = require('../lib/steamGames.js');
 function Backpack(steamid, game, cloud) {
     this.cloud = cloud;
     this.log = new Logs({applicationName: "Backpack " + steamid});
-    this.log.setLevel(100);
     this.game = game;
     this.owner = steamid;
     this.decayTime = 90000; // 1:30min
@@ -51,7 +50,7 @@ Backpack.prototype.getOwner = function () {
  * Will be fetching a new inventory only if current backpack results outdated
  * @param {Function} callback Self is passed
  */
-/*Backpack.prototype.getCached = function (callback) {
+Backpack.prototype.getCached = function (callback) {
     var self = this;
     this.log.debug("Getting cached backpack", 1);
     if (this.isOutdated() || !this.hasBeenFetched()) {
@@ -71,21 +70,6 @@ Backpack.prototype.getOwner = function () {
             callback(this);
         }
     }
-};*/
-Backpack.prototype.getCached = function (callback) {
-    var self = this;
-    this.log.debug("Getting cached backpack", 1);
-    if (this.isOutdated()) {
-        this.get(function () {
-            if (typeof callback === "function") {
-                callback(self);
-            }
-        });
-    } else {
-        if (typeof callback === "function") {
-            callback(this);
-        }
-    }
 };
 
 /**
@@ -96,7 +80,6 @@ Backpack.prototype.get = function (callback) {
     var self = this;
     this.fetching = true;
     this.cloud.send("getBackpack", {steamid: this.getOwner(), game: this.game.getID()}, function (result) {
-        console.log("/////////////////\n" + JSON.stringify(result).slice(0, 1000));
         var backpackWillChange = self._willChange(result.items);
         for (var i in result) {
             self[i] = result[i];
@@ -118,7 +101,7 @@ Backpack.prototype.get = function (callback) {
         self.fetching = false;
         self.fetched = true;
 
-        //self._manageOnceHasBeenFetchedHandlers();
+        self._manageOnceHasBeenFetchedHandlers();
         if (typeof callback === "function") {
             callback(self);
         }
