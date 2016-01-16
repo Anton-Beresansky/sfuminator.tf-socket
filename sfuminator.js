@@ -30,7 +30,7 @@ function Sfuminator(cloud, db) {
     this.admin = CFG.getAdmins();
     this.interrupts = new Interrupts([
         {name: "updatePrices", delay: 60000, tag: "internal"},
-        {name: "updateShopInventory", delay: 2000, tag: "internal"},
+        {name: "updateShopInventory", delay: 4000, tag: "internal"},
         {name: "updateActiveTrades", delay: 1500, tag: "internal"},
         {name: "updateStats", delay: 1000, tag: "global"},
         {name: "updateTradeStatus", delay: 1000, tag: "global"},
