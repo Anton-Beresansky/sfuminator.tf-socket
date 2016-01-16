@@ -82,11 +82,11 @@ ShopInventory.prototype.fetchTF2Items = function (callback) {
             } else {
                 allItems = allItems.concat(backpack.items);
             }
+            i += 1;
             if (i === self.bots.length) {
                 self.fetching = false;
                 callback(allItems);
             } else {
-                i += 1;
                 fetchNext();
             }
         });
