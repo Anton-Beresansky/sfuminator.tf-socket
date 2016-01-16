@@ -72,3 +72,11 @@ BotsController.prototype.getBot = function (steamid) {
 BotsController.prototype.getTradingBots = function () {
     return this.tradeBots;
 };
+
+BotsController.prototype.preSmeltMetal = function () {
+    for (var i = 0; i < this.tradeBots.length; i += 1) {
+        var bot = this.tradeBots[i];
+        var botBackapck = bot.getUser().getTF2Backpack();
+
+    }
+};

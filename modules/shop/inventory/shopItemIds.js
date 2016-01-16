@@ -17,6 +17,7 @@ function ShopItemIDs(db) {
     this.lookupTable = {};
     this.currentID = 0;
     this.log = new Logs({applicationName: "ShopItemIDs", color: "grey", dim: true});
+    this.log.setLevel(100);
 }
 
 /**
