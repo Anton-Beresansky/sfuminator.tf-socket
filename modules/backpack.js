@@ -96,6 +96,7 @@ Backpack.prototype.get = function (callback) {
     var self = this;
     this.fetching = true;
     this.cloud.send("getBackpack", {steamid: this.getOwner(), game: this.game.getID()}, function (result) {
+        console.log("/////////////////\n" + JSON.stringify(result).slice(0, 1000));
         var backpackWillChange = self._willChange(result.items);
         for (var i in result) {
             self[i] = result[i];
