@@ -24,6 +24,7 @@ function Cloud(socket, options) {
         }
     });
     this.socket.on("tcp_disconnected", function (id) {
+        self.sending = false;
         self._d("Lost connection with partner: " + id);
         self.emit("cloud_disconnected");
     });
@@ -66,11 +67,11 @@ Cloud.prototype.query = function (query, callback) {
 Cloud.prototype.send = function (action, data, callback) {
     var self = this;
     var time_beforeSending = new Date();
-    if (this.isSending()) {
+    /*if (this.isSending()) {
         this._d("Stacking request");
         this._stack.push(new CloudRequest(action, data, callback));
         return;
-    }
+    }*/
 
     this.sending = true;
     this.socket.send({action: action, parameters: data}, function (result) {
