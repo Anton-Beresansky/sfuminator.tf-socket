@@ -24,7 +24,6 @@ function Shop(sfuminator) {
     this.interrupts = this.sfuminator.interrupts;
     this.users = this.sfuminator.users;
     this.log = new Logs({applicationName: "Shop", color: "green"});
-    this.log.setLevel(100);
 
     this.ratio = new ShopRatio(this.db);
     this.tf2Currency = TF2Currency;

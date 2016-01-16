@@ -21,7 +21,7 @@ function ShopInventory(shop) {
     this.bots = this.shop.bots;
 
     this.log = new Logs({applicationName: "Shop Inventory", color: "green"});
-    this.log.setLevel(100);
+    this.log.setLevel(3);
     this.ids = new ShopItemIds(this.db);
     this.versioning = new ItemVersioning(10, "inventory");
     /**

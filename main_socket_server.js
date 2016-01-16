@@ -1,6 +1,12 @@
 var Database = require('./lib/database.js');
 var zmqSocket = require('./lib/zmqSocket.js');
 var Cloud = require('./modules/cloud.js');
+
+//>Items rework
+var SteamAPI = require('./lib/steamapi.js');
+var WebAPI = require('./modules/webApi/webApi.js');
+//<
+
 var SfuminatorRequest = require('./modules/requests.js');
 var Sfuminator = require('./sfuminator.js');
 var MaxRequestsHandler = require('./maxRequestsHandler.js');
@@ -10,6 +16,13 @@ var httpListenPort = CFG.getHTTPListenPort(); //dev 3191 | main 3190
 var socketPorts = {connect: CFG.getConnectCloudPort(), listen: CFG.getListenCloudPort()}; //main 3002,3003 | dev 3000,3001
 
 var db = new Database({user: "root", password: "1bonnica2", database: "my_sfuminator"});
+
+//>Items rework
+var db_items = new Database({user: "root", password: "1bonnica2", database: "my_sfuminator_items"});
+var steamAPI = new SteamAPI("0390C255E3A056EFFFD4E3ECFC1EB6A1");
+var webApi = new WebAPI(db_items, steamAPI);
+//<
+
 var socket = new zmqSocket({
     connect_address: "104.131.217.119",
     connect_port: socketPorts.connect,
