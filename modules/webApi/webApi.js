@@ -1,6 +1,6 @@
 module.exports = WebApi;
 
-var BackpacksAPI = requrie("./backpacksApi.js");
+var BackpacksAPI = require("./backpacksApi.js");
 var TF2API = require("./tf2Api.js");
 
 /**
