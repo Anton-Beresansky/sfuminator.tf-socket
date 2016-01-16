@@ -73,22 +73,25 @@ ShopInventory.prototype.fetchTF2Items = function (callback) {
         return;
     }
     this.fetching = true;
-    var fetchCounter = 0;
-    var allItems = [];
-    for (var i = 0; i < this.bots.length; i += 1) {
-        this.bots[i].tf2Backpack.get(function (backpack) {
-            fetchCounter += 1;
+    var allItems = [], i = 0;
+
+    var fetchNext = function () {
+        self.bots[i].getTF2Backpack().get(function (backpack) {
             if (backpack.hasErrored() && backpack._error_code !== "#database_backpack") {
                 self.log.warning("Couldn't fetch bot " + backpack.getOwner() + " inventory" + ((backpack.getItems().length === 0) ? " (items empty)" : ""));
             } else {
                 allItems = allItems.concat(backpack.items);
             }
-            if (fetchCounter === self.bots.length) {
+            if (i === self.bots.length) {
                 self.fetching = false;
                 callback(allItems);
+            } else {
+                i += 1;
+                fetchNext();
             }
         });
-    }
+    };
+    fetchNext();
 };
 
 /**
