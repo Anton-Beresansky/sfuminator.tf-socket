@@ -7,6 +7,7 @@ var events = require("events");
  * @param {ZmqSocket} socket
  * @param {Object} options
  * @returns {Cloud}
+ * @construct
  */
 function Cloud(socket, options) {
     var self = this;
@@ -27,7 +28,13 @@ function Cloud(socket, options) {
         self.emit("cloud_disconnected");
     });
     this.ping = 0;
-    this._debug = false;
+    this.sending = false;
+    /**
+     * @type {CloudRequest[]}
+     * @private
+     */
+    this._stack = [];
+    this._debug = true;
     this._dd = 0;
     if (options && options.hasOwnProperty("debug")) {
         if (options.hasOwnProperty("debug_depth")) {
@@ -59,12 +66,34 @@ Cloud.prototype.query = function (query, callback) {
 Cloud.prototype.send = function (action, data, callback) {
     var self = this;
     var time_beforeSending = new Date();
+    if (this.isSending()) {
+        this._d("Stacking request");
+        this._stack.push(new CloudRequest(action, data, callback));
+        return;
+    }
+
+    this.sending = true;
     this.socket.send({action: action, parameters: data}, function (result) {
+        self.sending = false;
         callback(result.data);
         var total_timing = new Date() - time_beforeSending;
         self._d("> Cloud action: " + action + " | Total timing: " + total_timing + "ms, cloud timing: " + result.timingInfo);
         self.updatePing(total_timing - result.timingInfo);
+        self.processNextRequest();
     });
+};
+
+Cloud.prototype.processNextRequest = function () {
+    if (this._stack.length > 0) {
+        var request = this._stack[0];
+        this._d("Processing stacked request");
+        this.send(request.action, request.data, request.callback);
+        this._stack.splice(0, 1);
+    }
+};
+
+Cloud.prototype.isSending = function () {
+    return this.sending;
 };
 
 /**
@@ -108,3 +137,14 @@ Cloud.prototype.updatePing = function (newPing) {
 Cloud.prototype.getPing = function () {
     return this.ping;
 };
+
+/**
+ *
+ * @constructor
+ */
+function CloudRequest(action, data, callback) {
+    this.action = action;
+    this.data = data;
+    this.callback = callback;
+}
+
