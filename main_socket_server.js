@@ -20,7 +20,7 @@ var db = new Database({user: "root", password: "1bonnica2", database: "my_sfumin
 //>Items rework
 var db_items = new Database({user: "root", password: "1bonnica2", database: "my_sfuminator_items"});
 var steamAPI = new SteamAPI("0390C255E3A056EFFFD4E3ECFC1EB6A1");
-var webApi = new WebAPI(db_items, steamAPI);
+//var webApi = new WebAPI(db_items, steamAPI);
 //<
 
 var socket = new zmqSocket({
