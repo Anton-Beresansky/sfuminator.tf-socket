@@ -35,7 +35,7 @@ function Cloud(socket, options) {
      * @private
      */
     this._stack = [];
-    this._debug = true;
+    this._debug = false;
     this._dd = 0;
     if (options && options.hasOwnProperty("debug")) {
         if (options.hasOwnProperty("debug_depth")) {
