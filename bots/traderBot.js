@@ -125,6 +125,9 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
             shopTrade.cancel();
         });
         this.steamClient.onFriendWith(partnerSteamid, function () {
+            if (shopTrade.isClosed()) {
+                return;
+            }
             self.steamClient.getFriend(partnerSteamid).sendMessage(self.interactions.getMessage("tradeOffer_hello", sfuminatorUser));
             if (shopTrade.areItemsReserved()) {
                 self.finalizeSendShopTrade(shopTrade);
@@ -147,6 +150,7 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
  * @param {ShopTrade} shopTrade
  */
 TraderBot.prototype.finalizeSendShopTrade = function (shopTrade) {
+    shopTrade.setAsMaking();
     this.createSteamTrade(shopTrade);
     this._bindShopTrade(shopTrade);
     shopTrade.steamTrade.make();
@@ -197,7 +201,7 @@ TraderBot.prototype._bindShopTrade = function (shopTrade) {
         self._tryToFixItemsIDs(shopTrade);
     });
     steamTradeOffer.on("tradeError", function (steamTradeError) {
-        shopTrade.cancel(TradeConstants.statusInfo.closed.ERROR);
+        shopTrade.cancel(steamTradeError.getCode());
         self.log.warning("Error sending offer: " + steamTradeError.getCode());
         if (steamTradeError.getCode() === SteamTradeError.ERROR.NOT_AVAILABLE_FOR_TRADE) {
             partner.sendMessage(self.interactions.message_senteces.steamTradeError.not_available_for_trade);
