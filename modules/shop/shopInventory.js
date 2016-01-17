@@ -147,7 +147,7 @@ ShopInventory.prototype._parseTF2ItemsToAdd = function (newItems) {
         var item_exist = false;
         for (var z = 0; z < this.items.length; z += 1) {
             if (this.items[z].isTF2Item()) {
-                if (newItems[i].getOriginalID() === this.items[z].getItem().getOriginalID()) {
+                if (newItems[i].getID() === this.items[z].getItem().getID()) {
                     item_exist = true;
                     //If item already exist, tf2item gets updated
                     //This will handle new ids due to bot ownership change
@@ -178,7 +178,7 @@ ShopInventory.prototype._parseTF2ItemsToRemove = function (newItems) {
 
             var item_exist = false;
             for (var j = 0; j < newItems.length; j += 1) {
-                if (this.items[i].getItem().getOriginalID() === newItems[j].getOriginalID()) {
+                if (this.items[i].getItem().getID() === newItems[j].getID()) {
                     item_exist = true;
                     break;
                 }
