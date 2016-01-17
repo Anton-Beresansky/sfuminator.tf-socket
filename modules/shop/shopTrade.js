@@ -108,6 +108,11 @@ ShopTrade.prototype.setAsSending = function () {
     }
 };
 
+ShopTrade.prototype.setAsMaking = function () {
+    this.setStatus(TradeConstants.status.ACTIVE);
+    this.commit();
+};
+
 ShopTrade.prototype.setAsWaitingForFriendRelation = function () {
     this.setStatus(TradeConstants.status.NO_FRIEND);
     this.setStatusInfo("");
