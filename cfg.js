@@ -136,6 +136,10 @@ BotCredentials.prototype.getApiKey = function () {
     return this.botCredentials.steamApiKey;
 };
 
+BotCredentials.prototype.getTradeToken = function () {
+    return this.botCredentials.tradeToken;
+};
+
 BotCredentials.prototype.hasSteamGuardCode = function () {
     return this.botCredentials.hasOwnProperty("steamGuardCode");
 };

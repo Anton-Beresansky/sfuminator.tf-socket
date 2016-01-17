@@ -14,6 +14,8 @@ var ShopTradeCurrency = require("./shopTradeCurrency.js");
  * Generic purpose class for Shop Trades
  * @event tradeRequestResponse
  * @event itemsReserved
+ * @event newStatus
+ * @event newStatusInfo
  * @param {Sfuminator} sfuminator The sfuminator instance
  * @param {User} partner Shop trade partner
  * @returns {ShopTrade}
@@ -549,6 +551,7 @@ ShopTrade.prototype.setID = function (id) {
 ShopTrade.prototype.setStatus = function (status) {
     this.status = status;
     this.setLastUpdateDate(new Date());
+    this.emit("newStatus", status);
 };
 
 /**
@@ -558,6 +561,7 @@ ShopTrade.prototype.setStatus = function (status) {
 ShopTrade.prototype.setStatusInfo = function (status_info) {
     this.status_info = status_info;
     this.setLastUpdateDate(new Date());
+    this.emit("newStatusInfo", status_info);
 };
 
 /**
