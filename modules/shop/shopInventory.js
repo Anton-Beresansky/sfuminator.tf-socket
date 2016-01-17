@@ -76,7 +76,7 @@ ShopInventory.prototype.fetchTF2Items = function (callback) {
     var allItems = [], i = 0;
 
     var fetchNext = function () {
-        self.log.debug("Fetching backpack " + self.bots[i].getSteamid(), 1);
+        self.log.debug("Fetching backpack " + self.bots[i].getSteamid(), 4);
         self.bots[i].getTF2Backpack().get(function (backpack) {
             if (backpack.hasErrored() && backpack._error_code !== "#database_backpack") {
                 self.log.warning("Couldn't fetch bot " + backpack.getOwner() + " inventory" + ((backpack.getItems().length === 0) ? " (items empty)" : ""));

@@ -34,6 +34,7 @@ function Sfuminator(cloud, db) {
         {name: "updateActiveTrades", delay: 1500, tag: "internal"},
         {name: "updateStats", delay: 1000, tag: "global"},
         {name: "updateTradeStatus", delay: 1000, tag: "global"},
+        {name: "preSmeltMetal", delay: 8000, tag: "internal"},
         {name: "cleanBuggedReservations_WhyDoIEvenHaveToPutSomethingLikeThis", delay: 900000, tag: "global"}
     ]);
     this.responses = new AjaxResponses(this);
@@ -98,6 +99,9 @@ Sfuminator.prototype.bindInterrupts = function () {
     });
     this.interrupts.on("cleanBuggedReservations_WhyDoIEvenHaveToPutSomethingLikeThis", function () {
         self._cleanBuggedReservations();
+    });
+    this.interrupts.on("preSmeltMetal", function () {
+        self.botsController.preSmeltMetal();
     });
 };
 
