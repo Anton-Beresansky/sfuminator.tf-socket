@@ -104,6 +104,17 @@ TraderBot.prototype.getAssignedShopTrades = function () {
 
 TraderBot.prototype.assignShopTrade = function (shopTrade) {
     this.assignedShopTrades.push(shopTrade);
+    var self = this;
+    shopTrade.on("newStatus", function (status) {
+        if (status === TradeConstants.status.CLOSED) {
+            for (var i = 0; i < self.assignedShopTrades.length; i += 1) {
+                if (self.assignedShopTrades[i].getID() === shopTrade.getID()) {
+                    self.assignedShopTrades.splice(i, 1);
+                    break;
+                }
+            }
+        }
+    });
 };
 
 /**
