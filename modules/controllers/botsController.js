@@ -19,6 +19,8 @@ function BotsController(sfuminator) {
      */
     this.tradeBots = [];
 
+    this.preSmeltedQuantity = 12;
+
     this.commands = new BotCommands(this.sfuminator);
     this.log = new Logs({applicationName: "Bots Controller", color: "blue", dim: true});
 
@@ -74,9 +76,34 @@ BotsController.prototype.getTradingBots = function () {
 };
 
 BotsController.prototype.preSmeltMetal = function () {
+    var self = this;
+    /**
+     * @param {TraderBot} bot
+     */
+    var preSmelt = function (bot) {
+        var backpack = bot.getUser().getTF2Backpack();
+        backpack.getCached(function () {
+            var metalToSmeltDefindexes = [5002, 5001, 5000];
+            for (var i = 0; i < 2; i += 1) {
+                var count = backpack.getCount({defindex: metalToSmeltDefindexes[i + 1]});
+                if (count < self.preSmeltedQuantity) {
+                    self.log.debug("PreSmelting metal, count for " + metalToSmeltDefindexes[i + 1] + " is " + count);
+                    var itemsLength = backpack.getItems().length;
+                    var filter = {id: []};
+                    while (itemsLength -= 1) {
+                        var itemsToSmelt = backpack.getItems(filter, {defindex: metalToSmeltDefindexes[i]}, 1);
+                        if (itemsToSmelt.length && !self.sfuminator.shop.reservations.exist(itemsToSmelt[0].getID())) {
+                            bot.steamClient.craftTF2Items(itemsToSmelt);
+                            break;
+                        } else {
+                            filter.id.push(itemsToSmelt[0].getID());
+                        }
+                    }
+                }
+            }
+        });
+    };
     for (var i = 0; i < this.tradeBots.length; i += 1) {
-        var bot = this.tradeBots[i];
-        var botBackapck = bot.getUser().getTF2Backpack();
-
+        preSmelt(this.tradeBots[i]);
     }
 };

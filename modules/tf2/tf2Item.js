@@ -8,6 +8,7 @@ var TF2Constants = require("./tf2Constants.js");
  * @param {object} item (steam api tf2 item combined with schema and (optional) price)
  * @param {string} owner (steamid)
  * @returns {TF2Item}
+ * @construct
  */
 function TF2Item(item, owner) {
     for (var property in item) {
@@ -17,6 +18,44 @@ function TF2Item(item, owner) {
     }
     this.owner = owner;
 }
+
+/**
+ * Matching object
+ * {
+ *   param1: value
+ *   param2: [value1, value2, value3]
+ * }
+ * Item will match if all given params are matching with at least 1 value
+ * @param attributes
+ * @returns {boolean}
+ */
+TF2Item.prototype.isMatchingWith = function (attributes) {
+    var matching = true;
+    for (var property in attributes) {
+        if (this.hasOwnProperty(property)) {
+            if (attributes[property] instanceof Array) {
+                var found = false;
+                for (var i = 0; i < attributes[property].length; i += 1) {
+                    if (this[property] === attributes[property][i]) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    matching = false;
+                    break;
+                }
+            } else if (this[property] !== attributes[property]) {
+                matching = false;
+                break;
+            }
+        } else {
+            matching = false;
+            break;
+        }
+    }
+    return matching;
+};
 
 TF2Item.prototype.getID = function () {
     return this.id;
@@ -124,10 +163,10 @@ TF2Item.prototype.isHat = function () {
  */
 TF2Item.prototype.isCurrency = function () {
     return (this.defindex === TF2Constants.defindexes.ScrapMetal
-    || this.defindex === TF2Constants.defindexes.ReclaimedMetal
-    || this.defindex === TF2Constants.defindexes.RefinedMetal
+        || this.defindex === TF2Constants.defindexes.ReclaimedMetal
+        || this.defindex === TF2Constants.defindexes.RefinedMetal
             //We are removing mann co key from currency for now.
-    /*|| this.defindex === TF2Constants.defindexes.MannCoKey*/) && this.isTradable();
+            /*|| this.defindex === TF2Constants.defindexes.MannCoKey*/) && this.isTradable();
 };
 
 /**

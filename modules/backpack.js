@@ -149,13 +149,52 @@ Backpack.prototype.getItem = function (itemID) {
 };
 
 /**
+ * @param {Object} [filterAttributes]
+ * @param {Object} [matchAttributes]
+ * @param {Number} [matchLimit]
  * @returns {TF2Item[]}
  */
-Backpack.prototype.getItems = function () {
+Backpack.prototype.getItems = function (filterAttributes, matchAttributes, matchLimit) {
     if (this.items instanceof Array) {
-        return this.items;
+        if (filterAttributes || matchAttributes) {
+            var items = [];
+            var matches = 0;
+            for (var i = 0; i < this.items.length; i += 1) {
+                if (!(filterAttributes && this.items[i].isMatchingWith(filterAttributes))) {
+                    if (matchAttributes) {
+                        if (this.items[i].isMatchingWith(matchAttributes)) {
+                            items.push(this.items[i]);
+                            matches += 1;
+                            if (matchLimit && matches === matchLimit) {
+                                return items;
+                            }
+                        }
+                    } else {
+                        items.push(this.items[i]);
+                    }
+                }
+            }
+            return items;
+        } else {
+            return this.items;
+        }
     }
     return [];
+};
+
+/**
+ * @param {Object} attributes
+ */
+Backpack.prototype.getCount = function (attributes) {
+    var count = 0;
+    if (this.items instanceof Array) {
+        for (var i = 0; i < this.items.length; i += 1) {
+            if (this.items[i].isMatchingWith(attributes)) {
+                count += 1;
+            }
+        }
+    }
+    return count;
 };
 
 Backpack.prototype.getCurrencyItems = function () {
