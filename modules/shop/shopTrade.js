@@ -43,7 +43,10 @@ function ShopTrade(sfuminator, partner) {
     this.last_update_date = new Date();
     this.assets_limit = {partner: 20, shop: 20};
     this.steamToken = "";
+    this.itemsReserved = false;
+    this.itemsReady = false;
     this.onceItemsReservedCallbacks = [];
+    this.onceItemsAreReadyCallbacks = [];
     events.EventEmitter.call(this);
 
     this._bindHandlers();
@@ -56,6 +59,7 @@ ShopTrade.addFriendTimeoutTime = 1000 * 60 * 2; //2 min
 ShopTrade.prototype._bindHandlers = function () {
     var self = this;
     this.on("itemsReserved", function () {
+        self.log.debug("Items have been reserved");
         self.itemsReserved = true;
         for (var i = 0; i < self.onceItemsReservedCallbacks.length; i += 1) {
             self.onceItemsReservedCallbacks[i]();
@@ -63,7 +67,22 @@ ShopTrade.prototype._bindHandlers = function () {
         self.onceItemsReservedCallbacks = [];
     });
     this.on("itemsDereserved", function () {
+        self.log.debug("Items have been dereserved");
         self.itemsReserved = false;
+    });
+    this.on("itemsTransferred", function () {
+        self.log.debug("Items have been transferred");
+        self.itemsReady = true;
+        for (var i = 0; i < self.onceItemsAreReadyCallbacks.length; i += 1) {
+            self.onceItemsAreReadyCallbacks[i]();
+        }
+        self.onceItemsAreReadyCallbacks = [];
+    });
+};
+
+ShopTrade.prototype.consolidate = function (callback) {
+    this.database.save(function () {
+        callback();
     });
 };
 
@@ -105,7 +124,7 @@ ShopTrade.prototype.setAsSending = function () {
     } else {
         this.setStatus(TradeConstants.status.HOLD);
         this.setStatusInfo("open"); //Are you sure this is needed?
-        this.database.save();
+        this.commit();
         this.log.debug("Sending trade...");
     }
 };
@@ -387,14 +406,32 @@ ShopTrade.prototype.getShopItemCount = function () {
     return this.assets.length - this.getPartnerItemCount();
 };
 
+ShopTrade.prototype.readyItems = function () {
+    var self = this;
+    this.onceItemsReserved(function () {
+        var assetsToTransfer = self.getItemsToTransfer();
+        if (assetsToTransfer.length) {
+            self.sfuminator.getBotsController().transfer(self.getAssignedBotUser(), assetsToTransfer, function () {
+                self.emit("itemsTransferred");
+            });
+        } else {
+            self.emit("itemsTransferred");
+        }
+    });
+    this.reserveItems();
+};
+
 ShopTrade.prototype.areItemsReserved = function () {
     return this.itemsReserved === true;
+};
+
+ShopTrade.prototype.areItemsReady = function () {
+    return this.itemsReady === true;
 };
 
 ShopTrade.prototype.reserveItems = function () {
     var self = this;
     this.currency.on("reserved", function () {
-        self.log.debug("Items have been reserved");
         self.emit("itemsReserved");
     });
 
@@ -405,6 +442,10 @@ ShopTrade.prototype.reserveItems = function () {
 
 ShopTrade.prototype.onceItemsReserved = function (callback) {
     this.onceItemsReservedCallbacks.push(callback);
+};
+
+ShopTrade.prototype.onceItemsAreReady = function (callback) {
+    this.onceItemsAreReadyCallbacks.push(callback);
 };
 
 /**
@@ -435,6 +476,16 @@ ShopTrade.prototype.dereserveShopItems = function () {
         }
     }
     this.emit("itemsDereserved");
+};
+
+ShopTrade.prototype.getItemsToTransfer = function () {
+    var assetsToTransfer = [];
+    for (var i = 0; i < this.assets.length; i += 1) {
+        if (!this.assets[i].isMineItem() && this.assets[i].getItem().getOwner() !== this.getAssignedBotUser().getSteamid()) {
+            assetsToTransfer.push(this.assets[i]);
+        }
+    }
+    return assetsToTransfer;
 };
 
 /**
@@ -770,6 +821,7 @@ function ShopTradeAssetDataStructure(shopItem) {
  * @param {ShopTrade} trade
  * @param {Database} db Database instance
  * @returns {TradeDb}
+ * @construct
  */
 function TradeDb(trade, db) {
     this.trade = trade;
@@ -800,8 +852,9 @@ TradeDb.prototype.load = function (callback) {
 
 /**
  * Save Shop Trade on Database
+ * @param {Function} [callback]
  */
-TradeDb.prototype.save = function () {
+TradeDb.prototype.save = function (callback) {
     var self = this;
     this.db.connect(function (connection) {
         connection.beginTransaction(function () {
@@ -810,6 +863,9 @@ TradeDb.prototype.save = function () {
                 self.log.debug("Saving trade: " + self.trade.getID());
                 connection.query(self._getSaveItemsQuery(), function () {
                     connection.commitRelease();
+                    if (typeof callback === "function") {
+                        callback();
+                    }
                 });
             });
         });

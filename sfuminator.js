@@ -5,7 +5,6 @@ var Logs = require('./lib/logs.js');
 var Users = require('./modules/users.js');
 var Shop = require('./modules/shop.js');
 var TradeConstants = require("./modules/trade/tradeConstants.js");
-var TradingController = require('./modules/controllers/tradingController.js');
 var BotsController = require('./modules/controllers/botsController.js');
 var AjaxResponses = require('./modules/ajaxResponses.js');
 var Stats = require('./modules/stats.js');
@@ -40,7 +39,6 @@ function Sfuminator(cloud, db) {
     this.responses = new AjaxResponses(this);
     this.users = new Users(this);
     this.shop = new Shop(this);
-    this.tradingController = new TradingController(this);
     this.botsController = new BotsController(this);
     this.stats = new Stats(this);
     this.status = new TradeStatus(this);
@@ -347,17 +345,16 @@ Sfuminator.prototype.requestTrade = function (request, mode, callback) {
         var trade = user.makeShopTrade(data.items);
         trade.setMode(mode);
         trade.on("tradeRequestResponse", function (response) {
-            self.log.debug("Request for trade " + trade.getID() + " rejected, response: " + trade.response.code);
+            self.log.debug("Request for trade rejected, response: " + trade.response.code);
             callback(response);
         });
         trade.verifyItems(function (success) {
-            if (success) {
-                if (trade.getPartnerItemCount() > 0 && trade.getShopItemCount() > 0 && trade.getMode() === TradeConstants.mode.MANUAL_TRADE) {
-                    callback(self.responses.denyManualMultiItems);
-                } else if (self.tradingController.startOffNewShopTrade(trade)) {
+            if (success && self.botsController.assignBot(trade)) {
+                trade.consolidate(function () {
                     self.log.debug("Trade request approved (id: " + trade.getID() + " ~ " + user.getSteamid() + ")");
                     callback(self.responses.tradeRequestSuccess(trade));
-                }
+                    self.botsController.startOffNewShopTrade(trade);
+                });
             }
         });
     } else {
@@ -389,13 +386,6 @@ Sfuminator.prototype.cancelTrade = function (request, callback) {
  */
 Sfuminator.prototype.getCFG = function () {
     return CFG;
-};
-
-/**
- * @returns {TradingController}
- */
-Sfuminator.prototype.getTradingController = function () {
-    return this.tradingController;
 };
 
 /**
