@@ -26,7 +26,7 @@ function ShopTrade(sfuminator, partner) {
     this.sfuminator = sfuminator;
     this.shop = sfuminator.shop;
     this.ajaxResponses = sfuminator.responses;
-    this.response = this.ajaxResponses.error;
+    this.response = null;
     this.database = new TradeDb(this, sfuminator.db);
     this.items = {};
     /**
@@ -77,6 +77,10 @@ ShopTrade.prototype._bindHandlers = function () {
             self.onceItemsAreReadyCallbacks[i]();
         }
         self.onceItemsAreReadyCallbacks = [];
+    });
+    this.on("tradeRequestResponse", function (requestResponse) {
+        self.response = requestResponse;
+        this.cancel();
     });
 };
 
@@ -341,15 +345,13 @@ ShopTrade.prototype.verifyItems = function (callback) {
                 }
             }
         } else if (section !== "mine") {
-            this.response = this.ajaxResponses.sectionNotFound;
-            this.emit("tradeRequestResponse", this.response);
+            this.emit("tradeRequestResponse", this.ajaxResponses.sectionNotFound);
             callback(false);
             return;
         }
     }
     if (this.getShopItemCount() > this.assets_limit.shop) {
-        this.response = this.ajaxResponses.shopAssetsLimit(this.assets_limit.shop);
-        this.emit("tradeRequestResponse", this.response);
+        this.emit("tradeRequestResponse", this.ajaxResponses.shopAssetsLimit(this.assets_limit.shop));
         callback(false);
         return;
     }
@@ -375,8 +377,7 @@ ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
     var self = this;
     this.getPartner().getTF2Backpack().getCached(function () {
         if (self.getPartner().getTF2Backpack().getCurrencyAmount() < self.currency.getSignedTradeBalance()) {
-            self.response = self.ajaxResponses.notEnoughCurrency;
-            self.emit("tradeRequestResponse", self.response);
+            self.emit("tradeRequestResponse", self.ajaxResponses.notEnoughCurrency);
             callback(false);
         } else {
             callback(true);
@@ -411,8 +412,13 @@ ShopTrade.prototype.readyItems = function () {
     this.onceItemsReserved(function () {
         var assetsToTransfer = self.getItemsToTransfer();
         if (assetsToTransfer.length) {
-            self.sfuminator.getBotsController().transfer(self.getAssignedBotUser(), assetsToTransfer, function () {
-                self.emit("itemsTransferred");
+            var assignedTraderBot = self.sfuminator.getBotsController().getBot(self.getAssignedBotUser().getSteamid());
+            self.sfuminator.getBotsController().transfer(assignedTraderBot, assetsToTransfer, function (err) {
+                if (!err) {
+                    self.emit("itemsTransferred");
+                } else {
+                    self.emit("tradeRequestResponse", self.sfuminator.responses.cannotGatherItems);
+                }
             });
         } else {
             self.emit("itemsTransferred");
@@ -682,13 +688,11 @@ ShopTrade.prototype.getLastUpdateDate = function () {
  */
 ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
     if (!this.shop.sections[section].itemExist(idToCheck)) {
-        this.response = this.ajaxResponses.itemsSelectedNotFound;
-        this.emit("tradeRequestResponse", this.response);
+        this.emit("tradeRequestResponse", this.ajaxResponses.itemsSelectedNotFound);
         return false;
     }
     if (this.shop.reservations.exist(idToCheck) && this.shop.reservations.get(idToCheck).getHolder() !== this.getPartner().getSteamid()) {
-        this.response = this.ajaxResponses.itemIsAlreadyReserved;
-        this.emit("tradeRequestResponse", this.response);
+        this.emit("tradeRequestResponse", this.ajaxResponses.itemIsAlreadyReserved);
         return false;
     }
     return true;
@@ -708,13 +712,11 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
             var itemID = self.items.mine[i];
             var item = backpack.getItem(itemID);
             if (!backpack.itemExist(itemID)) {
-                self.response = self.ajaxResponses.itemNotFound;
-                self.emit("tradeRequestResponse", self.response);
+                self.emit("tradeRequestResponse", self.ajaxResponses.itemNotFound);
                 callback(false);
                 return;
             } else if (!self.shop.canBeSold(item)) {
-                self.response = self.ajaxResponses.itemCantBeSold;
-                self.emit("tradeRequestResponse", self.response);
+                self.emit("tradeRequestResponse", self.ajaxResponses.itemCantBeSold);
                 callback(false);
                 return;
             } else {
@@ -722,16 +724,14 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
                 itemCount.add(item);
                 var netCount = (itemCount.get(item) + self.shop.count.get(item)) - self.shop.getLimit(item);
                 if (netCount > 0) {
-                    self.response = self.ajaxResponses.itemExceedCount(item, netCount);
-                    self.emit("tradeRequestResponse", self.response);
+                    self.emit("tradeRequestResponse",  self.ajaxResponses.itemExceedCount(item, netCount));
                     callback(false);
                     return;
                 }
             }
         }
         if (self.getPartnerItemCount() > self.assets_limit.partner) {
-            self.response = self.ajaxResponses.partnerAssetsLimit(self.assets_limit.partner);
-            self.emit("tradeRequestResponse", self.response);
+            self.emit("tradeRequestResponse", self.ajaxResponses.partnerAssetsLimit(self.assets_limit.partner));
             callback(false);
             return;
         }

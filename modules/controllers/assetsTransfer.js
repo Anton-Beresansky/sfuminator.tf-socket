@@ -2,6 +2,7 @@ module.exports = TransferNodesCluster;
 
 var SteamTradeOffer = require("./../../lib/steamTradeOffer.js");
 var Logs = require("./../../lib/logs.js");
+var Events = require("events");
 
 /**
  * @param {BotsController} botsController
@@ -15,10 +16,19 @@ function TransferNodesCluster(botsController, receiver) {
      * @type {TransferNode[]}
      */
     this.nodes = [];
+    this.lastTransferErrored = false;
+    this.log = new Logs({
+        applicationName: "Transfer Nodes Cluster > " + receiver.getSteamid(),
+        color: "blue"
+    });
+    Events.EventEmitter.call(this);
 }
+
+require("util").inherits(TransferNodesCluster, Events.EventEmitter);
 
 TransferNodesCluster.prototype.beginTransfer = function () {
     var self = this;
+    this.lastTransferErrored = false;
     for (var i = 0; i < this.nodes.length; i += 1) {
         this.nodes[i].start();
         this.nodes[i].onceFinished(function () {
@@ -26,6 +36,12 @@ TransferNodesCluster.prototype.beginTransfer = function () {
                 if (typeof self._onceCompletedCallback === "function") {
                     self._onceCompletedCallback();
                 }
+            }
+        });
+        this.nodes[i].on("error", function () {
+            if (!self.lastTransferErrored) {
+                self.lastTransferErrored = true;
+                self.emit("error");
             }
         });
     }
@@ -40,7 +56,7 @@ TransferNodesCluster.prototype.isCompleted = function () {
     return true;
 };
 
-TransferNode.prototype.onceCompleted = function (callback) {
+TransferNodesCluster.prototype.onceCompleted = function (callback) {
     this._onceCompletedCallback = callback;
 };
 
@@ -88,16 +104,16 @@ function TransferNode(sender, receiver) {
 
     this.log = new Logs({
         applicationName: "Transfer Node ("
-        + sender.steamClient.getCredentials().getUsername() + " > " + receiver.steamClient.getCredentials().getUsername() + ")",
+        + this.sender.steamClient.getCredentials().getUsername() + " > " + this.receiver.steamClient.getCredentials().getUsername() + ")",
         color: "blue"
     });
 
     this.senderOffer = new SteamTradeOffer(this.sender.steamClient, this.receiver.getSteamid());
-    for (var i = 0; i < this.items.length; i += 1) {
-        this.senderOffer.addMyItem(this.items[i].getTradeOfferAsset());
-    }
     this.senderOffer.setToken(this.receiver.steamClient.getCredentials().getTradeToken());
+    Events.EventEmitter.call(this);
 }
+
+require("util").inherits(TransferNode, Events.EventEmitter);
 
 TransferNode.prototype.getSenderSteamid = function () {
     return this.sender.getSteamid();
@@ -108,12 +124,13 @@ TransferNode.prototype.getSenderSteamid = function () {
  */
 TransferNode.prototype.addItem = function (item) {
     this.items.push(item);
+    this.senderOffer.addMyItem(item.getTradeOfferAsset());
 };
 
 TransferNode.prototype.start = function () {
     var self = this;
     this.senderOffer.make();
-    this.log.debug("Starting transfer, " + items.length + " items");
+    this.log.debug("Starting transfer, " + this.items.length + " items");
     this.senderOffer.on("tradeSent", function () {
         self.log.debug(senderOffer.getTradeOfferID() + " sent");
         self.receiver.steamClient.tradeOffersManager.getOffer(self.senderOffer.getTradeOfferID(), function (err, tradeOffer) {
@@ -124,8 +141,9 @@ TransferNode.prototype.start = function () {
             }
         });
     });
-    senderOffer.on("tradeError", function (error) {
+    this.senderOffer.on("tradeError", function (error) {
         self.log.error("Trade error: " + error.getCode());
+        self.emit("error");
     });
 };
 
@@ -144,6 +162,7 @@ TransferNode.prototype.accomplish = function (tradeOffer) {
                 }
             } else {
                 self.log.error(err);
+                self.emit("error");
             }
         });
     });
