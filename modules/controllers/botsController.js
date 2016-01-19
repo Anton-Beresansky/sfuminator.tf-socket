@@ -116,15 +116,18 @@ BotsController.prototype.getBestAvailableBot = function () {
  * @param {Function} [callback]
  */
 BotsController.prototype.transfer = function (receiver, items, callback) {
-    var cluster = new TransferNodesCluster(receiver);
+    var cluster = new TransferNodesCluster(this, receiver);
     for (var i = 0; i < items.length; i += 1) {
         cluster.addItem(items[i]);
     }
     cluster.beginTransfer();
     cluster.onceCompleted(function () {
         if (typeof callback === "function") {
-            callback();
+            callback(null);
         }
+    });
+    cluster.on("error", function () {
+        callback(new Error());
     });
 };
 
