@@ -3,6 +3,7 @@ module.exports = BotsController;
 var Logs = require('./../../lib/logs.js');
 var TraderBot = require('./../../bots/traderBot.js');
 var BotCommands = require('./../../bots/botCommands.js');
+var TransferNodesCluster = require('./assetsTransfer.js');
 
 /**
  * @class BotsController
@@ -14,6 +15,10 @@ function BotsController(sfuminator) {
      * @type {Sfuminator}
      */
     this.sfuminator = sfuminator;
+    /**
+     * @type {Shop}
+     */
+    this.shop = this.sfuminator.shop;
     /**
      * @type {TraderBot[]}
      */
@@ -68,11 +73,59 @@ BotsController.prototype.getBot = function (steamid) {
     }
 };
 
+BotsController.prototype.assignBot = function (shopTrade) {
+    var assignedBot = this.getBestAvailableBot();
+    if (!assignedBot) {
+        this.log.error("Wasn't able to assign bot");
+        shopTrade.emit("tradeRequestResponse", this.sfuminator.responses.botIsNotAvailable);
+        return false;
+    } else {
+        shopTrade.setBot(assignedBot.getUser());
+        return true;
+    }
+};
+
 /**
- * @returns {TraderBot[]}
+ * @param {ShopTrade} newShopTrade
  */
-BotsController.prototype.getTradingBots = function () {
-    return this.tradeBots;
+BotsController.prototype.startOffNewShopTrade = function (newShopTrade) {
+    var assignedBot = this.getBot(newShopTrade.getAssignedBotUser().getSteamid());
+    assignedBot.sendShopTrade(newShopTrade);
+};
+
+/**
+ * @returns {TraderBot|Boolean}
+ */
+BotsController.prototype.getBestAvailableBot = function () {
+    var bestBot = false;
+    for (var i = 0; i < this.tradeBots.length; i += 1) {
+        if (this.tradeBots[i].isAvailable()) {
+            if (!(bestBot instanceof TraderBot)) {
+                bestBot = this.tradeBots[i];
+            } else if (this.tradeBots[i].getAssignedShopTradesCount() > bestBot.getAssignedShopTradesCount()) {
+                bestBot = this.tradeBots[i];
+            }
+        }
+    }
+    return bestBot;
+};
+
+/**
+ * @param {TraderBot} receiver
+ * @param {ShopItem[]} items
+ * @param {Function} [callback]
+ */
+BotsController.prototype.transfer = function (receiver, items, callback) {
+    var cluster = new TransferNodesCluster(receiver);
+    for (var i = 0; i < items.length; i += 1) {
+        cluster.addItem(items[i]);
+    }
+    cluster.beginTransfer();
+    cluster.onceCompleted(function () {
+        if (typeof callback === "function") {
+            callback();
+        }
+    });
 };
 
 BotsController.prototype.preSmeltMetal = function () {

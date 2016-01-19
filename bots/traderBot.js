@@ -125,7 +125,6 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
     var partnerSteamid = shopTrade.getPartner().getSteamid();
     var sfuminatorUser = this.sfuminator.users.get(partnerSteamid);
     this.assignShopTrade(shopTrade);
-    shopTrade.setBot(this.getUser());
     shopTrade.setAsSending();
     if (!shopTrade.hasSteamToken() && !this.steamClient.isFriend(partnerSteamid)) {
         this.steamClient.addFriend(partnerSteamid);
@@ -140,21 +139,21 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
                 return;
             }
             self.steamClient.getFriend(partnerSteamid).sendMessage(self.interactions.getMessage("tradeOffer_hello", sfuminatorUser));
-            if (shopTrade.areItemsReserved()) {
+            if (shopTrade.areItemsReady()) {
                 self.finalizeSendShopTrade(shopTrade);
             } else {
-                shopTrade.onceItemsReserved(function () {
+                shopTrade.onceItemsAreReady(function () {
                     self.finalizeSendShopTrade(shopTrade);
                 });
             }
         });
     } else {
-        shopTrade.onceItemsReserved(function () {
+        shopTrade.onceItemsAreReady(function () {
             self.steamClient.getFriend(partnerSteamid).sendMessage(self.interactions.getMessage("tradeOffer_hello", sfuminatorUser));
             self.finalizeSendShopTrade(shopTrade);
         });
     }
-    shopTrade.reserveItems();
+    shopTrade.readyItems();
 };
 
 /**
