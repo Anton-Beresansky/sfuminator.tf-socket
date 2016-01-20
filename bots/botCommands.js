@@ -20,7 +20,7 @@ function BotCommands(sfuminator) {
                 prelievoAmount = new Price(-command.getMainParameter(), "metal");
             }
             var shopTrade = new ShopTrade(self.sfuminator, self.sfuminator.users.get(steamid));
-            var tradeBot = self.sfuminator.getTradingController().getBestAvailableBot();
+            var tradeBot = self.sfuminator.getBotsController().getBestAvailableBot();
             if (tradeBot) {
                 shopTrade.setBot(tradeBot);
                 shopTrade.getCurrencyHandler().forceStartingBalance(prelievoAmount);
