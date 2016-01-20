@@ -153,7 +153,15 @@ TF2Item.prototype.getPrice = function () {
  * @returns {Boolean}
  */
 TF2Item.prototype.isHat = function () {
-    return (this.hasOwnProperty("item_type_name") && (this.item_type_name === "#TF_Wearable_Hat")) || (this.item_type_name === "Hat") || (this.craft_material_type === "hat");
+    return (this.hasOwnProperty("item_type_name")
+        && (this.item_type_name === "#TF_Wearable_Hat"))
+        || (this.item_type_name === "Hat")
+        || (this.craft_material_type === "hat");
+};
+
+TF2Item.prototype.isStrangeWeapon = function () {
+    return (this.craft_material_type === "weapon")
+        && (this.getQuality() === TF2Constants.quality.Strange);
 };
 
 /**

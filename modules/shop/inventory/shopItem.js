@@ -33,6 +33,12 @@ function ShopItem(shop, item, mine) {
     }
 }
 
+ShopItem.TYPE = {
+    HATS: "hats",
+    CURRENCY: "currency",
+    STRANGE: "strange"
+};
+
 ShopItem.prototype.setID = function (id) {
     this.id = id;
 };
@@ -83,15 +89,24 @@ ShopItem.prototype.getType = function () {
     if (this.isTF2Item()) {
         if (this.item.isPriced() && this.item.isTradable()) {
             if (this.item.isHat() && this.item.isCraftable()) {
-                if (this.getPrice().toMetal() <= this.shop.ratio.hats.weSell.maximum) {
-                    return "hats";
-                }
+                return ShopItem.TYPE.HATS;
+            } else if (this.item.isStrangeWeapon()) {
+                return ShopItem.TYPE.STRANGE;
             } else if (this.isCurrency()) {
-                return "currency";
+                return ShopItem.TYPE.CURRENCY;
             }
         }
         return "";
     }
+};
+
+ShopItem.prototype.isHiddenType = function () {
+    for (var i = 0; i < this.shop.hiddenSections.length; i += 1) {
+        if (this.shop.hiddenSections[i] === this.getType()) {
+            return true;
+        }
+    }
+    return false;
 };
 
 /**
@@ -144,8 +159,8 @@ ShopItem.prototype.getMinePrice = function () {
     var finalPrice;
     if (this.isTF2Item()) {
         var item = this.getItem();
+        var originalPrice = item.getPrice();
         if (item.isHat()) {
-            var originalPrice = item.getPrice();
             if (originalPrice.toMetal() > this.shop.ratio.hats.weBuy.maximum) {
                 originalPrice = new Price(this.shop.ratio.hats.weBuy.maximum, TF2Currency.priceInits.Metal);
             }
@@ -163,6 +178,8 @@ ShopItem.prototype.getMinePrice = function () {
             if (finalPrice.toMetal() < this.shop.ratio.hats.weBuy.minimum) {
                 finalPrice = new Price(this.shop.ratio.hats.weBuy.minimum, TF2Currency.priceInits.Metal);
             }
+        } else if (item.isStrangeWeapon()) {
+            finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.hats.weBuy.lowTier), TF2Currency.priceInits.Scrap);
         } else {
             finalPrice = Price(0);
         }

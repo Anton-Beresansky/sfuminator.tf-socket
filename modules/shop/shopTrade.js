@@ -362,9 +362,7 @@ ShopTrade.prototype.verifyItems = function (callback) {
             } else {
                 callback(false);
             }
-        }, function (item) {
-            var shopItem = new ShopItem(self.shop, item);
-            shopItem.setAsMineSection();
+        }, function (shopItem) {
             self.assets.push(shopItem);
         });
     } else {
@@ -710,7 +708,9 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
     this.getPartner().getTF2Backpack().getCached(function (backpack) {
         for (var i = 0; i < self.items.mine.length; i += 1) {
             var itemID = self.items.mine[i];
-            var item = backpack.getItem(itemID);
+            var item = new ShopItem(self.shop, backpack.getItem(itemID));
+            item.setAsMineSection();
+
             if (!backpack.itemExist(itemID)) {
                 self.emit("tradeRequestResponse", self.ajaxResponses.itemNotFound);
                 callback(false);
@@ -724,7 +724,7 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
                 itemCount.add(item);
                 var netCount = (itemCount.get(item) + self.shop.count.get(item)) - self.shop.getLimit(item);
                 if (netCount > 0) {
-                    self.emit("tradeRequestResponse",  self.ajaxResponses.itemExceedCount(item, netCount));
+                    self.emit("tradeRequestResponse",  self.ajaxResponses.itemExceedCount(item.getItem(), netCount));
                     callback(false);
                     return;
                 }

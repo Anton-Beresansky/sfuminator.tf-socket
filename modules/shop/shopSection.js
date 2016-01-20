@@ -10,6 +10,7 @@ var CompressionLookup = require("./inventory/compressionTable.js");
  * @param {Shop} shop The Shop instance
  * @param {String} type Indicating section type
  * @returns {Section}
+ * @construct
  */
 function Section(shop, type) {
     this.shop = shop;
