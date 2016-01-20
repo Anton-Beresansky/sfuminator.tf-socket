@@ -72,10 +72,14 @@ ShopItemCount.prototype._inject = function (item, action) {
 
 /**
  * Get counter of a given item
- * @param {TF2Item} item
+ * @param {TF2Item|ShopItem} _item
  * @returns {ShopItemCounter}
  */
-ShopItemCount.prototype.get = function (item) {
+ShopItemCount.prototype.get = function (_item) {
+    var item = _item;
+    if (_item instanceof ShopItem) {
+        item = _item.getItem();
+    }
     var index = this.getIndex(item);
     if (index >= 0) {
         return this._counters[index];

@@ -35,7 +35,10 @@ function Shop(sfuminator) {
      */
     this.reservations = new Reservations(this.db);
     this.instanceID = new Date().getTime();
-    this.countLimit = {Strange: 0, Vintage: 3, Genuine: 3, Haunted: 3, _any: 4, _price: {over: 6, limit: 3}};
+    this.countLimit = {
+        hats: {Strange: 0, Vintage: 3, Genuine: 3, Haunted: 3, _any: 4, _price: {over: 6, limit: 3}},
+        strange: {_any: 4, _price: {over: 6, limit: 3}}
+    };
     /**
      * @type {ShopItemCount}
      */
@@ -45,7 +48,7 @@ function Shop(sfuminator) {
      * @type {Section[]}
      */
     this.sections = {};
-    this.hiddenSections = ["currency"];
+    this.hiddenSections = ["currency", "strange"];
 
     this._onceSectionItemsUpdatedHandlers = [];
 
@@ -88,10 +91,11 @@ Shop.prototype.init = function () {
  * @param {DataCommit} _changes
  */
 Shop.prototype.update = function (_changes) {
+    var i;
     var changes = {add: _changes.toAdd, remove: _changes.toRemove};
 
     for (var action in changes) {
-        for (var i = 0; i < changes[action].length; i += 1) {
+        for (i = 0; i < changes[action].length; i += 1) {
             var shopItem = changes[action][i];
             var shopType = shopItem.getType();
             if (shopType) {
@@ -105,7 +109,7 @@ Shop.prototype.update = function (_changes) {
     for (var type in this.sections) {
         this.sections[type].commit();
     }
-    for (var i = 0; i < changes.remove.length; i += 1) { //Removing reservations of deleted items(?)
+    for (i = 0; i < changes.remove.length; i += 1) { //Removing reservations of deleted items(?)
         if (this.reservations.exist(changes.remove[i].id)) {
             this.reservations.cancel(changes.remove[i].id);
         }
@@ -150,14 +154,19 @@ Shop.prototype.getClientBackpack = function (type) {
 
 /**
  * Get max possible stock for a given item
- * @param {TF2Item} item
+ * @param {ShopItem} item
  * @returns {Number}
  */
 Shop.prototype.getLimit = function (item) {
-    var qualityLimit = (this.countLimit.hasOwnProperty(item.getQualityName())) ? this.countLimit[item.getQualityName()] : this.countLimit._any;
-    if (item.getPrice().toMetal() > this.countLimit._price.over) {
-        if (this.countLimit._price.limit < qualityLimit) {
-            return this.countLimit._price.limit;
+    var countLimit = this.countLimit[item.getType()];
+    if (!countLimit) {
+        return 10000000; //well.. i mean that's a lot of items.
+    }
+    var itemQualityName = item.getItem().getQualityName();
+    var qualityLimit = (countLimit.hasOwnProperty(itemQualityName)) ? countLimit[itemQualityName] : countLimit._any;
+    if (item.getItem().getPrice().toMetal() > countLimit._price.over) {
+        if (countLimit._price.limit < qualityLimit) {
+            return countLimit._price.limit;
         }
     }
     return qualityLimit;
@@ -194,10 +203,12 @@ Shop.prototype.filterMineItems = function (backpack) {
         var items = backpack.getItems();
         if (items) {
             for (var i = 0; i < items.length; i += 1) {
-                if (this.canBeSold(items[i])) {
-                    var mineItem = new ShopItem(this, items[i]);
-                    mineItem.setAsMineSection();
+                var mineItem = new ShopItem(this, items[i]);
+                mineItem.setAsMineSection();
+                if (this.canBeSold(mineItem)) {
                     mySection.add(mineItem);
+                } else {
+                    mineItem = null;
                 }
             }
         }
@@ -208,18 +219,15 @@ Shop.prototype.filterMineItems = function (backpack) {
 
 /**
  * Check if given item can be sold
- * @param {TF2Item} item
+ * @param {ShopItem} item
  * @returns {Boolean}
  */
 Shop.prototype.canBeSold = function (item) {
-    if (item instanceof TF2Item) {
+    if (item.getItem() instanceof TF2Item) {
         return (
-            item.isHat() &&
-            item.isCraftable() &&
-            item.isTradable() &&
-            item.isPriced() &&
-            this.verifyMineItemPriceRange(item) &&
-            this.count.get(item) < this.getLimit(item)
+            item.getType() && this.verifyMineItemPriceRange(item)
+            && this.count.get(item.getItem()) < this.getLimit(item)
+            && !item.isHiddenType()
         );
     }
     return false;
@@ -227,13 +235,15 @@ Shop.prototype.canBeSold = function (item) {
 
 /**
  * Establish if item price range is acceptable
- * @param {TF2Item} item
+ * @param {ShopItem} item
  * @returns {Boolean|Undefined} Undefined if shop doesn't allow item type
  */
 Shop.prototype.verifyMineItemPriceRange = function (item) {
-    if (item.isHat()) {
-        var originalPrice = item.getPrice();
+    var originalPrice = item.getItem().getPrice(); //Be sure to check on actual item price not shop price
+    if (item.getType() === ShopItem.TYPE.HATS) {
         return originalPrice.toMetal() <= (this.ratio.hats.weSell.maximum) && originalPrice.toMetal() >= this.ratio.hats.weSell.minimum;
+    } else if (item.getType() === ShopItem.TYPE.STRANGE) {
+        return originalPrice.toMetal() <= (this.ratio.hats.weSell.maximum) && originalPrice.toMetal() >= 0.11;
     }
 };
 
