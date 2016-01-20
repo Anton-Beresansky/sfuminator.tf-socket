@@ -26,7 +26,7 @@ function Sfuminator(cloud, db) {
     this.db = db;
     this.log = new Logs({applicationName: "Sfuminator", color: "blue"});
     this.log.setLevel(0);
-    this.admin = CFG.getAdmins();
+    this.admins = CFG.getAdmins();
     this.interrupts = new Interrupts([
         {name: "updatePrices", delay: 60000, tag: "internal"},
         {name: "updateShopInventory", delay: 4000, tag: "internal"},
@@ -109,8 +109,8 @@ Sfuminator.prototype.bindInterrupts = function () {
  * @returns {Boolean}
  */
 Sfuminator.prototype.isAdmin = function (steamid) {
-    for (var i = 0; i < this.admin.length; i += 1) {
-        if (this.admin[i] === steamid) {
+    for (var i = 0; i < this.admins.length; i += 1) {
+        if (this.admins[i] === steamid) {
             return true;
         }
     }

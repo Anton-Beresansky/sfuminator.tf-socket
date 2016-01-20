@@ -48,13 +48,13 @@ TraderBot.prototype.onLogin = function () {
     this.steamClient.on("newFriend", function (friend) {
         self.log.debug("I'm now friend with " + friend.getSteamid());
         if (self.steamClient.getNumberOfFriends() > self.friendListLimit) {
-            self.steamClient.getOldestFriend([self.sfuminator.admin]).remove();
+            self.steamClient.getOldestFriend(self.sfuminator.admins).remove();
         }
     });
     this.steamClient.on("friendList", function () {
         self.log.debug("My friend list have " + self.steamClient.getNumberOfFriends() + " friends");
         while (self.steamClient.getNumberOfFriends() > self.friendListLimit) {
-            self.steamClient.getOldestFriend([self.sfuminator.admin]).remove();
+            self.steamClient.getOldestFriend(self.sfuminator.admins).remove();
         }
     });
     this.steamClient.on('message', function (steamid, message) {
