@@ -708,14 +708,14 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
     this.getPartner().getTF2Backpack().getCached(function (backpack) {
         for (var i = 0; i < self.items.mine.length; i += 1) {
             var itemID = self.items.mine[i];
-            var item = new ShopItem(self.shop, backpack.getItem(itemID));
-            item.setAsMineSection();
-
             if (!backpack.itemExist(itemID)) {
                 self.emit("tradeRequestResponse", self.ajaxResponses.itemNotFound);
                 callback(false);
                 return;
-            } else if (!self.shop.canBeSold(item)) {
+            }
+            var item = new ShopItem(self.shop, backpack.getItem(itemID));
+            item.setAsMineSection();
+            if (!self.shop.canBeSold(item)) {
                 self.emit("tradeRequestResponse", self.ajaxResponses.itemCantBeSold);
                 callback(false);
                 return;
