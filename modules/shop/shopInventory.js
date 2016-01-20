@@ -31,12 +31,15 @@ function ShopInventory(shop) {
     this.items = [];
     this.count = []; //[{defindex: Int, quality: Int, craftable: Bool, count: Int}]
     this.last_update_date = 0;
+    this.busyFetchAttempts = 0;
     this.fetching = false;
 
     events.EventEmitter.call(this);
 }
 
 require("util").inherits(ShopInventory, events.EventEmitter);
+
+ShopInventory.MAX_BUSY_FETCH_ATTEMPTS = 5;
 
 /**
  * Update shop inventory
@@ -70,8 +73,14 @@ ShopInventory.prototype.fetchTF2Items = function (callback) {
     var self = this;
     if (this.fetching) {
         this.log.warning("Fetching items... callback is busy, skipping.");
-        return;
+        if (this.busyFetchAttempts < ShopInventory.MAX_BUSY_FETCH_ATTEMPTS) {
+            this.busyFetchAttempts += 1;
+            return;
+        } else {
+            this.log.warning("Max busy fetch attempts reached, probably socket disconnected, ignoring busy state");
+        }
     }
+    this.busyFetchAttempts = 0;
     this.fetching = true;
     var allItems = [], i = 0;
 
