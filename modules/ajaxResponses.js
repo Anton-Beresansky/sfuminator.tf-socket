@@ -7,6 +7,7 @@ module.exports = AjaxResponses;
  * @construct
  */
 function AjaxResponses(sfuminator) {
+    //Result can be: "error", "warning", "success"
     this.sfuminator = sfuminator;
     this.error = {result: "error", message: "Error", code: "error"};
     this.methodNotRecognised = {result: "error", message: "Method not recognised", code: "method_not_recognised"};
@@ -68,6 +69,8 @@ function AjaxResponses(sfuminator) {
             return {result: "error", message: "Sorry, trading is disabled, come back in a few minutes.", code: "trading_disabled"};
         }
     };
+    this.shopTrade_declined = {result: "warning", message: "You declined the trade offer"};
+    this.shopTrade_afk = {result: "warning", message: "Sorry, trade took too much to accept"};
 }
 
 /**
