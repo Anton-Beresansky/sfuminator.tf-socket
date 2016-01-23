@@ -47,6 +47,7 @@ function ShopTrade(sfuminator, partner) {
     this.itemsReady = false;
     this.onceItemsReservedCallbacks = [];
     this.onceItemsAreReadyCallbacks = [];
+    this.clientChangeError = null;
     events.EventEmitter.call(this);
 
     this._bindHandlers();
@@ -165,19 +166,20 @@ ShopTrade.prototype.setAsSent = function (tradeOfferID) {
 ShopTrade.prototype.cancel = function (statusInfo) {
     var self = this;
     this.dereserveShopItems();
-    if (this.hasSteamTrade()) {
-        this.log.debug("Found steamTrade associated, cancelling");
-        this.steamTrade.cancel(function () {
-            self.unsetSteamTrade();
-        });
-    }
     this.setStatus(TradeConstants.status.CLOSED);
     if (statusInfo) {
         this.setStatusInfo(statusInfo);
     } else {
         this.setStatusInfo(TradeConstants.statusInfo.closed.CANCELLED);
     }
+    this.clientChangeError = this._parseClientChangeError();
     this.commit();
+    if (this.hasSteamTrade()) {
+        this.log.debug("Found steamTrade associated, cancelling");
+        this.steamTrade.cancel(function () {
+            self.unsetSteamTrade();
+        });
+    }
     this.log.debug("Trade " + this.getID() + " has been cancelled");
 };
 
@@ -253,11 +255,15 @@ ShopTrade.prototype.getClientChanges = function (last_update_date) {
     last_update_date = new Date(last_update_date);
     if (last_update_date.toString() !== "Invalid Date") {
         if (this.getLastUpdateDate() > last_update_date) {
-            return {
+            var result = {
                 status: this.getStatus(),
                 statusInfo: this.getStatusInfo(),
                 last_update_date: this.getLastUpdateDate().getTime()
             };
+            if (this.clientChangeError) {
+                result.error = this.clientChangeError;
+            }
+            return result;
         }
     }
     return false;
@@ -724,7 +730,7 @@ ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
                 itemCount.add(item);
                 var netCount = (itemCount.get(item) + self.shop.count.get(item)) - self.shop.getLimit(item);
                 if (netCount > 0) {
-                    self.emit("tradeRequestResponse",  self.ajaxResponses.itemExceedCount(item.getItem(), netCount));
+                    self.emit("tradeRequestResponse", self.ajaxResponses.itemExceedCount(item.getItem(), netCount));
                     callback(false);
                     return;
                 }
@@ -799,6 +805,16 @@ ShopTrade.prototype.setSteamToken = function (token) {
 
 ShopTrade.prototype.hasSteamToken = function () {
     return this.steamToken !== "";
+};
+
+ShopTrade.prototype._parseClientChangeError = function () {
+    if (this.getStatusInfo() !== TradeConstants.statusInfo.closed.CANCELLED) {
+        if (this.steamTrade && this.steamTrade.hasErrored()) {
+            return {result: "error", message: this.steamTrade.getTradeError().getMessage()};
+        } else if (this.sfuminator.responses.hasOwnProperty("shopTrade_" + this.getStatusInfo())){
+            return this.sfuminator.responses["shopTrade_" + this.getStatusInfo()];
+        }
+    }
 };
 
 /**
