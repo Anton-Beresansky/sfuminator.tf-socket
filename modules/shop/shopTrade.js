@@ -293,6 +293,7 @@ ShopTrade.prototype.getClientChangesAdditional = function () {
 ShopTrade.prototype.valueOf = function () {
     return {
         botSteamid: this.getAssignedBotUser().getSteamid(),
+        botUsername: this.getAssignedBotUser().getName(),
         partnerID: this.getPartner().getSteamid(),
         mode: this.getMode(),
         status: this.getStatus(),

@@ -4,6 +4,7 @@ var Logs = require('./../../lib/logs.js');
 var TraderBot = require('./../../bots/traderBot.js');
 var BotCommands = require('./../../bots/botCommands.js');
 var TransferNodesCluster = require('./assetsTransfer.js');
+var TF2Constants = require("./../tf2/tf2Constants.js");
 
 /**
  * @class BotsController
@@ -154,7 +155,11 @@ BotsController.prototype.preSmeltMetal = function () {
     var preSmelt = function (bot) {
         var backpack = bot.getUser().getTF2Backpack();
         backpack.getCached(function () {
-            var metalToSmeltDefindexes = [5002, 5001, 5000];
+            var metalToSmeltDefindexes = [
+                TF2Constants.defindexes.RefinedMetal,
+                TF2Constants.defindexes.ReclaimedMetal,
+                TF2Constants.defindexes.ScrapMetal
+            ];
             for (var i = 0; i < 2; i += 1) {
                 var count = backpack.getCount({defindex: metalToSmeltDefindexes[i + 1]});
                 if (count < self.preSmeltedQuantity) {
@@ -182,7 +187,40 @@ BotsController.prototype.preSmeltMetal = function () {
 };
 
 BotsController.prototype.manageItemsDistribution = function () {
-
+    var compensationSpaceLimitPercentile = 0.95;
+    var distribution = {};
+    var totalRefineds = [];
+    for (var i = 0; i < this.tradeBots.length; i += 1) {
+        var allItems = this.tradeBots[i].getUser().getTF2Backpack().getItems();
+        var refinedMetals = this.tradeBots[i].getUser().getTF2Backpack().getItems(null, {defindex: TF2Constants.defindexes.RefinedMetal});
+        distribution[this.tradeBots[i].getSteamid()] = {
+            refineds: refinedMetals,
+            allItems: allItems
+        };
+        totalRefineds = totalRefineds.concat(refinedMetals);
+    }
+    var singleBotAmount = totalRefineds.length / this.tradeBots.length;
+    this.log.test("Total refineds are " + totalRefineds.length + " each bot should have " + singleBotAmount + " +-" + (singleBotAmount * 0.2));
+    var minimumAmount = singleBotAmount * 0.8;
+    for (var botSteamid in distribution) {
+        var refinedsBotAmount = distribution[botSteamid].refineds.length;
+        var itemsBotAmount = distribution[botSteamid].allItems.length;
+        if (refinedsBotAmount < minimumAmount) {
+            var compensationCount = singleBotAmount - refinedsBotAmount;
+            var totalCountAfterCompensation = itemsBotAmount + compensationCount;
+            var totalSlots = this.getBot(botSteamid).getUser().getTF2Backpack().getTotalSlots();
+            this.log.test("Bot " + botSteamid + " is " + refinedsBotAmount + " need compensation of " + compensationCount);
+            this.log.test("Compensating would increase bot items from " + itemsBotAmount + " to " + totalCountAfterCompensation);
+            if (totalCountAfterCompensation < (totalSlots * compensationSpaceLimitPercentile)) {
+                this.log.test("Which wouldn't exceed " + parseInt(compensationSpaceLimitPercentile * 100) + "% of space, since maximum is " + totalSlots);
+            } else {
+                this.log.test("Which would exceed " + parseInt(compensationSpaceLimitPercentile * 100) + "% of space, since maximum is " + totalSlots);
+                compensationCount = (totalSlots * compensationSpaceLimitPercentile) - itemsBotAmount;
+            }
+            this.log.test("We will compensate: " + compensationCount + " refineds");
+            distribution[botSteamid].compensationCount = compensationCount;
+        }
+    }
 };
 
 /**

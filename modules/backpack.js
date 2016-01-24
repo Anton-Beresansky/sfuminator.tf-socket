@@ -123,6 +123,18 @@ Backpack.prototype.isFetching = function () {
     return this.fetching;
 };
 
+Backpack.prototype.getAvailableSpace = function () {
+    return this.getTotalSlots() - this.getCount();
+};
+
+Backpack.prototype.getTotalSlots = function () {
+    if (!isNaN(this.num_backpack_slots)) {
+        return this.num_backpack_slots;
+    } else {
+        return 0;
+    }
+};
+
 /**
  * Check if given item exist in the inventory
  * @param {Number} itemID
@@ -149,9 +161,9 @@ Backpack.prototype.getItem = function (itemID) {
 };
 
 /**
- * @param {Object} [filterAttributes]
- * @param {Object} [matchAttributes]
- * @param {Number} [matchLimit]
+ * @param {Object} [filterAttributes] Exclude specified items
+ * @param {Object} [matchAttributes] Will get matching items only
+ * @param {Number} [matchLimit] Limit matching to certain quantity
  * @returns {TF2Item[]}
  */
 Backpack.prototype.getItems = function (filterAttributes, matchAttributes, matchLimit) {
