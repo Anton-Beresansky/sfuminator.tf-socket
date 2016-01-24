@@ -20,12 +20,11 @@ function BotCommands(sfuminator) {
                 prelievoAmount = new Price(-command.getMainParameter(), "metal");
             }
             var shopTrade = new ShopTrade(self.sfuminator, self.sfuminator.users.get(steamid));
-            var tradeBot = self.sfuminator.getBotsController().getBestAvailableBot();
-            if (tradeBot) {
-                shopTrade.setBot(tradeBot);
+            if (bot) {
+                shopTrade.setBot(bot);
                 shopTrade.getCurrencyHandler().forceStartingBalance(prelievoAmount);
                 shopTrade.onceItemsReserved(function () {
-                    var steamTrade = tradeBot.createSteamTrade(shopTrade);
+                    var steamTrade = bot.createSteamTrade(shopTrade);
                     steamTrade.setMessage("Here's a prelievo of " + (-prelievoAmount.toMetal()) + " refined");
                     steamTrade.make();
                     bot.steamClient.sendMessage(steamid, "Sending you a prelievo of " + (-prelievoAmount.toMetal()) + " refined");

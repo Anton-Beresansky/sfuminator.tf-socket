@@ -76,7 +76,7 @@ BotsController.prototype.getBot = function (steamid) {
 BotsController.prototype.assignBot = function (shopTrade) {
     var i;
     var assignedBot = this.getBestAvailableBot();
-    var ownerList = this.getOwnerList(shopTrade.getAssets());
+    var ownerList = this._getOwnerList(shopTrade.getAssets());
     this.log.test("Owner list: " + JSON.stringify(ownerList));
     //Verify that all bots are available for the requested items
     for (i = 0; i < ownerList.length; i += 1) {
@@ -117,7 +117,7 @@ BotsController.prototype.getBestAvailableBot = function () {
         if (this.tradeBots[i].isAvailable()) {
             if (!(bestBot instanceof TraderBot)) {
                 bestBot = this.tradeBots[i];
-            } else if (this.tradeBots[i].getAssignedShopTradesCount() > bestBot.getAssignedShopTradesCount()) {
+            } else if (this.tradeBots[i].getUser().getTF2Backpack().getCount() < bestBot.getUser().getTF2Backpack().getCount()) {
                 bestBot = this.tradeBots[i];
             }
         }
@@ -163,11 +163,13 @@ BotsController.prototype.preSmeltMetal = function () {
                     var filter = {id: []};
                     while (itemsLength -= 1) {
                         var itemsToSmelt = backpack.getItems(filter, {defindex: metalToSmeltDefindexes[i]}, 1);
-                        if (itemsToSmelt.length && !self.sfuminator.shop.reservations.exist(itemsToSmelt[0].getID())) {
-                            bot.steamClient.craftTF2Items(itemsToSmelt);
-                            break;
-                        } else {
-                            filter.id.push(itemsToSmelt[0].getID());
+                        if (itemsToSmelt.length) {
+                            if (!self.sfuminator.shop.reservations.exist(itemsToSmelt[0].getID())) {
+                                bot.steamClient.craftTF2Items(itemsToSmelt);
+                                break;
+                            } else {
+                                filter.id.push(itemsToSmelt[0].getID());
+                            }
                         }
                     }
                 }
@@ -179,10 +181,14 @@ BotsController.prototype.preSmeltMetal = function () {
     }
 };
 
+BotsController.prototype.manageItemsDistribution = function () {
+
+};
+
 /**
  * @param {ShopItem[]} assets
  */
-BotsController.prototype.getOwnerList = function (assets) {
+BotsController.prototype._getOwnerList = function (assets) {
     var ownerList = [];
     for (var i = 0; i < assets.length; i += 1) {
         if (!assets[i].isMineItem()) {
