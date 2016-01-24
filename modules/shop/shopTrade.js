@@ -416,6 +416,8 @@ ShopTrade.prototype.readyItems = function () {
     this.onceItemsReserved(function () {
         var assetsToTransfer = self.getItemsToTransfer();
         if (assetsToTransfer.length) {
+            self.setStatusInfo(TradeConstants.statusInfo.active.TRANSFERRING);
+            self.commit();
             var assignedTraderBot = self.sfuminator.getBotsController().getBot(self.getAssignedBotUser().getSteamid());
             self.sfuminator.getBotsController().transfer(assignedTraderBot, assetsToTransfer, function (err) {
                 if (!err) {
