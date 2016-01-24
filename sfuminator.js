@@ -45,7 +45,7 @@ function Sfuminator(cloud, db) {
     this.status = new TradeStatus(this);
 
     this.activeTrades = [];
-    this.shopTrade_decay = 15000;
+    this.shopTrade_decay = 10000;
 
     this.botPorting = new BotPorting(this);
 
