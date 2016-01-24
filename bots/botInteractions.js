@@ -384,7 +384,7 @@ function BotInteractions() {
                 var number_of_trades = user.getNumberOfTrades();
                 var message = [
                     [
-                        "This is your first time trading with me eh? Alright, let's do this!",
+                        "This is your first time trading with us eh? Alright, let's do this!",
                         "Nice to meet you, your request is being processed...",
                         "Oh, welcome to the sfuminator community! I'm processing your request...",
                         "Hope that all was nice and easy, alright one more step!",
@@ -410,7 +410,7 @@ function BotInteractions() {
                         "Hey! It's you! Wait a sec :D",
                         "It's you, again! Happy that you like our service! Wait a sec",
                         "Nice to see you again! And again, and again, and again and again and again *hitting with a spoon* ...ehmm ok let's do this trade...",
-                        "Wow, this is your trade number // with me, you should be a veteran by now!",
+                        "Wow, this is your trade number // with us, you should be a veteran by now!",
                         "Hello!",
                         "Sup :)",
                         "What's up :D",
@@ -552,7 +552,7 @@ function BotInteractions() {
         },
         rep_comment: {
             message: [
-                "+rep | A great individual! We're proud to deliver the best hat prices for you at http://sfuminator.tf/",
+                "+rep | A great individual! We're proud to deliver the best item prices for you at http://sfuminator.tf/",
                 "+rep | Thank you for using our bot and joining our community! A big thank you from http://sfuminator.tf/",
                 "+rep | Thank you for being a part of the http://sfuminator.tf/ community! We hope you enjoy our fair prices and plentiful hat stock!",
                 "+rep | Enjoy your new items bought from http://sfuminator.tf/",
