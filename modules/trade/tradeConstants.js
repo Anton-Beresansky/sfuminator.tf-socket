@@ -23,7 +23,7 @@ function TradeConstants() {
      * - Accepted => Trade has been accepted by partner
      * - Declined => Trade has been declined by partner
      * - Closed:[info] => Trade ended for other causes
-     * @type {{HOLD: string, ACTIVE: string, SENT: string, CLOSED: string}}
+     * @type {{HOLD: string, ACTIVE: string, SENT: string, CLOSED: string, NO_FRIEND: string}}
      */
     this.status = {
         HOLD: "hold",
@@ -39,7 +39,7 @@ function TradeConstants() {
      * - Closed.cancelled => Trade has been cancelled
      * - Closed.error => Most likely steam errored
      * - Closed.afk => Partner didn't accept in time
-     * @type {{hold: {NO_FRIEND: string}, closed: {ACCEPTED: string, CANCELLED: string, DECLINED: string, ERROR: string, AFK: string}}}
+     * @type {{active: {TRANSFERRING: string, MAKING: string}, closed: {ACCEPTED: string, CANCELLED: string, DECLINED: string, ERROR: string, AFK: string}}}
      */
     this.statusInfo = {
         closed: {
@@ -48,6 +48,10 @@ function TradeConstants() {
             DECLINED: "declined",
             ERROR: "error",
             AFK: "afk"
+        },
+        active: {
+            TRANSFERRING: "transferring",
+            MAKING: "making"
         }
     };
 }

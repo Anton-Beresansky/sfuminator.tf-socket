@@ -164,6 +164,8 @@ TraderBot.prototype.finalizeSendShopTrade = function (shopTrade) {
     this.createSteamTrade(shopTrade);
     this._bindShopTrade(shopTrade);
     shopTrade.steamTrade.make();
+    shopTrade.setStatusInfo(TradeConstants.statusInfo.active.MAKING);
+    shopTrade.commit();
 };
 
 /**
