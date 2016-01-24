@@ -75,8 +75,13 @@ Stats.prototype.load = function () {
 };
 
 Stats.prototype.getStockCount = function () {
+    this.stats["stock_items"] = 0;
     for (var sectionID in this.shop.sections) {
-        this.stats["stock_" + sectionID] = this.shop.sections[sectionID].items.length;
+        var count = this.shop.sections[sectionID].items.length;
+        this.stats["stock_" + sectionID] = count;
+        if (!this.shop.sections[sectionID].isHidden()) {
+            this.stats["stock_items"] += count;
+        }
     }
 };
 
@@ -147,7 +152,7 @@ Stats.prototype._getTradeCountQuery = function () {
 };
 
 Stats.prototype._getOldTradeCountQuery = function () {
-    return "SELECT COUNT(*) as trade_count FROM `trades` WHERE `when`<1439827244";
+    return "SELECT COUNT(*) as trade_count FROM `trades` WHERE `when`<1452388283";
 };
 
 Stats.prototype.storePricedStock = function () {
