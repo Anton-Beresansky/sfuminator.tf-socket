@@ -36,7 +36,7 @@ function Shop(sfuminator) {
     this.reservations = new Reservations(this.db);
     this.instanceID = new Date().getTime();
     this.countLimit = {
-        hats: {Strange: 0, Vintage: 3, Genuine: 3, Haunted: 3, _any: 4, _price: {over: 6, limit: 3}},
+        hats: {Strange: 2, Vintage: 3, Genuine: 3, Haunted: 3, _any: 4, _price: {over: 6, limit: 3}},
         strange: {_any: 4, _price: {over: 6, limit: 3}}
     };
     /**
@@ -243,7 +243,7 @@ Shop.prototype.verifyMineItemPriceRange = function (item) {
     if (item.getType() === ShopItem.TYPE.HATS) {
         return originalPrice.toMetal() <= (this.ratio.hats.weSell.maximum) && originalPrice.toMetal() >= this.ratio.hats.weSell.minimum;
     } else if (item.getType() === ShopItem.TYPE.STRANGE) {
-        return originalPrice.toMetal() <= (this.ratio.hats.weSell.maximum) && originalPrice.toMetal() >= 0.11;
+        return originalPrice.toMetal() <= (this.ratio.strange.weSell.maximum) && originalPrice.toMetal() >= this.ratio.strange.weSell.minimum;
     }
 };
 
