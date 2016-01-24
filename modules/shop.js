@@ -48,7 +48,7 @@ function Shop(sfuminator) {
      * @type {Section[]}
      */
     this.sections = {};
-    this.hiddenSections = ["currency", "strange"];
+    this.hiddenSections = ["currency"];
 
     this._onceSectionItemsUpdatedHandlers = [];
 
