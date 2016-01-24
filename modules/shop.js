@@ -324,9 +324,9 @@ Shop.prototype._getActivePartnersQuery = function () {
 Shop.prototype._getActivePartnersBotComponentQuery = function () {
     var query = "AND `bot_steamid` IN (";
     for (var i = 0; i < this.bots.length; i += 1) {
-        query += "'" + this.bots[i].getSteamid() + "'";
+        query += "'" + this.bots[i].getSteamid() + "',";
     }
-    return query + ")";
+    return query.slice(0,-1) + ")";
 };
 
 Shop.prototype._manageOnceSectionItemsUpdatedHandlers = function (newItems) {
