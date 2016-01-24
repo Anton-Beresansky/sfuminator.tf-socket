@@ -263,10 +263,27 @@ ShopTrade.prototype.getClientChanges = function (last_update_date) {
             if (this.clientChangeError) {
                 result.error = this.clientChangeError;
             }
+            var additional = this.getClientChangesAdditional();
+            if (additional) {
+                result.additional = additional;
+            }
             return result;
         }
     }
     return false;
+};
+
+ShopTrade.prototype.getClientChangesAdditional = function () {
+    var additional = null;
+    if (this.getStatus() === TradeConstants.status.NO_FRIEND) {
+        additional = {
+            assignedBot: {
+                steamid: this.getAssignedBotUser().getSteamid(),
+                username: this.getAssignedBotUser().getName()
+            }
+        };
+    }
+    return additional;
 };
 
 /**
