@@ -811,9 +811,11 @@ ShopTrade.prototype._parseClientChangeError = function () {
     if (this.getStatusInfo() !== TradeConstants.statusInfo.closed.CANCELLED) {
         if (this.steamTrade && this.steamTrade.hasErrored()) {
             return {result: "error", message: this.steamTrade.getTradeError().getMessage()};
-        } else if (this.sfuminator.responses.hasOwnProperty("shopTrade_" + this.getStatusInfo())){
+        } else if (this.sfuminator.responses.hasOwnProperty("shopTrade_" + this.getStatusInfo())) {
             return this.sfuminator.responses["shopTrade_" + this.getStatusInfo()];
         }
+    } else if (this.response) {
+        return this.response;
     }
 };
 

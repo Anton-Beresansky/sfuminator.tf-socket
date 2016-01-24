@@ -111,9 +111,19 @@ function TransferNode(sender, receiver) {
     this.senderOffer = new SteamTradeOffer(this.sender.steamClient, this.receiver.getSteamid());
     this.senderOffer.setToken(this.receiver.steamClient.getCredentials().getTradeToken());
     Events.EventEmitter.call(this);
+
+    this._bindHandlers();
 }
 
 require("util").inherits(TransferNode, Events.EventEmitter);
+
+
+TransferNode.prototype._bindHandlers = function () {
+    var self = this;
+    this.on("error", function () {
+        self.unlockItems();
+    });
+};
 
 TransferNode.prototype.getSenderSteamid = function () {
     return this.sender.getSteamid();
@@ -131,8 +141,9 @@ TransferNode.prototype.start = function () {
     var self = this;
     this.senderOffer.make();
     this.log.debug("Starting transfer, " + this.items.length + " items");
+    this.lockItems();
     this.senderOffer.on("tradeSent", function () {
-        self.log.debug(senderOffer.getTradeOfferID() + " sent");
+        self.log.debug(self.senderOffer.getTradeOfferID() + " sent");
         self.receiver.steamClient.tradeOffersManager.getOffer(self.senderOffer.getTradeOfferID(), function (err, tradeOffer) {
             if (!err) {
                 self.accomplish(tradeOffer);
@@ -154,8 +165,9 @@ TransferNode.prototype.accomplish = function (tradeOffer) {
         self.log.debug(self.senderOffer.getTradeOfferID() + " accepted");
         tradeOffer.getReceivedItems(function (err, itemsReceived) {
             if (!err) {
-                self._afterTransferItemsUpdate(itemsToReceive, itemsReceived, self.receiver.getSteamid());
-                self.log.debug(senderOffer.getTradeOfferID() + " completed");
+                self._afterTransferItemsUpdate(itemsToReceive, itemsReceived);
+                self.log.debug(self.senderOffer.getTradeOfferID() + " completed");
+                self.unlockItems();
                 self.finished = true;
                 if (typeof self._onceFinishedCallback === "function") {
                     self._onceFinishedCallback();
@@ -176,21 +188,35 @@ TransferNode.prototype.isFinished = function () {
     return this.finished;
 };
 
+TransferNode.prototype.lockItems = function () {
+    for (var i = 0; i < this.items.length; i += 1) {
+        this.items[i].setAsTransferring();
+    }
+};
+
+TransferNode.prototype.unlockItems = function () {
+    for (var i = 0; i < this.items.length; i += 1) {
+        this.items[i].unsetAsTransferring();
+    }
+};
+
 /**
  * After an internal item transfer we have to update item id and owner
  * @param oldItems
  * @param newItems
- * @param newOwner
  * @private
  */
-TransferNode.prototype._afterTransferItemsUpdate = function (oldItems, newItems, newOwner) {
+TransferNode.prototype._afterTransferItemsUpdate = function (oldItems, newItems) {
     var matches = 0;
     for (var i = 0; i < oldItems.length; i += 1) {
         for (var p = 0; p < newItems.length; p += 1) {
             if (oldItems[i].classid === newItems[p].classid && oldItems[i].instanceid === newItems[p].instanceid) {
-                var inventoryItem = this.shop.inventory.getItem(oldItems[i].assetid);
-                inventoryItem.owner = newOwner;
-                inventoryItem.id = newItems[p].assetid;
+                for (var z = 0; z < this.items.length; z += 1) {
+                    if (this.items[z].getItem().getID() === parseInt(oldItems[i].assetid)) {
+                        this.items[z].item.owner = this.receiver.getSteamid();
+                        this.items[z].item.id = parseInt(newItems[p].assetid);
+                    }
+                }
                 matches += 1;
             }
         }

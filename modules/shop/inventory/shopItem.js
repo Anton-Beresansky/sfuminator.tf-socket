@@ -31,6 +31,7 @@ function ShopItem(shop, item, mine) {
     if (mine && mine === "mine") {
         this.setAsMineSection();
     }
+    this.transferring = false; //Transfer occurs when hopping to another bot backpack
 }
 
 ShopItem.TYPE = {
@@ -107,6 +108,21 @@ ShopItem.prototype.isHiddenType = function () {
         }
     }
     return false;
+};
+
+ShopItem.prototype.setAsTransferring = function () {
+    this.transferring = true;
+};
+
+ShopItem.prototype.unsetAsTransferring = function () {
+    this.transferring = false;
+};
+
+ShopItem.prototype.isBeingTransferred = function () {
+    if (this.transferring) {
+        console.log("Being transferred you shouldn't remove this");
+    }
+    return this.transferring;
 };
 
 /**

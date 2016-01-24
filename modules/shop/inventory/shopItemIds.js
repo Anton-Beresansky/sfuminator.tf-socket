@@ -41,6 +41,10 @@ ShopItemIDs.prototype.make = function (shopItem) {
     }
 };
 
+ShopItemIDs.prototype.hasLookup = function (shopItem) {
+    return this.exist(shopItem.getUniqueItemID(), shopItem.getGameCode());
+};
+
 /**
  * Link current shop id with given item id
  * @param {ShopItem} shopItem
