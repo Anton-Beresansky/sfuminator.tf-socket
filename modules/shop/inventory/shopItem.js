@@ -177,10 +177,12 @@ ShopItem.prototype.getMinePrice = function () {
         var item = this.getItem();
         var originalPrice = item.getPrice();
         if (item.isHat()) {
+            //Cut price we pay if maximum exceeded
             if (originalPrice.toMetal() > this.shop.ratio.hats.weBuy.maximum) {
                 originalPrice = new Price(this.shop.ratio.hats.weBuy.maximum, TF2Currency.priceInits.Metal);
             }
 
+            //Apply ratio to price
             if (originalPrice.toMetal() === 1.66) {
                 finalPrice = new Price(this.shop.ratio.hats.weBuy.default166, TF2Currency.priceInits.Metal);
             } else {
@@ -191,11 +193,21 @@ ShopItem.prototype.getMinePrice = function () {
                 finalPrice = new Price(parseInt(originalPrice.toScrap() * ratio), TF2Currency.priceInits.Scrap);
             }
 
+            //Compensate price if it's lower than the minimum we pay
             if (finalPrice.toMetal() < this.shop.ratio.hats.weBuy.minimum) {
                 finalPrice = new Price(this.shop.ratio.hats.weBuy.minimum, TF2Currency.priceInits.Metal);
             }
         } else if (item.isStrangeWeapon()) {
-            finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.hats.weBuy.lowTier), TF2Currency.priceInits.Scrap);
+            //Cut
+            if (originalPrice.toMetal() > this.shop.ratio.strange.weBuy.maximum) {
+                originalPrice = new Price(this.shop.ratio.strange.weBuy.maximum, TF2Currency.priceInits.Metal);
+            }
+            //Ratio
+            finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.strange.weBuy.normal), TF2Currency.priceInits.Scrap);
+            //Compensate
+            if (finalPrice.toMetal() < this.shop.ratio.strange.weBuy.minimum) {
+                finalPrice = new Price(this.shop.ratio.strange.weBuy.minimum, TF2Currency.priceInits.Metal);
+            }
         } else {
             finalPrice = Price(0);
         }

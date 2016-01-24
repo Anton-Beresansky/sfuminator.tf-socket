@@ -4,7 +4,7 @@ var Logs = require("../../lib/logs.js");
 
 /**
  * @class ShopRatio
- * @description Will define shop price ratios used to buy and sell items 
+ * @description Will define shop price ratios used to buy and sell items
  * @param {Database} db Database instance
  * @returns {ShopRatio}
  */
@@ -17,7 +17,7 @@ function ShopRatio(db) {
 /**
  * Update hats ratio
  * @param {Funciton} [callback]
- * Callback will return this instance 
+ * Callback will return this instance
  */
 ShopRatio.prototype.updateHats = function (callback) {
     var self = this;
@@ -25,9 +25,13 @@ ShopRatio.prototype.updateHats = function (callback) {
     this.getHats(function (hatRatio) {
         self.hats = hatRatio;
         self.log.debug("Hats updated");
-        if (typeof callback === "function") {
-            callback(self);
-        }
+        self.getStrange(function (strangeRatio) {
+            self.strange = strangeRatio;
+            self.log.debug("Strange updated");
+            if (typeof callback === "function") {
+                callback(self);
+            }
+        });
     });
 };
 
@@ -52,9 +56,9 @@ ShopRatio.prototype.getHats = function (callback) {
     var self = this;
     var hatRatio = {weBuy: {}, weSell: {}};
     this.db.connect(function (connection) {
-        connection.query(self._getHatsQuery(), function (result) {
+        connection.query(self._getHatsQuery(), function (result, empty) {
             connection.release();
-            if (result) {
+            if (!empty) {
                 for (var i = 0; i < result.length; i += 1) {
                     switch (result[i].item) {
                         case "hat":
@@ -69,6 +73,7 @@ ShopRatio.prototype.getHats = function (callback) {
                         case "hat_max":
                             hatRatio.weBuy.maximum = result[i].weBuy;
                             hatRatio.weSell.maximum = result[i].weSell;
+                            break;
                         case "hat_166":
                             hatRatio.weBuy.default166 = result[i].weBuy;
                             hatRatio.weSell.default166 = result[i].weSell;
@@ -83,10 +88,45 @@ ShopRatio.prototype.getHats = function (callback) {
     });
 };
 
+ShopRatio.prototype.getStrange = function (callback) {
+    var self = this;
+    var strangeRatio = {weBuy: {}, weSell: {}};
+    this.db.connect(function (connection) {
+        connection.query(self._getStrangeQuery(), function (result, empty) {
+            connection.release();
+            if (!empty) {
+                for (var i = 0; i < result.length; i += 1) {
+                    switch (result[i].item) {
+                        case "strange":
+                            strangeRatio.weBuy.normal = result[i].weBuy;
+                            strangeRatio.weSell.normal = result[i].weSell;
+                            break;
+                        case "strange_min":
+                            strangeRatio.weBuy.minimum = result[i].weBuy;
+                            strangeRatio.weSell.minimum = result[i].weSell;
+                            break;
+                        case "strange_max":
+                            strangeRatio.weBuy.maximum = result[i].weBuy;
+                            strangeRatio.weSell.maximum = result[i].weSell;
+                            break;
+                    }
+                }
+                callback(strangeRatio);
+            } else {
+                self.log.error("Couldn't get strangeRatio from database");
+            }
+        })
+    })
+};
+
 /**
  * Get query to fetch hat ratio
  * @returns {String} Query
  */
 ShopRatio.prototype._getHatsQuery = function () {
     return "SELECT `item`, `weBuy`, `weSell` FROM `botPrices` WHERE item='hat' OR item='hat_min' OR item='hat_max' OR item='hat_166'";
+};
+
+ShopRatio.prototype._getStrangeQuery = function () {
+    return "SELECT `item`, `weBuy`, `weSell` FROM `botPrices` WHERE item='strange' OR item='strange_min' OR item='strange_max'";
 };
