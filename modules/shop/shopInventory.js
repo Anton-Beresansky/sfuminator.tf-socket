@@ -105,13 +105,27 @@ ShopInventory.prototype.fetchTF2Items = function (callback) {
 };
 
 /**
- * Get Shop Item given item id
+ * Get Shop Item from given shop item id
  * @param {Number} itemID id
  * @returns {ShopItem}
  */
 ShopInventory.prototype.getItem = function (itemID) {
     for (var i = 0; i < this.items.length; i += 1) {
         if (this.items[i].getID() === itemID) {
+            return this.items[i];
+        }
+    }
+    return false;
+};
+
+/**
+ * Get Shop Item from given steam real item id
+ * @param {Number} itemID
+ * @returns {ShopItem}
+ */
+ShopInventory.prototype.getItemFromRealId = function (itemID) {
+    for (var i = 0; i < this.items.length; i += 1) {
+        if (this.items[i].getItem().getID() === itemID) {
             return this.items[i];
         }
     }
@@ -167,7 +181,10 @@ ShopInventory.prototype._parseTF2ItemsToAdd = function (newItems) {
         }
 
         if (!item_exist) {
-            itemsToAdd.push(this.makeShopItem(newItems[i]));
+            var itemToAdd = this.makeShopItem(newItems[i]);
+            if (itemToAdd) {
+                itemsToAdd.push(itemToAdd);
+            }
         }
     }
 
@@ -193,7 +210,10 @@ ShopInventory.prototype._parseTF2ItemsToRemove = function (newItems) {
                 }
             }
 
-            if (!item_exist && !this.shop.getBotUser(this.items[i].getItem().getOwner()).getTF2Backpack().hasErrored()) {
+            if (!item_exist
+                && !this.shop.getBotUser(this.items[i].getItem().getOwner()).getTF2Backpack().hasErrored()
+                && !this.items[i].isBeingTransferred()
+            ) {
                 itemsToRemove.push(this.items[i]);
                 this.ids.unlink(this.items[i]);
             }
@@ -210,6 +230,11 @@ ShopInventory.prototype._parseTF2ItemsToRemove = function (newItems) {
  */
 ShopInventory.prototype.makeShopItem = function (item) {
     var shopItem = new ShopItem(this.shop, item);
-    shopItem.setID(this.ids.make(shopItem));
-    return shopItem;
+    if (this.ids.hasLookup(shopItem) && this.getItem(this.ids.make(shopItem))) {
+        this.log.test("Updated shop item with a new item id");
+        this.getItem(this.ids.make(shopItem)).item = item;
+    } else {
+        shopItem.setID(this.ids.make(shopItem));
+        return shopItem;
+    }
 };
