@@ -74,15 +74,30 @@ BotsController.prototype.getBot = function (steamid) {
 };
 
 BotsController.prototype.assignBot = function (shopTrade) {
+    var i;
     var assignedBot = this.getBestAvailableBot();
-    if (!assignedBot) {
-        this.log.error("Wasn't able to assign bot");
-        shopTrade.emit("tradeRequestResponse", this.sfuminator.responses.botIsNotAvailable);
-        return false;
-    } else {
-        shopTrade.setBot(assignedBot.getUser());
-        return true;
+    var ownerList = this.getOwnerList(shopTrade.getAssets());
+    this.log.test("Owner list: " + JSON.stringify(ownerList));
+    //Verify that all bots are available for the requested items
+    for (i = 0; i < ownerList.length; i += 1) {
+        if (!this.getBot(ownerList[i].owner).isAvailable()) {
+            shopTrade.emit("tradeRequestResponse", this.sfuminator.responses.botIsNotAvailable);
+            return false;
+        }
     }
+    if (ownerList.length > 0) { //If bot have shop items to give
+        assignedBot = this.getBot(ownerList[0].owner); //Go with the one with most items (Can be the only as well)
+        for (i = 0; i < ownerList.length; i += 1) { //But if there is one already friend go with it
+            var bot = this.getBot(ownerList[i].owner);
+            if (bot.steamClient.isFriend(shopTrade.getPartner().getSteamid())) {
+                assignedBot = bot;
+                break;
+            }
+        }
+    }
+
+    shopTrade.setBot(assignedBot.getUser());
+    return true;
 };
 
 /**
@@ -162,4 +177,38 @@ BotsController.prototype.preSmeltMetal = function () {
     for (var i = 0; i < this.tradeBots.length; i += 1) {
         preSmelt(this.tradeBots[i]);
     }
+};
+
+/**
+ * @param {ShopItem[]} assets
+ */
+BotsController.prototype.getOwnerList = function (assets) {
+    var ownerList = [];
+    for (var i = 0; i < assets.length; i += 1) {
+        if (!assets[i].isMineItem()) {
+            var owner = assets[i].getItem().getOwner();
+            var found = false;
+            for (var p = 0; p < ownerList.length; p += 1) {
+                if (ownerList[p].owner === owner) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                ownerList[p].count += 1;
+            } else {
+                ownerList.push({owner: owner, count: 1});
+            }
+        }
+    }
+    ownerList.sort(function (a, b) {
+        if (a.count > b.count) {
+            return -1;
+        }
+        if (a.count < b.count) {
+            return 1;
+        }
+        return 0;
+    });
+    return ownerList;
 };
