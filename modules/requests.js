@@ -221,7 +221,7 @@ SfuminatorRequest.prototype._parseCookies = function () {
         try {
             list[parts.shift().trim()] = decodeURI(parts.join('='));
         } catch (e) {
-            self.log.error("Couldn't parse cookie " + cookie);
+            self.log.debug("Couldn't parse cookie " + cookie, 1);
         }
     });
     this._cookies = list;
