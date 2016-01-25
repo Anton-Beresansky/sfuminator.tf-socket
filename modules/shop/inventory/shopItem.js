@@ -119,17 +119,18 @@ ShopItem.prototype.unsetAsTransferring = function () {
 };
 
 ShopItem.prototype.isBeingTransferred = function () {
-    if (this.transferring) {
-        console.log("Being transferred you shouldn't remove this");
-    }
     return this.transferring;
+};
+
+ShopItem.prototype.isReserved = function () {
+    return this.shop.reservations.exist(this.getID());
 };
 
 /**
  * @returns {Reservation}
  */
 ShopItem.prototype.getReservation = function () {
-    return this.shop.reservations.get(this.item.getID());
+    return this.shop.reservations.get(this.getID());
 };
 
 ShopItem.prototype.getSectionID = function () {

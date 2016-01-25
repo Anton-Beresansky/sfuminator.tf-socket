@@ -129,7 +129,7 @@ BotsController.prototype.getBestAvailableBot = function () {
 /**
  * @param {TraderBot} receiver
  * @param {ShopItem[]} items
- * @param {Function} [callback]
+ * @param {Function} [callback] null if success, error otherwise
  */
 BotsController.prototype.transfer = function (receiver, items, callback) {
     var cluster = new TransferNodesCluster(this, receiver);
@@ -187,24 +187,34 @@ BotsController.prototype.preSmeltMetal = function () {
 };
 
 BotsController.prototype.manageItemsDistribution = function () {
-    var compensationSpaceLimitPercentile = 0.95;
-    var distribution = {};
-    var totalRefineds = [];
-    for (var i = 0; i < this.tradeBots.length; i += 1) {
-        var allItems = this.tradeBots[i].getUser().getTF2Backpack().getItems();
-        var refinedMetals = this.tradeBots[i].getUser().getTF2Backpack().getItems(null, {defindex: TF2Constants.defindexes.RefinedMetal});
-        distribution[this.tradeBots[i].getSteamid()] = {
-            refineds: refinedMetals,
-            allItems: allItems
-        };
-        totalRefineds = totalRefineds.concat(refinedMetals);
+    if (this.managingDistribution) {
+        return;
     }
-    var singleBotAmount = totalRefineds.length / this.tradeBots.length;
-    this.log.test("Total refineds are " + totalRefineds.length + " each bot should have " + singleBotAmount + " +-" + (singleBotAmount * 0.2));
-    var minimumAmount = singleBotAmount * 0.8;
-    for (var botSteamid in distribution) {
-        var refinedsBotAmount = distribution[botSteamid].refineds.length;
-        var itemsBotAmount = distribution[botSteamid].allItems.length;
+    this.managingDistribution = true;
+    var compensationSpaceLimitPercentile = 0.95;
+    var compensationMarginPercentile = 0.2;
+    var distribution = [], compensations = [];
+    var totalRefinedsCount = 0;
+    var i;
+    for (i = 0; i < this.tradeBots.length; i += 1) {
+        var backpack = this.tradeBots[i].getUser().getTF2Backpack();
+        var refinedCount = backpack.getCount({defindex: TF2Constants.defindexes.RefinedMetal});
+        distribution.push({
+            botSteamid: this.tradeBots[i].getSteamid(),
+            refineds: refinedCount,
+            allItems: backpack.getCount()
+        });
+        totalRefinedsCount += refinedCount;
+    }
+    var singleBotAmount = totalRefinedsCount / this.tradeBots.length;
+    this.log.test("Total refineds are " + totalRefinedsCount + " each bot should have " + singleBotAmount + " +-" + parseInt(singleBotAmount * compensationMarginPercentile));
+    this.log.test("Distribution: " + JSON.stringify(distribution));
+
+    var minimumAmount = singleBotAmount * (1 - compensationMarginPercentile);
+    for (i = 0; i < distribution.length; i += 1) {
+        var botSteamid = distribution[i].botSteamid;
+        var refinedsBotAmount = distribution[i].refineds;
+        var itemsBotAmount = distribution[i].allItems;
         if (refinedsBotAmount < minimumAmount) {
             var compensationCount = singleBotAmount - refinedsBotAmount;
             var totalCountAfterCompensation = itemsBotAmount + compensationCount;
@@ -218,8 +228,61 @@ BotsController.prototype.manageItemsDistribution = function () {
                 compensationCount = (totalSlots * compensationSpaceLimitPercentile) - itemsBotAmount;
             }
             this.log.test("We will compensate: " + compensationCount + " refineds");
-            distribution[botSteamid].compensationCount = compensationCount;
+
+            compensations.push({botSteamid: botSteamid, compensation: compensationCount});
         }
+    }
+
+    var self = this;
+    i = 0;
+    function compensate(index) {
+        var toCompensate = compensations[index];
+        var itemsToTransfer = [];
+        var shopItems = self.shop.inventory.items;
+        var countdown = toCompensate.compensation;
+        self.log.test("Compensating " + toCompensate.botSteamid);
+        for (var i = 0; i < shopItems.length; i += 1) {
+            if (countdown <= 0) {
+                break;
+            }
+            if (
+                shopItems[i].getItem().getDefindex() === TF2Constants.defindexes.RefinedMetal
+                && shopItems[i].getItem().getOwner() !== toCompensate.botSteamid
+                && !shopItems[i].isReserved()
+            ) {
+                itemsToTransfer.push(shopItems[i]);
+                countdown -= 1;
+            }
+        }
+        self.transfer(self.getBot(toCompensate.botSteamid), itemsToTransfer, function (error) {
+            function finalizeTransfer() {
+                if (i < distribution.length) {
+                    i += 1;
+                    compensate(i);
+                } else {
+                    self.log.test("Item compensation done!");
+                    self.managingDistribution = false;
+                }
+            }
+
+            if (error) {
+                self.log.warning("Compensation errored");
+                if (itemsToTransfer > 50) {
+                    self.log.test("Let's give steam some time to process the items");
+                    setTimeout(function () {
+                        finalizeTransfer();
+                    }, 1000 * 60);
+                } else {
+                    finalizeTransfer();
+                }
+            }
+        });
+    }
+
+    if (compensations.length) {
+        compensate(i);
+    } else {
+        this.managingDistribution = false;
     }
 };
 

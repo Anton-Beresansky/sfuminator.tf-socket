@@ -34,7 +34,7 @@ function Sfuminator(cloud, db) {
         {name: "updateStats", delay: 1000, tag: "global"},
         {name: "updateTradeStatus", delay: 1000, tag: "global"},
         {name: "preSmeltMetal", delay: 8000, tag: "internal"},
-        {name: "manageBotItemsDistribution", delay: ***REMOVED***00, tag: "internal"},
+        {name: "manageBotItemsDistribution", delay: 900000, tag: "internal"},
         {name: "cleanBuggedReservations_WhyDoIEvenHaveToPutSomethingLikeThis", delay: 900000, tag: "global"}
     ]);
     this.responses = new AjaxResponses(this);
