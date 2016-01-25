@@ -267,7 +267,7 @@ BotsController.prototype.manageItemsDistribution = function () {
 
             if (error) {
                 self.log.warning("Compensation errored");
-                if (itemsToTransfer > 50) {
+                if (itemsToTransfer.length > 50) {
                     self.log.test("Let's give steam some time to process the items");
                     setTimeout(function () {
                         finalizeTransfer();
