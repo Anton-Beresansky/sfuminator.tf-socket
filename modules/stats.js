@@ -19,7 +19,8 @@ function Stats(sfuminator) {
         fetchTradeCount: {every: 5, c: 0},
         fetchScannedProfiles: {every: 30, c: 0},
         fetchNewItems: {every: 2, c: 0},
-        storePricedStock: {every: (60 * 15), c: 0}
+        storePricedStock: {every: (60 * 15), c: 0},
+        getBotsStock: {every: 10, c: 0}
     };
     this.stats = {};
     this.max_new_items = 10;
@@ -72,6 +73,32 @@ Stats.prototype.load = function () {
     for (var method in this.ticks) {
         this[method]();
     }
+};
+
+Stats.prototype.getBotsStock = function () {
+    var bots_stock = {};
+    var shopItems = this.sfuminator.shop.inventory.items;
+    for (var i = 0; i < shopItems.length; i += 1) {
+        var owner = shopItems[i].getItem().getOwner();
+        var type = shopItems[i].getType();
+        if (type === "") {
+            type = "other"
+        }
+        if (!bots_stock.hasOwnProperty(owner)) {
+            bots_stock[owner] = {stock: {}};
+        }
+        if (!bots_stock[owner].stock.hasOwnProperty(type)) {
+            bots_stock[owner].stock[type] = 0;
+        }
+        bots_stock[owner].stock[type] += 1;
+    }
+    for (owner in bots_stock) {
+        var user = this.sfuminator.getBotsController().getBot(owner).getUser();
+        bots_stock[owner].total_slots = user.getTF2Backpack().getTotalSlots();
+        bots_stock[owner].steamid = owner;
+        bots_stock[owner].username = user.getName();
+    }
+    this.stats["bots_stock"] = bots_stock;
 };
 
 Stats.prototype.getStockCount = function () {
