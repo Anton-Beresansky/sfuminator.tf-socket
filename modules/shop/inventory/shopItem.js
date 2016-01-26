@@ -91,7 +91,7 @@ ShopItem.prototype.getType = function () {
         if (this.item.isPriced() && this.item.isTradable()) {
             if (this.item.isHat() && this.item.isCraftable()) {
                 return ShopItem.TYPE.HATS;
-            } else if (this.item.isStrangeWeapon()) {
+            } else if (this.item.isStrangeWeapon() && !this.item.isAustralium()) {
                 return ShopItem.TYPE.STRANGE;
             } else if (this.isCurrency()) {
                 return ShopItem.TYPE.CURRENCY;

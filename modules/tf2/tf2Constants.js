@@ -33,5 +33,10 @@ function TF2Constants() {
         Haunted: 13,
         Collectors: 14,
         DecoratedWeapon: 15
-    }
+    };
+
+    this.attributeDefindexes = {
+        Australium: 2027,
+        Paint: 142
+    };
 }
