@@ -36,8 +36,8 @@ function Shop(sfuminator) {
     this.reservations = new Reservations(this.db);
     this.instanceID = new Date().getTime();
     this.countLimit = {
-        hats: {Strange: 2, Vintage: 3, Genuine: 3, Haunted: 3, _any: 4, _price: {over: 6, limit: 3}},
-        strange: {_any: 4, _price: {over: 6, limit: 3}}
+        hats: {Strange: 2, Vintage: 3, Genuine: 3, Haunted: 3, _any: 5, _price: {over: 7, limit: 3}},
+        strange: {_any: 5, _price: {over: 7, limit: 3}}
     };
     /**
      * @type {ShopItemCount}
