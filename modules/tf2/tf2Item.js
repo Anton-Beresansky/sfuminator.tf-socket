@@ -164,6 +164,10 @@ TF2Item.prototype.isStrangeWeapon = function () {
         && (this.getQuality() === TF2Constants.quality.Strange);
 };
 
+TF2Item.prototype.isAustralium = function () {
+    return this.attributeExist(TF2Constants.attributeDefindexes.Australium);
+};
+
 /**
  * Establish if item is Currency
  * Scrap, Reclaimed, Refined and Mann Co Key defindex are checked
@@ -182,11 +186,11 @@ TF2Item.prototype.isCurrency = function () {
  * @returns {String}
  */
 TF2Item.prototype.getPaintColor = function () {
-    return this.getAttribute(142).getFloatValue().toString(16);
+    return this.getAttribute(TF2Constants.attributeDefindexes.Paint).getFloatValue().toString(16);
 };
 
 TF2Item.prototype.isPainted = function () {
-    return this.attributeExist(142);
+    return this.attributeExist(TF2Constants.attributeDefindexes.Paint);
 };
 
 TF2Item.prototype.attributeExist = function (defindex) {
