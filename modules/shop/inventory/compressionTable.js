@@ -34,7 +34,8 @@ function CompressionLookup() {
         },
         shop: {
             mine: 0,
-            hats: 1
+            hats: 1,
+            strange: 2
         },
         image_url: function (url) {
             return url.slice(45);
