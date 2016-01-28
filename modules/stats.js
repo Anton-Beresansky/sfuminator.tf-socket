@@ -93,10 +93,11 @@ Stats.prototype.getBotsStock = function () {
         bots_stock[owner].stock[type] += 1;
     }
     for (owner in bots_stock) {
-        var user = this.sfuminator.getBotsController().getBot(owner).getUser();
-        bots_stock[owner].total_slots = user.getTF2Backpack().getTotalSlots();
+        var bot = this.sfuminator.getBotsController().getBot(owner);
+        bots_stock[owner].total_slots = bot.getUser().getTF2Backpack().getTotalSlots();
         bots_stock[owner].steamid = owner;
-        bots_stock[owner].username = user.getName();
+        bots_stock[owner].username = bot.getUser().getName();
+        bots_stock[owner].inEscrow = bot.steamClient.getItemsInEscrow().getCounted()
     }
     this.stats["bots_stock"] = bots_stock;
 };
