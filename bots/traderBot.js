@@ -45,6 +45,7 @@ TraderBot.prototype.onLogin = function () {
     var self = this;
     this.steamClient.setAutomaticMobileTradingConfirmation();
     this.steamClient.startTradeOffersManagerPolling();
+    this.steamClient.startItemsInEscrowPolling();
     this.steamClient.on("newFriend", function (friend) {
         self.log.debug("I'm now friend with " + friend.getSteamid());
         if (self.steamClient.getNumberOfFriends() > self.friendListLimit) {
