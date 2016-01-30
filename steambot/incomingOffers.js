@@ -42,6 +42,7 @@ function IncomingOffers(steam, tradeOffers, sfr) {
                     self.emit("debug", JSON.stringify(result));
                 });
                 self.incomingOffers.splice(i, 1);
+                i -= 1;
                 incLength = self.incomingOffers.length;
             }
         }
