@@ -407,7 +407,7 @@ ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
             }
         });
     } else {
-        this.emit("tradeRequestResponse", this.ajaxResponses.itemsSelectedNotFound);
+        this.emit("tradeRequestResponse", this.ajaxResponses.noItems);
         callback(false);
     }
 };
