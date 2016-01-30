@@ -5,7 +5,7 @@ var TraderBot = require('./../../bots/traderBot.js');
 var BotCommands = require('./../../bots/botCommands.js');
 var TransferNodesCluster = require('./assetsTransfer.js');
 var TF2Constants = require("./../tf2/tf2Constants.js");
-
+var SteamTradeErrorSolver = require("./steamTradeErrorSolver.js");
 /**
  * @class BotsController
  * @parameter {Sfuminator} sfuminator
@@ -27,6 +27,10 @@ function BotsController(sfuminator) {
 
     this.preSmeltedQuantity = 12;
 
+    /**
+     * @type {SteamTradeErrorSolver}
+     */
+    this.steamTradeErrorSolver = new SteamTradeErrorSolver(this.sfuminator);
     this.commands = new BotCommands(this.sfuminator);
     this.log = new Logs({applicationName: "Bots Controller", color: "blue", dim: true});
 

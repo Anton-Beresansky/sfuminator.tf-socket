@@ -20,6 +20,7 @@ function TraderBot(user, sfuminator) {
     this.sfuminator = sfuminator;
     this.steamid = user.getSteamid();
     this.friendListLimit = 170;
+    this.available = false;
     /**
      * @type {SteamClient}
      */
@@ -36,16 +37,15 @@ function TraderBot(user, sfuminator) {
     this.log = new Logs({applicationName: "Trader bot " + this.steamid, color: "grey", dim: true});
     var self = this;
     this.steamClient.login();
-    this.steamClient.on('loggedIn', function () {
-        self.onLogin();
+    this.steamClient.onceLoggedIn(function () {
+        self.onFirstLogin();
     });
 }
 
-TraderBot.prototype.onLogin = function () {
+TraderBot.AUTOMATIC_CANCEL_TIME = 600000; //10 minutes
+
+TraderBot.prototype.onFirstLogin = function () {
     var self = this;
-    this.steamClient.setAutomaticMobileTradingConfirmation();
-    this.steamClient.startTradeOffersManagerPolling();
-    this.steamClient.startItemsInEscrowPolling();
     this.steamClient.on("newFriend", function (friend) {
         self.log.debug("I'm now friend with " + friend.getSteamid());
         if (self.steamClient.getNumberOfFriends() > self.friendListLimit) {
@@ -75,6 +75,12 @@ TraderBot.prototype.onLogin = function () {
             }
         });
     });
+
+    this.steamClient.setAutomaticMobileTradingConfirmation();
+    this.steamClient.startTradeOffersManagerPolling();
+    this.steamClient.startItemsInEscrowPolling();
+    this.steamClient.setAutomaticTradeCancelAfter(TraderBot.AUTOMATIC_CANCEL_TIME);
+    this.setAsAvailable();
 };
 
 TraderBot.prototype.getSteamid = function () {
@@ -86,13 +92,22 @@ TraderBot.prototype.getUser = function () {
 };
 
 TraderBot.prototype.isAvailable = function () {
-    return this.steamClient.isLogged(); //&& isWebLogged ??
+    return this.steamClient.isLogged() && this.available;
+    //&& isWebLogged ??
     /* I mean I'm not sure if that's needed but
      * probably wen you are logged in it doesn't meant you
      * can successfully operate on web even if webLogin happens
      * consequentially to the client login, maybe we need to fetch
      * a steam web page and check if I'm actually web logged in?
      * */
+};
+
+TraderBot.prototype.setAsAvailable = function () {
+    this.available = true;
+};
+
+TraderBot.prototype.unsetAsAvailable = function () {
+    this.available = false;
 };
 
 TraderBot.prototype.getAssignedShopTradesCount = function () {
@@ -197,6 +212,12 @@ TraderBot.prototype._bindShopTrade = function (shopTrade) {
     var partner = this.steamClient.getFriend(partnerSteamid);
     var sfuminatorUser = this.sfuminator.users.get(partnerSteamid);
     var steamTradeOffer = shopTrade.getSteamTrade();
+    steamTradeOffer.on("handleTradeErrorSolving", function (error) {
+        self.sfuminator.getBotsController().steamTradeErrorSolver.handle(steamTradeOffer, error);
+    });
+    steamTradeOffer.on("wrongItemIDs", function () {
+        self.sfuminator.getBotsController().steamTradeErrorSolver.onWrongItemIds(shopTrade);
+    });
     steamTradeOffer.on("itemsRevoked", function () {
         steamTradeOffer.pauseAutoRetry();
         self.log.warning("Items have been revoked, will retry currency reservation");
@@ -209,9 +230,6 @@ TraderBot.prototype._bindShopTrade = function (shopTrade) {
             });
             shopTrade.reserveItems();
         });
-    });
-    steamTradeOffer.on("wrongItemIDs", function () {
-        self._tryToFixItemsIDs(shopTrade);
     });
     steamTradeOffer.on("tradeError", function (steamTradeError) {
         shopTrade.cancel(steamTradeError.getCode());
@@ -255,14 +273,6 @@ TraderBot.prototype._bindShopTrade = function (shopTrade) {
             partner.sendMessage(self.interactions.getMessage("trade_complete", sfuminatorUser));
         }
     });
-};
-
-/**
- * @param {ShopTrade} shopTrade
- * @private
- */
-TraderBot.prototype._tryToFixItemsIDs = function (shopTrade) {
-
 };
 
 /**
