@@ -395,16 +395,21 @@ ShopTrade.prototype.verifyItems = function (callback) {
 };
 
 ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
-    this.currency.loadAssets(); //If I don't put this it will think balance is still 0 :(
-    var self = this;
-    this.getPartner().getTF2Backpack().getCached(function () {
-        if (self.getPartner().getTF2Backpack().getCurrencyAmount() < self.currency.getSignedTradeBalance()) {
-            self.emit("tradeRequestResponse", self.ajaxResponses.notEnoughCurrency);
-            callback(false);
-        } else {
-            callback(true);
-        }
-    });
+    if (this.assets.length) {
+        this.currency.loadAssets(); //If I don't put this it will think balance is still 0 :(
+        var self = this;
+        this.getPartner().getTF2Backpack().getCached(function () {
+            if (self.getPartner().getTF2Backpack().getCurrencyAmount() < self.currency.getSignedTradeBalance()) {
+                self.emit("tradeRequestResponse", self.ajaxResponses.notEnoughCurrency);
+                callback(false);
+            } else {
+                callback(true);
+            }
+        });
+    } else {
+        this.emit("tradeRequestResponse", this.ajaxResponses.itemsSelectedNotFound);
+        callback(false);
+    }
 };
 
 /**
