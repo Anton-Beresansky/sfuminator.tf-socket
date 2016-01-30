@@ -95,7 +95,7 @@ SteamTradeErrorSolver.prototype.onWrongItemIds = function (shopTrade) {
 
 };
 
-//////////////// SOLVING PROCEDURES
+//////////////// SOLVING ERROR PROCEDURES
 
 /**
  * @param {SteamTradeOffer} steamTradeOffer

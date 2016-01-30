@@ -47,6 +47,7 @@ var outpost = new api("www.tf2outpost.com");
 var cheerio = require("cheerio");
 var IncomingOffers = require("./incomingOffers.js");
 var incomingOffers = new IncomingOffers(steam, tradeOffers, sfr);
+var CONFIRMATIONS = {};
 
 sfr.on('debug', function (msg, level) {
     if (typeof level === "undefined") {
@@ -165,8 +166,8 @@ steam.on('webSessionID', function (sessionID) {
                 sfr.updateCurrency();
             }
         });
-        setAutomaticMobileTradingConfirmation();
-        //community.startConfirmationChecker(5000);
+        //setAutomaticMobileTradingConfirmation();
+        community.startConfirmationChecker(10000);
     });
     if (sfr.in_trade) {
         steamTrade.open(steamTrade.tradePartnerSteamID);
@@ -194,6 +195,7 @@ community.on('newConfirmation', function (confirmation) {
         } else {
             debugmsg("TRADE CONFIRMED");
         }
+        sfr.emit("appendTradeOffer", confirmation.offerID);
     });
 });
 
@@ -319,25 +321,34 @@ sfr.on("steamMessage", function (obj) {
         console.log("##ERROR COUGHT - EMPTY STEAMID GIVEN, WON'T SEND MESSAGE##");
     }
 });
+sfr.on("appendTradeOffer", function (tradeOfferID) {
+    if (CONFIRMATIONS.hasOwnProperty(tradeOfferID)) {
+        sfr.appendTradeOffer(CONFIRMATIONS[tradeOfferID], tradeOfferID);
+        delete CONFIRMATIONS[tradeOfferID];
+    } else {
+        debugmsg("The offer id: " + tradeOfferID + " can't confirm any sent trade");
+    }
+});
 sfr.on("sendTradeOffer", function (offer) {
     debugmsg("Making trade offer to " + offer.partnerSteamId);
     tradeOffers.makeOffer(offer, function (error, result) {
             if (typeof result !== "undefined") {
-                var checkRetries = 0;
-                var checkConfirmation = function () {
-                    var oldConfirmationCounter = CONFIRMATIONS_COUNTER;
-                    setTimeout(function () {
-                        if (oldConfirmationCounter !== CONFIRMATIONS_COUNTER) {
-                            sfr.appendTradeOffer(offer.partnerSteamId, result.tradeofferid);
-                        } else {
-                            if (checkRetries < MAX_CHECK_TENTATIVI) {
-                                checkRetries += 1;
-                                checkConfirmation();
-                            }
-                        }
-                    }, 400);
-                };
-                checkConfirmation();
+                /*var checkRetries = 0;
+                 var checkConfirmation = function () {
+                 var oldConfirmationCounter = CONFIRMATIONS_COUNTER;
+                 setTimeout(function () {
+                 if (oldConfirmationCounter !== CONFIRMATIONS_COUNTER) {
+                 sfr.appendTradeOffer(offer.partnerSteamId, result.tradeofferid);
+                 } else {
+                 if (checkRetries < MAX_CHECK_TENTATIVI) {
+                 checkRetries += 1;
+                 checkConfirmation();
+                 }
+                 }
+                 }, 400);
+                 };
+                 checkConfirmation();*/
+                CONFIRMATIONS[result.tradeofferid] = offer.partnerSteamId;
             } else {
                 debugmsg("Error sending trade offer to " + offer.partnerSteamId + " (relation: " + steam.friends[offer.partnerId] + "): " + error);
                 if (offer.hasOwnProperty("makeAttempts")) {
@@ -1790,19 +1801,19 @@ function mergeWithDescriptions(items, descriptions, contextid) {
 
 function webRelog(callback) {
     /*steam.webLogOn(function (cookies) {
-        debugmsg("Got cookies: " + JSON.stringify(cookies) + ", configuring trade...", {level: 2});
-        steamTrade.setCookie(cookies[0]);
-        steamTrade.setCookie(cookies[1]);
-        steamTrade.setCookie(cookies[2]);
-        browser.setCookie(cookies);
-        community.setCookies(cookies);
-        tradeOffers.setup({sessionID: steamTrade.sessionID, webCookie: cookies}, function () {
-            debugmsg("Alright, web logged!", {level: 1});
-            if (callback) {
-                callback(true);
-            }
-        });
-    });*/
+     debugmsg("Got cookies: " + JSON.stringify(cookies) + ", configuring trade...", {level: 2});
+     steamTrade.setCookie(cookies[0]);
+     steamTrade.setCookie(cookies[1]);
+     steamTrade.setCookie(cookies[2]);
+     browser.setCookie(cookies);
+     community.setCookies(cookies);
+     tradeOffers.setup({sessionID: steamTrade.sessionID, webCookie: cookies}, function () {
+     debugmsg("Alright, web logged!", {level: 1});
+     if (callback) {
+     callback(true);
+     }
+     });
+     });*/
     if (callback) {
         callback(true);
     }
