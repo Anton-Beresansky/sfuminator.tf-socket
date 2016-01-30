@@ -29,10 +29,7 @@ function BotCommands(sfuminator) {
                     steamTrade.make();
                     bot.steamClient.sendMessage(steamid, "Sending you a prelievo of " + (-prelievoAmount.toMetal()) + " refined");
                 });
-                shopTrade.on("tradeRequestResponse", function (result) {
-                    bot.steamClient.sendMessage(steamid, "Error: " + result);
-                });
-                shopTrade.verifyItems(function () {
+                shopTrade.getPartner().getTF2Backpack().getCached(function () { //Be sure to load partner bp first
                     shopTrade.reserveItems();
                 });
             }
