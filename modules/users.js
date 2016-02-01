@@ -13,7 +13,7 @@ var User = require("./user/user.js");
 function Users(sfuminator) {
     this.sfuminator = sfuminator;
     this.db = this.sfuminator.db;
-    this.cloud = this.sfuminator.cloud;
+    this.webApi = this.sfuminator.webApi;
     this.log = new Logs({applicationName: "Users", color: "cyan"});
     this.log.setLevel(0);
     this._users = {};

@@ -13,7 +13,7 @@ var Logs = require("../../lib/logs.js");
 function TF2Api(db, steam, backpacktf_key, options) {
     var self = this;
     this.db = db;
-    this.log = new Logs("TF2 update");
+    this.log = new Logs({applicationName: "TF2 Api"});
     this.updateInterval = (options && options.hasOwnProperty("update_interval")) ? options.update_interval : (4 * 60 * 60000); //default 4 hours
     this.debug = (options && options.hasOwnProperty("debug")) ? options.debug : false; //default false  
     this.steam = steam;
@@ -38,6 +38,8 @@ function TF2Api(db, steam, backpacktf_key, options) {
 
 require("util").inherits(TF2Api, events.EventEmitter);
 
+TF2Api.BPTF_DECAY_TIME = 5 * 60; //5 minutes (seconds)
+
 TF2Api.prototype.loadSchema = function (callback) {
     var self = this;
     this.loadItemSchema(function () {
@@ -53,11 +55,17 @@ TF2Api.prototype.loadCurrencies = function (callback) {
     var self = this;
     this.db.connect(function (connection) {
         connection.query("SELECT * FROM `currency`", function (result) {
+            connection.release();
             if (result && result.length > 0) {
                 var currencies = {};
                 for (var i = 0; i < result.length; i += 1) {
                     var row = result[i];
-                    currencies[row.currency_type] = {usd: row.usd, metal: row.metal, keys: row.keys, earbuds: row.earbuds};
+                    currencies[row.currency_type] = {
+                        usd: row.usd,
+                        metal: row.metal,
+                        keys: row.keys,
+                        earbuds: row.earbuds
+                    };
                 }
                 self.currencies = currencies;
             }
@@ -105,8 +113,7 @@ TF2Api.prototype._getSchemaObject_Load = function (thisItem) {
             property !== "flag_cannot_trade" &&
             property !== "additional" &&
             property !== "currency"
-        )
-        {
+        ) {
             schemaObject[property] = thisItem[property];
         }
     }
@@ -128,7 +135,6 @@ TF2Api.prototype._getPriceObject_Load = function (thisItem) {
 TF2Api.prototype.startAutoUpdate = function () {
     this.emit("debug", "Starting auto update tf2 procedure");
     var self = this;
-    self.update();
     this._autoUpdateInterval = setInterval(function () {
         self.update();
     }, self.updateInterval);
@@ -161,19 +167,42 @@ TF2Api.prototype.update = function (callback) {
 TF2Api.prototype.updatePrices = function (callback) {
     this.emit("debug", "Updating tf2 prices...");
     var self = this;
-    this.iGetPrices(function (response) {
-        self.emit("debug", "Got backpack.tf prices...");
-        if (response.hasOwnProperty("response") && response.response.hasOwnProperty("success") && response.response.success === 1) {
-            var result = response.response;
-            self.saveItemPrices(result.items, function () {
-                self.saveTF2Currency(result, function () {
-                    callback();
-                });
+    this.arePricesOutdated(function (outdated) {
+        if (outdated) {
+            self.log.debug("Prices are outdated");
+            self.iGetPrices(function (response) {
+                self.emit("debug", "Got backpack.tf prices...");
+                if (response.hasOwnProperty("response") && response.response.hasOwnProperty("success") && response.response.success === 1) {
+                    var result = response.response;
+                    self.saveItemPrices(result.items, function () {
+                        self.saveTF2Currency(result, function () {
+                            callback();
+                        });
+                    });
+                } else {
+                    self.emit("steam_error");
+                }
             });
         } else {
-            self.emit("steam_error");
+            self.log.debug("Prices are already up to date");
+            callback();
         }
     });
+};
+
+TF2Api.prototype.arePricesOutdated = function (callback) {
+    this.db.connect(function (connection) {
+        connection.query("SELECT version FROM versioning WHERE id='bptf'", function (result, empty) {
+            connection.release();
+            var outdated = true;
+            if (!empty) {
+                if (result[0].version + TF2Api.BPTF_DECAY_TIME > parseInt(new Date().getTime() / 1000)) {
+                    outdated = false;
+                }
+            }
+            callback(outdated);
+        })
+    })
 };
 
 TF2Api.prototype.updateSchema = function (callback) {
@@ -199,8 +228,10 @@ TF2Api.prototype.saveItemPrices = function (items, callback) {
     var self = this;
     this.db.connect(function (connection) {
         connection.query(self._getInsertItemPricesQuery(items), function () {
-            connection.release();
-            callback();
+            connection.query(self._getBpTfVersioningUpdateQuery(), function () {
+                connection.release();
+                callback();
+            });
         });
     });
 };
@@ -404,10 +435,20 @@ TF2Api.prototype._convertCurrencyFormat = function (result) {
     var key_price = result.items["Mann Co. Supply Crate Key"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
     var earbuds_price = result.items["Earbuds"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
     return {
-        usd: {usd: 1, metal: 1 / metal_price, keys: 1 / (key_price * metal_price), earbuds: 1 / (earbuds_price * key_price * metal_price)},
+        usd: {
+            usd: 1,
+            metal: 1 / metal_price,
+            keys: 1 / (key_price * metal_price),
+            earbuds: 1 / (earbuds_price * key_price * metal_price)
+        },
         metal: {usd: metal_price, metal: 1, keys: 1 / key_price, earbuds: 1 / (earbuds_price * key_price)},
         keys: {usd: key_price * metal_price, metal: key_price, keys: 1, earbuds: 1 / earbuds_price},
-        earbuds: {usd: earbuds_price * key_price * metal_price, metal: earbuds_price * key_price, keys: earbuds_price, earbuds: 1}
+        earbuds: {
+            usd: earbuds_price * key_price * metal_price,
+            metal: earbuds_price * key_price,
+            keys: earbuds_price,
+            earbuds: 1
+        }
     };
 };
 
@@ -446,4 +487,8 @@ TF2Api.prototype._getInsertSchemaVersionQuery = function (newVersion) {
 
 TF2Api.prototype._getSelectFullSchemaQuery = function () {
     return "SELECT `schema`.`name`,`schema`.`defindex`, `schema`.`item_class`, `schema`.`item_type_name`, `schema`.`item_name`, `schema`.`proper_name`, `schema`.`item_slot`, `schema`.`image_url`, `schema`.`image_url_large`, `schema`.`holiday_restriction`, `schema`.`craft_material_type`, `schema`.`used_by_classes`, `prices`.`quality`, `prices`.`flag_cannot_craft`, `prices`.`flag_cannot_trade`, `prices`.`additional`, `prices`.`price`, `prices`.`currency` from `schema` LEFT JOIN `prices` ON `schema`.`defindex`=`prices`.`defindex`";
+};
+
+TF2Api.prototype._getBpTfVersioningUpdateQuery = function () {
+    return "INSERT INTO versioning (id,version) VALUES('bptf'," + parseInt(new Date().getTime() / 1000) + ") ON DUPLICATE KEY UPDATE version=VALUES(version)";
 };
