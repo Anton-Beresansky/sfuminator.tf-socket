@@ -12,7 +12,7 @@ function Stats(sfuminator) {
     this.sfuminator = sfuminator;
     this.shop = this.sfuminator.shop;
     this.db = this.sfuminator.db;
-    this.cloud = this.sfuminator.cloud;
+    this.webApi = this.sfuminator.webApi;
     this.ticks = {
         getStockCount: {every: 1, c: 0},
         fetchActiveTradeCount: {every: 5, c: 0},
@@ -148,11 +148,16 @@ Stats.prototype.fetchActiveTradeCount = function () {
 
 Stats.prototype.fetchScannedProfiles = function () {
     var self = this;
-    this.cloud.send("query", "SELECT COUNT(*) as bp_count FROM backpacks", function (result) {
-        var count = result[0].bp_count;
-        if (count) {
-            self.stats.scanned_profiles = count;
-        }
+    this.webApi.backpacks.db.connect(function (connection) {
+        connection.query("SELECT COUNT(*) as bp_count FROM backpacks", function (result, empty) {
+            connection.release();
+            if (!empty) {
+                var count = result[0].bp_count;
+                if (count) {
+                    self.stats.scanned_profiles = count;
+                }
+            }
+        });
     });
 };
 

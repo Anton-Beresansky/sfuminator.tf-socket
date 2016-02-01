@@ -47,11 +47,6 @@ function BackpacksApi(db, steam, tf2, options) {
     this.tf2 = tf2;
     this.debug = ((options && options.hasOwnProperty("debug")) ? options.debug : false);
     events.EventEmitter.call(this);
-    this.on("debug", function (message) {
-        if (self.debug) {
-            console.log("> Backapcks: " + message);
-        }
-    });
 }
 
 require("util").inherits(BackpacksApi, events.EventEmitter);
@@ -80,7 +75,6 @@ BackpacksApi.prototype.fetch = function (steamid, callback, options) {
     this.emit("debug", "Fetching backpack...");
     var self = this;
     this.steam.getPlayerItems(steamid, function (response) {
-        console.log(JSON.stringify(response).slice(0,300));
         if (response.hasOwnProperty("result") && response.result.hasOwnProperty("status")) {
             var backpack = response.result;
             callback(self.mergeWithSchema(backpack));
@@ -125,7 +119,6 @@ BackpacksApi.prototype.readItems = function (owner, date, callback, connection, 
     if (options && options.hasOwnProperty("mode")) {
         mode = options.mode;
     }
-    console.log("Fetching backpack mode: " + mode);
     switch (mode) {
         case "full":
             this._getFullItems(owner, date, function (items) {

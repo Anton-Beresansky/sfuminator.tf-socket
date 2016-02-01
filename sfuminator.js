@@ -16,13 +16,13 @@ var Valve = require("./valve.js");
 
 /**
  * General purpose Sfuminator class
- * @param {Cloud} cloud
+ * @param {WebApi} webApi
  * @param {Database} db
  * @returns {Sfuminator}
  * @construct
  */
-function Sfuminator(cloud, db) {
-    this.cloud = cloud;
+function Sfuminator(webApi, db) {
+    this.webApi = webApi;
     this.db = db;
     this.log = new Logs({applicationName: "Sfuminator", color: "blue"});
     this.log.setLevel(0);
@@ -67,6 +67,7 @@ Sfuminator.prototype.init = function () {
         self.interrupts.startInternals();
         self.interrupts.startGlobals();
         self.bindInterrupts();
+        self.log.debug("Loading active trades");
         self.loadActiveTrades(function () {
             self.log.debug("-- Sfuminator socket is ready --", 0);
             self.emit("ready");

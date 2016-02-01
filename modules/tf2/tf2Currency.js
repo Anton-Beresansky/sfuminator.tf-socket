@@ -19,11 +19,11 @@ function TF2Currency() {
 }
 
 /**
- * Will apply cloud instance to the TF2 Currency instance
- * @param {Cloud} cloud
+ * Will apply webApi instance to the TF2 Currency instance
+ * @param {WebApi} webApi
  */
-TF2Currency.prototype.setCloud = function (cloud) {
-    this.cloud = cloud;
+TF2Currency.prototype.setWebApi = function (webApi) {
+    this.webApi = webApi;
 };
 
 /**
@@ -57,7 +57,7 @@ TF2Currency.prototype.get = function () {
 };
 
 /**
- * Will update currency through cloud connection
+ * Will update currency through webApi connection
  * @param {Function} [callback]
  * Callback will return TF2Currency.valueOf
  */
@@ -76,14 +76,12 @@ TF2Currency.prototype.update = function (callback) {
 };
 
 /**
- * Fetch current TF2 Currency from cloud
+ * Fetch current TF2 Currency from webApi
  * @param {type} [callback]
- * Callback will return currency fetched from cloud
+ * Callback will return currency fetched from webApi
  */
 TF2Currency.prototype.fetch = function (callback) {
-    this.cloud.send("getCurrency", {data: "something..."}, function (currency) {
-        if (typeof callback === "function") {
-            callback(currency);
-        }
-    });
+    if (typeof callback === "function") {
+        callback(this.webApi.tf2.currencies);
+    }
 };

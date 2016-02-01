@@ -19,7 +19,7 @@ var Search = require('./shop/shopSearch.js');
  */
 function Shop(sfuminator) {
     this.sfuminator = sfuminator;
-    this.cloud = this.sfuminator.cloud;
+    this.webApi = this.sfuminator.webApi;
     this.db = this.sfuminator.db;
     this.interrupts = this.sfuminator.interrupts;
     this.users = this.sfuminator.users;
@@ -27,7 +27,7 @@ function Shop(sfuminator) {
 
     this.ratio = new ShopRatio(this.db);
     this.tf2Currency = TF2Currency;
-    this.tf2Currency.setCloud(this.cloud);
+    this.tf2Currency.setWebApi(this.webApi);
     this.bots = this.getBots();
     this.inventory = new ShopInventory(this);
     /**
@@ -72,9 +72,13 @@ require("util").inherits(Shop, events.EventEmitter);
  */
 Shop.prototype.init = function () {
     var self = this;
+    self.log.debug("Updating shop ratios");
     self.ratio.updateHats(function () {
+        self.log.debug("Updating currency");
         self.tf2Currency.update(function () {
+            self.log.debug("Loading reservations");
             self.reservations.load(function () {
+                self.log.debug("Loading shop ids");
                 self.inventory.ids.load(function () {
                     self.log.debug("Loading up inventory...");
                     self.inventory.update(function () {
@@ -326,7 +330,7 @@ Shop.prototype._getActivePartnersBotComponentQuery = function () {
     for (var i = 0; i < this.bots.length; i += 1) {
         query += "'" + this.bots[i].getSteamid() + "',";
     }
-    return query.slice(0,-1) + ")";
+    return query.slice(0, -1) + ")";
 };
 
 Shop.prototype._manageOnceSectionItemsUpdatedHandlers = function (newItems) {

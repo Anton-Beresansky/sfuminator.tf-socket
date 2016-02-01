@@ -18,8 +18,8 @@ function User(steamid, sfuminator) {
     this.sfuminator = sfuminator;
     this.shop = this.sfuminator.shop;
     this.db = this.sfuminator.db;
-    this.cloud = this.sfuminator.cloud;
-    this.tf2Backpack = new Backpack(steamid, SteamGames.TF2, this.cloud);
+    this.webApi = this.sfuminator.webApi;
+    this.tf2Backpack = new Backpack(steamid, SteamGames.TF2, this.webApi);
     this.log = new Logs({applicationName: "User " + JSON.stringify(steamid), color: "cyan"});
     this.decayTime = 1000 * 60 * 60 * 8; // 8hrs
     this.last_use_date = new Date();
@@ -199,11 +199,11 @@ User.prototype.update = function () {
 };
 
 /**
- * Fetch user data set from cloud
+ * Fetch user data set from webApi
  * @param {Function} callback Will pass steam web api response
  */
 User.prototype.fetchInfo = function (callback) {
-    this.cloud.send("getPlayerSummaries", {steamid: this.steamid}, function (result) {
+    this.webApi.steamApi.getPlayerSummaries(this.steamid, function (result) {
         if (result && result.hasOwnProperty("players") && result.players.length > 0) {
             callback(result.players);
         } else {

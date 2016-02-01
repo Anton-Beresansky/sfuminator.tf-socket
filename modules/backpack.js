@@ -10,12 +10,12 @@ var SteamGames = require('../lib/steamGames.js');
  * Generic purpose Steam Backpack library
  * @param {String} steamid
  * @param {SteamGame} game
- * @param {Cloud} cloud Cloud connection
+ * @param {WebApi} webApi webApi connection
  * @returns {Backpack}
  * @construct
  */
-function Backpack(steamid, game, cloud) {
-    this.cloud = cloud;
+function Backpack(steamid, game, webApi) {
+    this.webApi = webApi;
     this.log = new Logs({applicationName: "Backpack " + steamid});
     this.game = game;
     this.owner = steamid;
@@ -79,7 +79,7 @@ Backpack.prototype.getCached = function (callback) {
 Backpack.prototype.get = function (callback) {
     var self = this;
     this.fetching = true;
-    this.cloud.send("getBackpack", {steamid: this.getOwner(), game: this.game.getID()}, function (result) {
+    this.webApi.getBackpack({steamid: this.getOwner(), game: this.game.getID()}, function (result) {
         var backpackWillChange = self._willChange(result.items);
         for (var i in result) {
             self[i] = result[i];
@@ -269,7 +269,7 @@ Backpack.prototype.getErrorMessage = function () {
 
 /**
  * Encode backpack fetching error
- * @param {Object} newBackpack Result from cloud fetching
+ * @param {Object} newBackpack Result from webApi fetching
  */
 Backpack.prototype._encodeFetchingError = function (newBackpack) {
     this.error = false;
