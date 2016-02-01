@@ -50,16 +50,22 @@ WebApi.prototype.getBackpack = function (data, answer) {
         if (steamBackpack.hasOwnProperty("result") && steamBackpack.result === "error") {
             self.backpacks.read(data.steamid, function (dbBackpack) {
                 if (dbBackpack.hasOwnProperty("result") && dbBackpack.result === "error") {
-                    answer(steamBackpack);
+                    if (typeof answer === "function") {
+                        answer(steamBackpack);
+                    }
                 } else {
-                    answer(dbBackpack);
+                    if (typeof answer === "function") {
+                        answer(dbBackpack);
+                    }
                 }
                 answer = null;
                 steamBackpack = null;
                 dbBackpack = null;
             });
         } else {
-            answer(steamBackpack);
+            if (typeof answer === "function") {
+                answer(steamBackpack);
+            }
             answer = null;
             steamBackpack = null;
         }
