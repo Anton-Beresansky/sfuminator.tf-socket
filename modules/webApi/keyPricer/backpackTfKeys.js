@@ -1,7 +1,7 @@
 module.exports = BackpackTFKeys;
 
-var request = require("../../../node_modules/request/index.js");
-var cheerio = require("../../../node_modules/cheerio/index.js");
+var request = require("request");
+var cheerio = require("cheerio");
 var Logs = require("../../../lib/logs.js");
 
 function BackpackTFKeys() {
