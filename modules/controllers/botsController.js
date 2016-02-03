@@ -26,6 +26,7 @@ function BotsController(sfuminator) {
     this.tradeBots = [];
 
     this.preSmeltedQuantity = 12;
+    this.busyDistributionManagerTimeoutInterval = 300000; //5 minutes
 
     /**
      * @type {SteamTradeErrorSolver}
@@ -191,12 +192,25 @@ BotsController.prototype.preSmeltMetal = function () {
 };
 
 BotsController.prototype.manageItemsDistribution = function () {
+    var compensationSpaceLimitPercentile = 0.95;
+    var compensationMarginPercentile = 0.15;
+
+    var self = this;
     if (this.managingDistribution) {
+        this.log.test("Busy distribution manager. Skipping.");
+        if (!this.busyDistributionManagerTimeout) {
+            this.busyDistributionManagerTimeout = setTimeout(function () {
+                if (self.managingDistribution) {
+                    self.log.warning("Distribution manager didn't finish yet, resetting busy status");
+                    self.managingDistribution = false;
+                }
+            }, this.busyDistributionManagerTimeoutInterval);
+        }
         return;
     }
+    clearTimeout(this.busyDistributionManagerTimeout);
+    this.busyDistributionManagerTimeout = null;
     this.managingDistribution = true;
-    var compensationSpaceLimitPercentile = 0.95;
-    var compensationMarginPercentile = 0.2;
     var distribution = [], compensations = [];
     var totalRefinedsCount = 0;
     var i;
@@ -237,7 +251,6 @@ BotsController.prototype.manageItemsDistribution = function () {
         }
     }
 
-    var self = this;
     i = 0;
     function compensate(index) {
         var toCompensate = compensations[index];
