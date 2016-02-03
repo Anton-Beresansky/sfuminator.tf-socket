@@ -34,15 +34,24 @@ KeyPricer.prototype.fetch = function (callback) {
     var self = this;
     this.tradeTFKeys.load(function () {
         self.backpackTFKeys.load(function () {
+            self.sellers = [];
+            self.buyers = [];
             self.injectSellers(self.backpackTFKeys.getSellers());
             self.injectBuyers(self.backpackTFKeys.getBuyers());
             self.injectSellers(self.tradeTFKeys.getSellers());
             self.injectBuyers(self.tradeTFKeys.getBuyers());
             if (typeof callback === "function") {
-                callback(self.get());
+                callback();
             }
         });
     });
+};
+
+KeyPricer.prototype.reset = function () {
+    this.sellers = [];
+    this.buyers = [];
+    this.tradeTFKeys.reset();
+    this.backpackTFKeys.reset();
 };
 
 /**

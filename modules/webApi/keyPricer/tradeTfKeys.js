@@ -11,6 +11,7 @@ function TradeTFKeys() {
     this.sellers = [];
     this.buyers = [];
     this.log = new Logs({applicationName: "TradeTFKeys", dim: true});
+    this.log.setLevel(2);
 }
 
 TradeTFKeys.prototype.getSellers = function () {
@@ -47,6 +48,11 @@ TradeTFKeys.prototype.load = function (callback) {
             }
         });
     });
+};
+
+TradeTFKeys.prototype.reset = function () {
+    this.sellers = [];
+    this.buyers = [];
 };
 
 TradeTFKeys.prototype.parsePage = function (who, callback) {
