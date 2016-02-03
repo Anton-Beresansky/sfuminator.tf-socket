@@ -8,7 +8,7 @@ function BackpackTFKeys() {
     this._pageToFetch = 5;
     this.sellers = [];
     this.buyers = [];
-    this.log = new Logs("BackpackTFKeys");
+    this.log = new Logs({applicationName: "BackpackTFKeys"});
 }
 
 BackpackTFKeys.prototype.getSellers = function () {
@@ -40,6 +40,11 @@ BackpackTFKeys.prototype.load = function (callback) {
         self.injectTrades(trades);
         callback();
     });
+};
+
+BackpackTFKeys.prototype.reset = function () {
+    this.sellers = [];
+    this.buyers = [];
 };
 
 BackpackTFKeys.prototype.injectTrades = function (trades) {
@@ -84,7 +89,6 @@ BackpackTFKeys.prototype.parsePages = function (callback) {
 };
 
 BackpackTFKeys.prototype.fetch = function (pageNumber, callback) {
-    this.log.debug("Fetching page " + pageNumber);
     request('http://backpack.tf/classifieds?item=Mann%20Co.%20Supply%20Crate%20Key&quality=6&tradable=1&craftable=1&page=' + pageNumber, function (error, response, body) {
         if (!error && response.statusCode === 200) {
             callback(body);

@@ -29,7 +29,7 @@ function Sfuminator(webApi, db) {
     this.admins = CFG.getAdmins();
     this.interrupts = new Interrupts([
         {name: "updatePrices", delay: 60000, tag: "internal"},
-        {name: "updateKeyPrice", delay: 15000, tag: "global"},
+        //{name: "updateKeyPrice", delay: 60000, tag: "global"},
         {name: "updateShopInventory", delay: 4000, tag: "internal"},
         {name: "updateActiveTrades", delay: 1500, tag: "internal"},
         {name: "updateStats", delay: 1000, tag: "global"},
@@ -88,7 +88,8 @@ Sfuminator.prototype.bindInterrupts = function () {
     });
     this.interrupts.on("updateKeyPrice", function () {
         self.webApi.getKeyPrice(function () {
-            self.log.debug("Key pricer: " + self.webApi.keyPricer.get().toMetal() + "ref ");
+            var myPrice = self.webApi.keyPricer.get();
+            self.log.debug("Key price: " + myPrice.toMetal() + "ref or scrap: " + myPrice.toScrap() + " well keys.. " + myPrice.toKeys());
         });
     });
     this.interrupts.on("updateStats", function () {
