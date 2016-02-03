@@ -1,5 +1,10 @@
 module.exports = KeyPricer;
 
+var Logs = require("../../lib/logs.js");
+var BackpackTFKeys = require("./keyPricer/backpackTfKeys.js");
+var TradeTFKeys = require("./keyPricer/tradeTfKeys.js");
+var Price = require("../price.js");
+
 /*
  * Trade list format:
  * [
@@ -11,16 +16,41 @@ module.exports = KeyPricer;
  * 
  */
 
-
+/**
+ * @constructor
+ */
 function KeyPricer() {
     this.sellers = [];
     this.buyers = [];
     this.sell_price = 0;
     this.buy_price = 0;
+
+    this.backpackTFKeys = new BackpackTFKeys();
+    this.tradeTFKeys = new TradeTFKeys();
+    this.log = new Logs({applicationName: "Key Pricer", color: "cyan", dim: true});
 }
 
+KeyPricer.prototype.fetch = function (callback) {
+    var self = this;
+    this.tradeTFKeys.load(function () {
+        self.backpackTFKeys.load(function () {
+            self.injectSellers(self.backpackTFKeys.getSellers());
+            self.injectBuyers(self.backpackTFKeys.getBuyers());
+            self.injectSellers(self.tradeTFKeys.getSellers());
+            self.injectBuyers(self.tradeTFKeys.getBuyers());
+            if (typeof callback === "function") {
+                callback(self.get());
+            }
+        });
+    });
+};
+
+/**
+ * @returns {Price}
+ */
 KeyPricer.prototype.get = function () {
-    return {sold_for: this.sell_price, bought_for: this.buy_price};
+    this.log.debug("Sold for: " + this.sell_price + " ~ Bought for: " + this.buy_price);
+    return new Price((this.sell_price + this.buy_price) / 2, Price.REFINED_METAL);
 };
 
 KeyPricer.prototype.makeAverage = function (trades) {

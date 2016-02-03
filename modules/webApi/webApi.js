@@ -2,6 +2,7 @@ module.exports = WebApi;
 
 var BackpacksAPI = require("./backpacksApi.js");
 var TF2API = require("./tf2Api.js");
+var KeyPricer = require("./keyPricer.js");
 
 /**
  * @param {Database} db_items
@@ -22,6 +23,11 @@ function WebApi(db_items, steamApi) {
      * @type {BackpacksApi}
      */
     this.backpacks = new BackpacksAPI(this.db_items, this.steamApi, this.tf2, {debug: true});
+    /**
+     * @type {KeyPricer}
+     */
+    this.keyPricer = new KeyPricer();
+
     this.onceReadyCallbacks = [];
     this.ready = false;
     this._bindHandlers();
@@ -42,6 +48,14 @@ WebApi.prototype.onceReady = function (callback) {
     } else {
         this.onceReadyCallbacks.push(callback);
     }
+};
+
+WebApi.prototype.getKeyPrice = function (callback) {
+    this.keyPricer.fetch(function (price) {
+        if (typeof callback === "function") {
+            callback(price);
+        }
+    })
 };
 
 WebApi.prototype.getBackpack = function (data, answer) {
