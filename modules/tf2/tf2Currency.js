@@ -10,12 +10,6 @@ module.exports = new TF2Currency();
 function TF2Currency() {
     this.log = new Logs({applicationName: "TF2 Currency", color: "blue"});
     this._currency = {};
-    this.priceInits = {
-        Scrap: "scrap",
-        Metal: "metal",
-        Keys: "keys",
-        Usd: "usd"
-    }
 }
 
 /**

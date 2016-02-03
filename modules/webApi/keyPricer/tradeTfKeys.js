@@ -1,13 +1,16 @@
 module.exports = TradeTFKeys;
 
-var request = require("../../../node_modules/request/index.js");
-var cheerio = require("../../../node_modules/cheerio/index.js");
+var request = require("request");
+var cheerio = require("cheerio");
 var Logs = require("../../../lib/logs.js");
 
+/**
+ * @constructor
+ */
 function TradeTFKeys() {
     this.sellers = [];
     this.buyers = [];
-    this.log = new Logs("TradeTFKeys");
+    this.log = new Logs({applicationName: "TradeTFKeys", dim: true});
 }
 
 TradeTFKeys.prototype.getSellers = function () {

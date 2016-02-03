@@ -9,6 +9,7 @@ var TF2Currency = require("./tf2/tf2Currency.js");
  * @param {String} [initCurrency]
  * Defines currency of the given price, can be: scrap, metal, usd, keys, earbuds (obsolete)
  * @returns {Price}
+ * @construct
  */
 function Price(price, initCurrency) {
     this.absolute_price = price;
@@ -22,6 +23,11 @@ function Price(price, initCurrency) {
         this.absolute_price = price * this.currency[initCurrency].usd;
     }
 }
+
+Price.SCRAP_METAL = "scrap";
+Price.REFINED_METAL = "metal";
+Price.KEYS = "keys";
+Price.USD = "usd";
 
 /**
  * Get price converted in USD
