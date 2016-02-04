@@ -54,7 +54,7 @@ Price.prototype.toMetal = function () {
  */
 Price.prototype.toKeys = function () {
     if (!this._keyPrice) {
-        this._keyPrice = this.absolute_pirce * this.currency.usd.keys;
+        this._keyPrice = this.absolute_price * this.currency.usd.keys;
     }
     return this._keyPrice;
 };

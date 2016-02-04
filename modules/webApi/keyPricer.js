@@ -32,6 +32,7 @@ function KeyPricer() {
 
 KeyPricer.prototype.fetch = function (callback) {
     var self = this;
+    this.reset();
     this.tradeTFKeys.load(function () {
         self.backpackTFKeys.load(function () {
             self.sellers = [];
