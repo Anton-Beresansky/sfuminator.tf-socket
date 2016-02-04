@@ -29,7 +29,7 @@ function Sfuminator(webApi, db) {
     this.admins = CFG.getAdmins();
     this.interrupts = new Interrupts([
         {name: "updatePrices", delay: 60000, tag: "internal"},
-        //{name: "updateKeyPrice", delay: 60000, tag: "global"},
+        {name: "updateKeyPrice", delay: 10000000, tag: "global"},
         {name: "updateShopInventory", delay: 4000, tag: "internal"},
         {name: "updateActiveTrades", delay: 1500, tag: "internal"},
         {name: "updateStats", delay: 1000, tag: "global"},
