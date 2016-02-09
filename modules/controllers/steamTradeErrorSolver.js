@@ -30,7 +30,7 @@ SteamTradeErrorSolver.prototype.handle = function (steamTradeOffer, steamTradeEr
 
     if (errorCode === SteamTradeError.ERROR.MAX_SENT_OFFER_LIMIT_REACHED) {
 
-    } else if (errorCode === SteamTradeError.ERROR.NO_WEB_LOGIN) {
+    } else if (errorCode === SteamTradeError.ERROR.NO_WEB_LOGIN || errorCode === SteamTradeError.ERROR.SESSION_EXPIRED) {
         this.holdTrade(steamTradeOffer);
         if (!this.isCodeBeingSolved(errorCode)) {
             this.alertCodeErrorSolvingFor(errorCode);
