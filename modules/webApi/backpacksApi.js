@@ -334,7 +334,13 @@ BackpacksApi.prototype.mergeWithSchema = function (backpack) {
         var schema = this.tf2.schema;
         for (var i = 0; i < items.length; i += 1) {
             var schemaItem = schema[items[i].defindex];
-            items[i] = this.mergeItemWithSchemaItem(items[i], schemaItem);
+            if(schemaItem) {
+                items[i] = this.mergeItemWithSchemaItem(items[i], schemaItem);
+            } else {
+                items.splice(i, 1);
+                i -= 1;
+            }
+
         }
     }
     return backpack;
