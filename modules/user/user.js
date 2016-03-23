@@ -204,8 +204,8 @@ User.prototype.update = function () {
  */
 User.prototype.fetchInfo = function (callback) {
     this.webApi.steamApi.getPlayerSummaries(this.steamid, function (result) {
-        if (result && result.hasOwnProperty("players") && result.players.length > 0) {
-            callback(result.players);
+        if (result && result.hasOwnProperty("response") && result.response.hasOwnProperty("players") && result.response.players.length > 0) {
+            callback(result.response.players);
         } else {
             callback([]);
         }
