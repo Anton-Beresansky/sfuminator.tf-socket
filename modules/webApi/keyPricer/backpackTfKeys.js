@@ -78,9 +78,9 @@ BackpackTFKeys.prototype.parsePages = function (callback) {
                 var $listing = $($listings[i]);
                 var listingID = $listing.attr("id");
                 var listing = $listing.find(".item-singular > li");
-                var userID = listing.attr("data-listing-steamid");
-                var refined_price = parseFloat(listing.attr("data-listing-price").slice(0, -4));
-                var intent = parseInt(listing.attr("data-listing-intent")) ? "sell" : "buy";
+                var userID = listing.attr("data-listing_account_id");
+                var refined_price = parseFloat(listing.attr("data-listing_price").slice(0, -4));
+                var intent = parseInt(listing.attr("data-listing_intent")) ? "sell" : "buy";
                 listings[listingID] = {steamid: userID, metal_price: refined_price, intent: intent};
             }
             go();

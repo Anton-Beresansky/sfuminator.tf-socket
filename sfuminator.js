@@ -87,10 +87,14 @@ Sfuminator.prototype.bindInterrupts = function () {
         self.shop.ratio.updateHats();
     });
     this.interrupts.on("updateKeyPrice", function () {
-        self.webApi.getKeyPrice(function () {
-            var myPrice = self.webApi.keyPricer.get();
-            self.log.debug("Key price: " + myPrice.toMetal() + "ref or scrap: " + myPrice.toScrap() + " well keys.. " + myPrice.toKeys());
-        });
+        try {
+            self.webApi.getKeyPrice(function () {
+                var myPrice = self.webApi.keyPricer.get();
+                self.log.debug("Key price: " + myPrice.toMetal() + "ref or scrap: " + myPrice.toScrap() + " well keys.. " + myPrice.toKeys());
+            });
+        } catch (e) {
+            self.log.error("Key pricing procedure is not working anymore. Most likely HTML has been changed somewhere... " + e);
+        }
     });
     this.interrupts.on("updateStats", function () {
         self.stats.update();
