@@ -1,5 +1,3 @@
-module.exports = new CFG();
-
 var SENTRYFILES_PATH = './sentryFiles/';
 
 var fs = require("fs");
@@ -7,15 +5,19 @@ var crypto = require("crypto");
 var SteamTotp = require('steam-totp');
 var Logs = require("./lib/logs.js");
 
+module.exports = new CFG();
+
 /**
  * Class for socket configuration and loading cfg
  * @class CFG
  * @constructor
  */
 function CFG() {
+    this.log = new Logs({applicationName: "CFG", color: "red", dim: true});
     try {
         var config = JSON.parse(require("fs").readFileSync('./socket_config.json'));
     } catch (e) {
+        this.log.error("Couldn't read socket config: " + e);
         config = JSON.parse(require("fs").readFileSync('../socket_config.json'));
     }
     for (var prop in config) {
