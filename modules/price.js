@@ -43,7 +43,8 @@ Price.prototype.toUSD = function () {
  */
 Price.prototype.toMetal = function () {
     if (!this._metalPrice) {
-        this._metalPrice = parseInt(this.absolute_price * this.currency.usd.metal * 100) / 100;
+        this._metalPrice = parseInt(this.absolute_price * this.currency.usd.metal * 100 + 0.1) / 100;
+        console.log(this._metalPrice);
     }
     return this._metalPrice;
 };
