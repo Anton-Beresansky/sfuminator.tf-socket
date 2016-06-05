@@ -97,7 +97,8 @@ Stats.prototype.getBotsStock = function () {
         bots_stock[owner].total_slots = bot.getUser().getTF2Backpack().getTotalSlots();
         bots_stock[owner].steamid = owner;
         bots_stock[owner].username = bot.getUser().getName();
-        bots_stock[owner].inEscrow = bot.steamClient.getItemsInEscrow().getCounted()
+        bots_stock[owner].online = bot.steamClient.isLogged();
+        bots_stock[owner].inEscrow = bot.steamClient.getItemsInEscrow().getCounted();
     }
     this.stats["bots_stock"] = bots_stock;
 };
