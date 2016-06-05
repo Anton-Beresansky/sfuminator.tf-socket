@@ -255,6 +255,9 @@ Sfuminator.prototype.onAction = function (request, callback) {
         case "getStats":
             callback(this.stats.get(parseInt(data.last_update_date)));
             break;
+        case "verifyTradeUrlToken":
+            this.verifyTradeOfferToken(request.getRequesterSteamid(), data.token, callback);
+            break;
         case "i_ve_been_here":
             var justForValve = new Valve(request);
             justForValve.process(callback);
@@ -394,6 +397,35 @@ Sfuminator.prototype.cancelTrade = function (request, callback) {
         callback(this.responses.tradeCancelled);
     } else {
         callback(this.responses.notInTrade);
+    }
+};
+
+Sfuminator.prototype.verifyTradeOfferToken = function (steamid, token, callback) {
+    token = token.match(/[a-zA-Z0-9_-]*/i)[0]; //Prevent sneaky users
+    var self = this;
+    var unrelatedBot = this.botsController.getUnrelatedAvailableBot(steamid);
+    if (unrelatedBot) {
+        function check() {
+            unrelatedBot.steamClient.tradeOffersManager.getEscrowDuration(steamid, token, function (error) {
+                if (error) {
+                    callback(self.responses.wrongTradeToken);
+                } else {
+                    callback(self.responses.success);
+                }
+            });
+        }
+
+        if (unrelatedBot.steamClient.isFriend(steamid)) {
+            setTimeout(function () {
+                //Be sure that bot gets unrelated also for steam
+                //Friend removal may take some time, this procedure should grant 99.99% reliability.
+                check();
+            }, 4000);
+        } else {
+            check();
+        }
+    } else {
+        callback(this.responses.cannotVerifyTradeToken);
     }
 };
 

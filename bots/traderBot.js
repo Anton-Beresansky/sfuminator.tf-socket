@@ -91,6 +91,7 @@ TraderBot.prototype.getUser = function () {
     return this.user;
 };
 
+//Available to do stuff...
 TraderBot.prototype.isAvailable = function () {
     return this.steamClient.isLogged() && this.available;
     //&& isWebLogged ??
