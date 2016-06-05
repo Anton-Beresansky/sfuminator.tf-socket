@@ -115,20 +115,56 @@ BotsController.prototype.startOffNewShopTrade = function (newShopTrade) {
 };
 
 /**
+ * @returns {TraderBot[]}
+ */
+BotsController.prototype.getAvailableBots = function () {
+    var bots = [];
+    for (var i = 0; i < this.tradeBots.length; i += 1) {
+        if (this.tradeBots[i].isAvailable()) {
+            bots.push(this.tradeBots[i]);
+        }
+    }
+    return bots;
+};
+
+/**
  * @returns {TraderBot|Boolean}
  */
 BotsController.prototype.getBestAvailableBot = function () {
     var bestBot = false;
-    for (var i = 0; i < this.tradeBots.length; i += 1) {
-        if (this.tradeBots[i].isAvailable()) {
-            if (!(bestBot instanceof TraderBot)) {
-                bestBot = this.tradeBots[i];
-            } else if (this.tradeBots[i].getUser().getTF2Backpack().getCount() < bestBot.getUser().getTF2Backpack().getCount()) {
-                bestBot = this.tradeBots[i];
-            }
+    var availableBots = this.getAvailableBots();
+    for (var i = 0; i < availableBots.length; i += 1) {
+        if (!(bestBot instanceof TraderBot)) {
+            bestBot = availableBots[i];
+        } else if (availableBots[i].getUser().getTF2Backpack().getCount() < bestBot.getUser().getTF2Backpack().getCount()) {
+            bestBot = availableBots[i];
         }
     }
     return bestBot;
+};
+
+/**
+ * @param steamid
+ * @returns {TraderBot|Boolean}
+ */
+BotsController.prototype.getUnrelatedAvailableBot = function (steamid) {
+    var bots = this.getAvailableBots();
+    if (bots.length > 0) {
+        var selectedBot;
+        for (var i = 0; i < bots.length; i += 1) {
+            if (!bots[i].steamClient.isFriend(steamid)) {
+                selectedBot = bots[i];
+                break;
+            }
+        }
+        if (!selectedBot) {
+            selectedBot = bots[0];
+            bots[0].steamClient.removeFriend(steamid);
+        }
+        return selectedBot;
+    } else {
+        return false;
+    }
 };
 
 /**

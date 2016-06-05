@@ -9,19 +9,36 @@ module.exports = AjaxResponses;
 function AjaxResponses(sfuminator) {
     //Result can be: "error", "warning", "success"
     this.sfuminator = sfuminator;
+    this.success = {result: "success", message: "Success", code: "success"};
     this.error = {result: "error", message: "Error", code: "error"};
     this.methodNotRecognised = {result: "error", message: "Method not recognised", code: "method_not_recognised"};
     this.notLogged = {result: "error", message: "You are not logged in", code: "not_logged"};
     this.noItems = {result: "error", message: "No items selected", code: "no_items_selected"};
-    this.itemsSelectedNotFound = {result: "error", message: "One or more selected items were not found", code: "no_items_found"};
-    this.itemIsAlreadyReserved = {result: "error", message: "One or more selected items have been already reserved", code: "items_already_reserved"};
+    this.itemsSelectedNotFound = {
+        result: "error",
+        message: "One or more selected items were not found",
+        code: "no_items_found"
+    };
+    this.itemIsAlreadyReserved = {
+        result: "error",
+        message: "One or more selected items have been already reserved",
+        code: "items_already_reserved"
+    };
     this.sectionNotFound = {result: "error", message: "Shop section not found", code: "section_not_found"};
     this.itemCantBeSold = {result: "error", message: "Selected item can't be sold", code: "cant_sell_item"};
     this.alreadyInTrade = {result: "error", message: "You are already in trade", code: "already_in_trade"};
     this.notInTrade = {result: "error", message: "You are not in trade", code: "not_in_trade"};
-    this.notEnoughCurrency = {result: "error", message: "Sorry, but it seems you don't have enough metal", code: "not_enough_metal"};
+    this.notEnoughCurrency = {
+        result: "error",
+        message: "Sorry, but it seems you don't have enough metal",
+        code: "not_enough_metal"
+    };
     this.botIsNotAvailable = {result: "error", message: "Sorry, bot can't trade right now", code: "bot_cannot_trade"};
-    this.cannotGatherItems = {result: "error", message: "Sorry, there was a problem when gathering items from bots, please retry later", code: "cannot_transfer"};
+    this.cannotGatherItems = {
+        result: "error",
+        message: "Sorry, there was a problem when gathering items from bots, please retry later",
+        code: "cannot_transfer"
+    };
     this.denyManualMultiItems = {
         result: "error",
         message: "Sorry, in manual trade you can only sell or only buy items",
@@ -66,11 +83,21 @@ function AjaxResponses(sfuminator) {
                 code: "bot_maintenance"
             };
         } else {
-            return {result: "error", message: "Sorry, trading is disabled, come back in a few minutes.", code: "trading_disabled"};
+            return {
+                result: "error",
+                message: "Sorry, trading is disabled, come back in a few minutes.",
+                code: "trading_disabled"
+            };
         }
     };
-    this.shopTrade_declined = {result: "warning", message: "You declined the trade offer"};
-    this.shopTrade_afk = {result: "warning", message: "Sorry, trade took too much to accept"};
+    this.shopTrade_declined = {result: "warning", message: "You declined the trade offer", code: "trade_declined"};
+    this.shopTrade_afk = {result: "warning", message: "Sorry, trade took too much to accept", code: "trade_afk"};
+    this.wrongTradeToken = {result: "error", message: "Given trade url is not valid", code: "wrong_trade_token"};
+    this.cannotVerifyTradeToken = {
+        result: "error",
+        message: "Sorry, we were unable to verify your trade url, please retry later",
+        code: "cannot_verify_trade_token"
+    };
 }
 
 /**
