@@ -410,8 +410,9 @@ Sfuminator.prototype.clientCheckTradeOfferToken = function (steamid, token, call
     if (user.getTradeToken() === token) {
         callback(self.responses.success);
     } else if (this.botsController.getUnrelatedAvailableBot(steamid)) {
-        this.verifyTradeOfferToken(steamid, token, function (savedToken) {
-            if (savedToken) {
+        this.verifyTradeOfferToken(steamid, token, function (tokenToSave) {
+            if (tokenToSave) {
+                self.log.debug("Saving trade token " + tokenToSave + " for steamid " + steamid);
                 callback(self.responses.success);
                 self.users.get(steamid).setTradeToken(token);
             } else {
