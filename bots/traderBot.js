@@ -69,11 +69,16 @@ TraderBot.prototype.onFirstLogin = function () {
     });
     this.interactions.on('postProfileComment', function (steamid, message) {
         self.log.debug("Leaving a comment on " + steamid + " profile");
-        self.steamClient.getFriend(steamid).postProfileComment(message, function (success) {
-            if (!success) {
-                self.steamClient.sendMessage(steamid, "There was a problem when leaving the comment, I guess we will try this later, sorry :(");
-            }
-        });
+        if (self.steamClient.isFriend(steamid)) {
+            self.steamClient.getFriend(steamid).postProfileComment(message, function (success) {
+                if (!success) {
+                    self.steamClient.sendMessage(steamid, "There was a problem when leaving the comment, I guess we will try this later, sorry :(");
+                }
+            });
+        } else {
+            //If not friend, will try posting and hoping he has public comments
+            self.steamClient.postProfileComment(steamid, message);
+        }
     });
 
     this.steamClient.setAutomaticMobileTradingConfirmation();
@@ -143,7 +148,7 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
     var sfuminatorUser = this.sfuminator.users.get(partnerSteamid);
     this.assignShopTrade(shopTrade);
     shopTrade.setAsSending();
-    if (!shopTrade.hasSteamToken() && !this.steamClient.isFriend(partnerSteamid)) {
+    if (!shopTrade.isUsingTradeOfferToken() && !this.steamClient.isFriend(partnerSteamid)) {
         this.steamClient.addFriend(partnerSteamid);
         shopTrade.setAsWaitingForFriendRelation();
         shopTrade.on('friendRequestTimeout', function () {
@@ -165,8 +170,8 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
             }
         });
     } else {
+        this.log.debug("Using trade token: " + shopTrade.getPartner().getTradeToken());
         shopTrade.onceItemsAreReady(function () {
-            self.steamClient.getFriend(partnerSteamid).sendMessage(self.interactions.getMessage("tradeOffer_hello", sfuminatorUser));
             self.finalizeSendShopTrade(shopTrade);
         });
     }
@@ -195,12 +200,20 @@ TraderBot.prototype.createSteamTrade = function (shopTrade) {
 
     steamTrade.setAutomaticAFKCheck();
     steamTrade.setMessage("Here you go ;)");
-    if (shopTrade.hasSteamToken()) {
-        steamTrade.setToken(shopTrade.getSteamToken());
+    if (shopTrade.getPartner().hasTradeToken()) {
+        steamTrade.setToken(shopTrade.getPartner().getTradeToken());
     }
 
     shopTrade.injectSteamTrade(steamTrade);
     return steamTrade;
+};
+
+TraderBot.prototype.sendTradingMessage = function (shopTrade, message) {
+    var partnerSteamid = shopTrade.getPartner().getSteamid();
+    if (this.steamClient.isFriend(partnerSteamid) && !shopTrade.isUsingTradeOfferToken()) {
+        var friend = this.steamClient.getFriend(partnerSteamid);
+        friend.sendMessage(message);
+    }
 };
 
 /**
@@ -210,7 +223,6 @@ TraderBot.prototype.createSteamTrade = function (shopTrade) {
 TraderBot.prototype._bindShopTrade = function (shopTrade) {
     var self = this;
     var partnerSteamid = shopTrade.getPartner().getSteamid();
-    var partner = this.steamClient.getFriend(partnerSteamid);
     var sfuminatorUser = this.sfuminator.users.get(partnerSteamid);
     var steamTradeOffer = shopTrade.getSteamTrade();
     steamTradeOffer.on("handleTradeErrorSolving", function (error) {
@@ -236,42 +248,45 @@ TraderBot.prototype._bindShopTrade = function (shopTrade) {
         shopTrade.cancel(steamTradeError.getCode());
         self.log.warning("Error sending offer: " + steamTradeError.getCode());
         if (steamTradeError.getCode() === SteamTradeError.ERROR.NOT_AVAILABLE_FOR_TRADE) {
-            partner.sendMessage(self.interactions.message_senteces.steamTradeError.not_available_for_trade);
+            self.sendTradingMessage(shopTrade, self.interactions.message_senteces.steamTradeError.not_available_for_trade);
         } else {
-            partner.sendMessage(self.interactions.message_senteces.steamTradeError.generic + steamTradeError.getMessage());
+            self.sendTradingMessage(shopTrade, self.interactions.message_senteces.steamTradeError.generic + steamTradeError.getMessage());
             logSteamError(shopTrade, steamTradeError);
         }
     });
     steamTradeOffer.on("tradeSent", function (tradeOfferID) {
         shopTrade.setAsSent(tradeOfferID);
         self.log.debug("Offer to " + partnerSteamid + " has been sent. (" + tradeOfferID + ")");
-        partner.sendMessage(self.interactions.getMessage("tradeOffer_sent", sfuminatorUser)
+        self.sendTradingMessage(shopTrade, self.interactions.getMessage("tradeOffer_sent", sfuminatorUser)
             + " http://steamcommunity.com/tradeoffer/" + tradeOfferID + "\n"
             + "It will be available for the next " + parseInt(steamTradeOffer.afkTimeoutInterval / 60000) + " minutes");
     });
     steamTradeOffer.on("partnerDeclined", function () {
         shopTrade.cancel(TradeConstants.statusInfo.closed.DECLINED);
         self.log.debug("Offer to " + partnerSteamid + " has been declined");
-        partner.sendMessage(self.interactions.getMessage("tradeOffer_declined", sfuminatorUser));
+        self.sendTradingMessage(shopTrade, self.interactions.getMessage("tradeOffer_declined", sfuminatorUser));
     });
     steamTradeOffer.on("cancelled", function () {
         self.log.debug("Offer to " + partnerSteamid + " has been cancelled");
         if (shopTrade.getStatusInfo() === TradeConstants.statusInfo.closed.CANCELLED) {
-            partner.sendMessage(self.interactions.getMessage("tradeOffer_cancel", sfuminatorUser));
+            self.sendTradingMessage(shopTrade, self.interactions.getMessage("tradeOffer_cancel", sfuminatorUser));
         }
     });
     steamTradeOffer.on("partnerIsAFK", function () {
         shopTrade.cancel(TradeConstants.statusInfo.closed.AFK);
         self.log.debug("Offer to " + partnerSteamid + " took too long to accept, partner is AFK");
-        partner.sendMessage(self.interactions.getMessage("tradeOffer_afk_kick", sfuminatorUser));
+        self.sendTradingMessage(shopTrade, self.interactions.getMessage("tradeOffer_afk_kick", sfuminatorUser));
     });
     steamTradeOffer.on("partnerAccepted", function (escrow) {
         shopTrade.setAsAccepted();
         self.log.debug("Offer to " + partnerSteamid + " has been accepted");
         if (escrow) {
-            partner.sendMessage(self.interactions.getMessage("trade_complete_escrow", sfuminatorUser));
+            self.sendTradingMessage(shopTrade, self.interactions.getMessage("trade_complete_escrow", sfuminatorUser));
         } else {
-            partner.sendMessage(self.interactions.getMessage("trade_complete", sfuminatorUser));
+            self.sendTradingMessage(shopTrade, self.interactions.getMessage("trade_complete", sfuminatorUser));
+        }
+        if (shopTrade.isUsingTradeOfferToken()) {
+            self.interactions.postReputationComment(partnerSteamid);
         }
     });
 };

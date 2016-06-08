@@ -8,6 +8,10 @@ var SteamGames = require('../../lib/steamGames.js');
 
 /**
  * General purpose User class
+ * When creating a new instance, user identity is requested to steam api
+ * while the other information is gathered from the database
+ * Instance will lasts for 8 hours if unused
+ *
  * @param {String} steamid User steamid
  * @param {Sfuminator} sfuminator The sfuminator instance
  * @returns {User}
@@ -24,7 +28,7 @@ function User(steamid, sfuminator) {
     this.decayTime = 1000 * 60 * 60 * 8; // 8hrs
     this.last_use_date = new Date();
     this.databaseHasBeenLoaded = false;
-    this.update();
+    this.updateIdentity();
     this.loadDatabaseInfo();
     this.tf2Backpack.getCached();
     events.EventEmitter.call(this);
@@ -130,6 +134,19 @@ User.prototype.makeShopTrade = function (items) {
     return this.shopTrade;
 };
 
+User.prototype.hasTradeToken = function () {
+    return this.tradeToken;
+};
+
+User.prototype.getTradeToken = function () {
+    return this.tradeToken;
+};
+
+User.prototype.setTradeToken = function (token) {
+    this.tradeToken = token;
+    this._saveTradeToken();
+};
+
 /**
  * Check if user instance is expired (user data set is outdated / user instance is obsolete)
  * @returns {Boolean}
@@ -182,7 +199,7 @@ User.prototype.loadDatabaseInfo = function () {
 /**
  * Update user data set (Name, Avatar)
  */
-User.prototype.update = function () {
+User.prototype.updateIdentity = function () {
     var self = this;
     this.fetchInfo(function (_info) {
         for (var i = 0; i < _info.length; i += 1) {
@@ -240,10 +257,12 @@ User.prototype._loadUserInfoFromDatabase = function (connection, callback) {
             self.first_login = new Date(dbUser.first_login);
             self.last_login = new Date(dbUser.last_login);
             self.last_visit = new Date(dbUser.last_visit);
+            self.tradeToken = dbUser.trade_token;
         } else {
             self.first_login = new Date();
             self.last_login = new Date();
             self.last_visit = new Date();
+            self.tradeToken = null;
         }
         callback();
     });
@@ -261,6 +280,18 @@ User.prototype._loadNumberOfTrades = function (connection, callback) {
     });
 };
 
+User.prototype._saveTradeToken = function (callback) {
+    var self = this;
+    this.db.connect(function (connection) {
+        connection.query(self._getSaveTradeTokenQuery(), function () {
+            connection.release();
+            if (typeof callback === "function") {
+                callback();
+            }
+        });
+    });
+};
+
 /**
  * Get database update user data set query
  * @param {DatabaseConnection} connection
@@ -270,8 +301,12 @@ User.prototype._getUpdateUserQuery = function (connection) {
     return "UPDATE `users` SET `name`=" + (connection.c.escape(this.personaname.toString())) + ", `avatar`='" + this.avatarfull.toString() + "' WHERE steam_id='" + this.steamid + "' LIMIT 1";
 };
 
+User.prototype._getSaveTradeTokenQuery = function () {
+    return "UPDATE `users` SET `trade_token`='" + this.tradeToken + "' WHERE `steam_id`='" + this.steamid + "'";
+};
+
 User.prototype._getFetchUserInfoQuery = function () {
-    return "SELECT first_login,last_login,last_visit FROM `users` where `steam_id`='" + this.steamid + "'";
+    return "SELECT `first_login`,`last_login`,`last_visit`,`trade_token` FROM `users` where `steam_id`='" + this.steamid + "'";
 };
 
 User.prototype._getFetchNumberOfTradesQuery = function () {

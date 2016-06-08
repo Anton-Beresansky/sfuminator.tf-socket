@@ -42,7 +42,6 @@ function ShopTrade(sfuminator, partner) {
     this._available_modes = ["offer", "manual"];
     this.last_update_date = new Date();
     this.assets_limit = {partner: 20, shop: 20};
-    this.steamToken = "";
     this.itemsReserved = false;
     this.itemsReady = false;
     this.onceItemsReservedCallbacks = [];
@@ -815,21 +814,10 @@ ShopTrade.prototype.logAssets = function (level) {
 };
 
 /**
- * @returns {String}
+ * @returns {Boolean}
  */
-ShopTrade.prototype.getSteamToken = function () {
-    return this.steamToken;
-};
-
-/**
- * @param {String} token
- */
-ShopTrade.prototype.setSteamToken = function (token) {
-    this.steamToken = token;
-};
-
-ShopTrade.prototype.hasSteamToken = function () {
-    return this.steamToken !== "";
+ShopTrade.prototype.isUsingTradeOfferToken = function () {
+    return this.getPartner().hasTradeToken();
 };
 
 ShopTrade.prototype._parseClientChangeError = function () {

@@ -39,6 +39,9 @@ function Sfuminator(webApi, db) {
         {name: "cleanBuggedReservations_WhyDoIEvenHaveToPutSomethingLikeThis", delay: 900000, tag: "global"}
     ]);
     this.responses = new AjaxResponses(this);
+    /**
+     * @type {Users}
+     */
     this.users = new Users(this);
     this.shop = new Shop(this);
     this.botsController = new BotsController(this);
@@ -256,7 +259,7 @@ Sfuminator.prototype.onAction = function (request, callback) {
             callback(this.stats.get(parseInt(data.last_update_date)));
             break;
         case "verifyTradeUrlToken":
-            this.verifyTradeOfferToken(request.getRequesterSteamid(), data.token, callback);
+            this.clientCheckTradeOfferToken(request.getRequesterSteamid(), data.token, callback);
             break;
         case "i_ve_been_here":
             var justForValve = new Valve(request);
@@ -400,17 +403,35 @@ Sfuminator.prototype.cancelTrade = function (request, callback) {
     }
 };
 
-Sfuminator.prototype.verifyTradeOfferToken = function (steamid, token, callback) {
+Sfuminator.prototype.clientCheckTradeOfferToken = function (steamid, token, callback) {
     token = token.match(/[a-zA-Z0-9_-]*/i)[0]; //Prevent sneaky users
     var self = this;
+    var user = this.users.get(steamid);
+    if (user.getTradeToken() === token) {
+        callback(self.responses.success);
+    } else if (this.botsController.getUnrelatedAvailableBot(steamid)) {
+        this.verifyTradeOfferToken(steamid, token, function (savedToken) {
+            if (savedToken) {
+                callback(self.responses.success);
+                self.users.get(steamid).setTradeToken(token);
+            } else {
+                callback(self.responses.wrongTradeToken);
+            }
+        });
+    } else {
+        callback(this.responses.cannotVerifyTradeToken);
+    }
+};
+
+Sfuminator.prototype.verifyTradeOfferToken = function (steamid, token, callback) {
     var unrelatedBot = this.botsController.getUnrelatedAvailableBot(steamid);
     if (unrelatedBot) {
         function check() {
             unrelatedBot.steamClient.tradeOffersManager.getEscrowDuration(steamid, token, function (error) {
                 if (error) {
-                    callback(self.responses.wrongTradeToken);
+                    callback(false);
                 } else {
-                    callback(self.responses.success);
+                    callback(token);
                 }
             });
         }
@@ -425,7 +446,7 @@ Sfuminator.prototype.verifyTradeOfferToken = function (steamid, token, callback)
             check();
         }
     } else {
-        callback(this.responses.cannotVerifyTradeToken);
+        callback(false);
     }
 };
 
