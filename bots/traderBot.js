@@ -169,6 +169,11 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
                 });
             }
         });
+    } else if (!shopTrade.isUsingTradeOfferToken()) {
+        shopTrade.onceItemsAreReady(function () {
+            self.steamClient.getFriend(partnerSteamid).sendMessage(self.interactions.getMessage("tradeOffer_hello", sfuminatorUser));
+            self.finalizeSendShopTrade(shopTrade);
+        });
     } else {
         this.log.debug("Using trade token: " + shopTrade.getPartner().getTradeToken());
         shopTrade.onceItemsAreReady(function () {
