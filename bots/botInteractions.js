@@ -530,7 +530,7 @@ function BotInteractions() {
             need_answer: true,
             onAnswer: function (user, type) {
                 if (type === "boolean_answer_yes") {
-                    self.emit("postProfileComment", user.getSteamid(), getRandomElement(self.message_senteces.rep_comment.message));
+                    self.postReputationComment(user.getSteamid());
                     return self.getMessage("yes_rep", user);
                 } else if (type === "boolean_answer_no") {
                     return self.getMessage("no_rep", user);
@@ -580,6 +580,10 @@ function BotInteractions() {
 }
 
 require("util").inherits(BotInteractions, Events.EventEmitter);
+
+BotInteractions.prototype.postReputationComment = function (steamid) {
+    this.emit("postProfileComment", steamid, getRandomElement(this.message_senteces.rep_comment.message));
+};
 
 BotInteractions.prototype.getMessage = function (type, user) {
     var message = "";
