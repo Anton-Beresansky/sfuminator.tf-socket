@@ -97,7 +97,11 @@ BackpacksApi.prototype.read = function (owner, callback, options) {
                     self.readItems(owner, backpack.last_update_date, function (items) {
                         if (items.hasOwnProperty("result") && items.result === "error") {
                             connection.rollbackRelease();
-                            callback({result: "error", message: "Wasn't able to read backpack items", code: "#reading_items"});
+                            callback({
+                                result: "error",
+                                message: "Wasn't able to read backpack items",
+                                code: "#reading_items"
+                            });
                         } else {
                             backpack.last_update_time = parseInt(backpack.last_update_date.getTime() / 1000);
                             backpack.items = items;
@@ -107,7 +111,11 @@ BackpacksApi.prototype.read = function (owner, callback, options) {
                     }, connection, options);
                 } else {
                     connection.rollbackRelease();
-                    callback({result: "error", message: "No backpack on database for specified owner", code: "#no_database_backpack"});
+                    callback({
+                        result: "error",
+                        message: "No backpack on database for specified owner",
+                        code: "#no_database_backpack"
+                    });
                 }
             });
         });
@@ -334,7 +342,7 @@ BackpacksApi.prototype.mergeWithSchema = function (backpack) {
         var schema = this.tf2.schema;
         for (var i = 0; i < items.length; i += 1) {
             var schemaItem = schema[items[i].defindex];
-            if(schemaItem) {
+            if (schemaItem) {
                 items[i] = this.mergeItemWithSchemaItem(items[i], schemaItem);
             } else {
                 items.splice(i, 1);
@@ -378,9 +386,13 @@ BackpacksApi.prototype.mergeItemWithSchemaItem = function (item, schemaItem) {
             }
         }
         if (right_price) {
-            item.relative_price = right_price.price;
-            item.currency = right_price.currency;
-            item.absolute_price = this.tf2.currencies[item.currency]["usd"] * item.relative_price;
+            if (this.tf2.currencies.hasOwnProperty(item.currency)) {
+                item.relative_price = right_price.price;
+                item.currency = right_price.currency;
+                item.absolute_price = this.tf2.currencies[item.currency]["usd"] * item.relative_price;
+            } else {
+                console.log("Currency not found: " + item.currency);
+            }
         } else {
             item.relative_price = null;
             item.currency = null;
