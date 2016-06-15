@@ -15,7 +15,7 @@ function ShopTradeCurrency(shopTrade) {
     this.shop = this.shopTrade.shop;
 
     this.iSmelted = 0;
-    this.loadAssets();
+    this.importAssets();
 
     this.log = new Logs({
         applicationName: "Shop Trade Currency " + this.shopTrade.getPartner().getSteamid(),
@@ -72,7 +72,7 @@ ShopTradeCurrency.prototype.forceStartingBalance = function (price) {
 
 ShopTradeCurrency.prototype.reserve = function () {
     this.log.debug("Reserving currency...");
-    this.loadAssets();
+    this.importAssets();
 
     var partnerCurrencyItems = this.getPartnerCurrencyShopItems();
     var ourCurrencyItems = this.getOurCurrencyShopItems();
@@ -133,7 +133,7 @@ ShopTradeCurrency.prototype.reserve = function () {
     }
 };
 
-ShopTradeCurrency.prototype.loadAssets = function () {
+ShopTradeCurrency.prototype.importAssets = function () {
     this.assets = this.shopTrade.getAssets();
 };
 

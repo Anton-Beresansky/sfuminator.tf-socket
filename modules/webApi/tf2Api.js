@@ -183,13 +183,13 @@ TF2Api.prototype.updatePrices = function (callback) {
              });*/
 
             /*
-            self.stiScemiDiBackpackTF(function (items) {
-                self.saveItemPrices(items, function () {
-                    self.saveTF2Currency(items, function () {
-                        callback();
-                    });
-                });
-            })*/
+             self.stiScemiDiBackpackTF(function (items) {
+             self.saveItemPrices(items, function () {
+             self.saveTF2Currency(items, function () {
+             callback();
+             });
+             });
+             });*/
 
             //Turning off until bp.tf is up
             self.log.warning("Backpack.tf is down, remember to update when it gets back");
@@ -480,7 +480,7 @@ TF2Api.prototype._convertCurrencyFormat = function (result) {
     //var metal_price = result.raw_usd_value;
     //var key_price = result.items["Mann Co. Supply Crate Key"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
     //var earbuds_price = result.items["Earbuds"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
-    var metal_price = 0.105;//;result.raw_usd_value;
+    var metal_price = 0.11;//;result.raw_usd_value;
     var key_price = result["Mann Co. Supply Crate Key"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
     var earbuds_price = result["Earbuds"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
     return {
