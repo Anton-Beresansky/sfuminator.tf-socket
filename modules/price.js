@@ -43,7 +43,7 @@ Price.prototype.toUSD = function () {
  */
 Price.prototype.toMetal = function () {
     if (!this._metalPrice) {
-        this._metalPrice = parseInt(this.absolute_price * this.currency.usd.metal * 100 + 0.1) / 100;
+        this._metalPrice = parseInt(this.absolute_price * this.currency.usd.metal * 100 + (0.1 * this.getPriceSign())) / 100;
     }
     return this._metalPrice;
 };
@@ -65,13 +65,17 @@ Price.prototype.toKeys = function () {
  */
 Price.prototype.toScrap = function () {
     if (!this._scrapPrice) {
-        var delta = 0.1;
-        if (this.absolute_price < 0) {
-            delta = -0.1;
-        }
-        this._scrapPrice = parseInt((this.toMetal() + delta) * 9);
+        this._scrapPrice = parseInt((this.toMetal() + (0.1 * this.getPriceSign())) * 9);
     }
     return this._scrapPrice;
+};
+
+Price.prototype.getPriceSign = function () {
+    if (this.absolute_price < 0) {
+        return -1;
+    } else {
+        return 1;
+    }
 };
 
 /**
