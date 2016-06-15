@@ -170,19 +170,30 @@ TF2Api.prototype.updatePrices = function (callback) {
     this.arePricesOutdated(function (outdated) {
         if (outdated) {
             self.log.debug("Prices are outdated");
-            self.iGetPrices(function (response) {
-                self.emit("debug", "Got backpack.tf prices...");
-                if (response.hasOwnProperty("response") && response.response.hasOwnProperty("success") && response.response.success === 1) {
-                    var result = response.response;
-                    self.saveItemPrices(result.items, function () {
-                        self.saveTF2Currency(result, function () {
-                            callback();
-                        });
+            /*self.iGetPrices(function (response) {
+             self.emit("debug", "Got backpack.tf prices...");
+             if (response.hasOwnProperty("response") && response.response.hasOwnProperty("success") && response.response.success === 1) {
+             var result = response.response;
+             self.saveItemPrices(result.items, function () {
+             self.saveTF2Currency(result, function () {
+             callback();
+             });
+             });
+             }
+             });*/
+
+            /*
+            self.stiScemiDiBackpackTF(function (items) {
+                self.saveItemPrices(items, function () {
+                    self.saveTF2Currency(items, function () {
+                        callback();
                     });
-                } else {
-                    self.emit("steam_error");
-                }
-            });
+                });
+            })*/
+
+            //Turning off until bp.tf is up
+            self.log.warning("Backpack.tf is down, remember to update when it gets back");
+            callback();
         } else {
             self.log.debug("Prices are already up to date");
             callback();
@@ -264,6 +275,39 @@ TF2Api.prototype.iGetPrices = function (callback) {
         }
     };
     this.bptfApi.callAPI(myInterface, function (result) {
+        callback(result);
+    });
+};
+
+TF2Api.prototype.iGetCurrencies = function (callback) {
+    var self = this;
+    var myInterface = {
+        name: "api",
+        method: {
+            name: "IGetCurrencies",
+            version: 1,
+            httpmethod: "GET",
+            parameters: {
+                key: self.bptftf_key,
+                compress: 1
+            }
+        }
+    };
+    this.bptfApi.callAPI(myInterface, function (result) {
+        callback(result);
+    });
+};
+
+TF2Api.prototype.stiScemiDiBackpackTF = function (callback) {
+    var swapApi = new API("www.tf2swap.com");
+    var myInterface = {
+        name: "cdn",
+        method: {
+            httpmethod: "GET",
+            predata: "prices.json"
+        }
+    };
+    swapApi.callAPI(myInterface, function (result) {
         callback(result);
     });
 };
@@ -373,13 +417,15 @@ TF2Api.prototype._convertItemPricesFormat = function (items) {
             }
         }
         var defindexes = items[i]["defindex"];
-        for (var p = 0; p < defindexes.length; p += 1) {
-            if (finalItems.hasOwnProperty(defindexes[p])) {
-                for (var c = 0; c < final_prices.length; c += 1) {
-                    finalItems[defindexes[p]].push(final_prices[c]);
+        if (defindexes && defindexes.length > 0) {
+            for (var p = 0; p < defindexes.length; p += 1) {
+                if (finalItems.hasOwnProperty(defindexes[p])) {
+                    for (var c = 0; c < final_prices.length; c += 1) {
+                        finalItems[defindexes[p]].push(final_prices[c]);
+                    }
+                } else {
+                    finalItems[defindexes[p]] = final_prices;
                 }
-            } else {
-                finalItems[defindexes[p]] = final_prices;
             }
         }
 
@@ -431,9 +477,12 @@ TF2Api.prototype._getInsertCurrencyQuery = function (currencies) {
 };
 
 TF2Api.prototype._convertCurrencyFormat = function (result) {
-    var metal_price = result.raw_usd_value;
-    var key_price = result.items["Mann Co. Supply Crate Key"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
-    var earbuds_price = result.items["Earbuds"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
+    //var metal_price = result.raw_usd_value;
+    //var key_price = result.items["Mann Co. Supply Crate Key"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
+    //var earbuds_price = result.items["Earbuds"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
+    var metal_price = 0.105;//;result.raw_usd_value;
+    var key_price = result["Mann Co. Supply Crate Key"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
+    var earbuds_price = result["Earbuds"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
     return {
         usd: {
             usd: 1,
