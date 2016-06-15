@@ -386,13 +386,9 @@ BackpacksApi.prototype.mergeItemWithSchemaItem = function (item, schemaItem) {
             }
         }
         if (right_price) {
-            if (this.tf2.currencies.hasOwnProperty(item.currency)) {
-                item.relative_price = right_price.price;
-                item.currency = right_price.currency;
-                item.absolute_price = this.tf2.currencies[item.currency]["usd"] * item.relative_price;
-            } else {
-                console.log("Currency not found: " + item.currency);
-            }
+            item.relative_price = right_price.price;
+            item.currency = right_price.currency;
+            item.absolute_price = this.tf2.currencies[item.currency]["usd"] * item.relative_price;
         } else {
             item.relative_price = null;
             item.currency = null;
