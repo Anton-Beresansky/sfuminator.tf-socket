@@ -63,6 +63,7 @@ TF2Api.prototype.loadCurrencies = function (callback) {
                     currencies[row.currency_type] = {
                         usd: row.usd,
                         metal: row.metal,
+                        hat: row.hat,
                         keys: row.keys,
                         earbuds: row.earbuds
                     };
@@ -170,30 +171,24 @@ TF2Api.prototype.updatePrices = function (callback) {
     this.arePricesOutdated(function (outdated) {
         if (outdated) {
             self.log.debug("Prices are outdated");
-            /*self.iGetPrices(function (response) {
-             self.emit("debug", "Got backpack.tf prices...");
-             if (response.hasOwnProperty("response") && response.response.hasOwnProperty("success") && response.response.success === 1) {
-             var result = response.response;
-             self.saveItemPrices(result.items, function () {
-             self.saveTF2Currency(result, function () {
-             callback();
-             });
-             });
-             }
-             });*/
 
-            /*
-             self.stiScemiDiBackpackTF(function (items) {
-             self.saveItemPrices(items, function () {
-             self.saveTF2Currency(items, function () {
-             callback();
-             });
-             });
-             });*/
+            self.iGetCurrencies(function (response) {
+                self.emit("debug", "Getting backpack.tf currencies...");
+                if (response.hasOwnProperty("response") && response.response.hasOwnProperty("success") && response.response.success === 1) {
+                    self.saveTF2Currency(response.response.currencies, function () {
 
-            //Turning off until bp.tf is up
-            self.log.warning("Backpack.tf is down, remember to update when it gets back");
-            callback();
+                        self.iGetPrices(function (response) {
+                            self.emit("debug", "Got backpack.tf prices...");
+                            if (response.hasOwnProperty("response") && response.response.hasOwnProperty("success") && response.response.success === 1) {
+                                self.saveItemPrices(response.response.items, function () {
+                                    callback();
+                                });
+                            }
+                        });
+                    });
+                }
+            });
+
         } else {
             self.log.debug("Prices are already up to date");
             callback();
@@ -251,6 +246,7 @@ TF2Api.prototype.saveTF2Currency = function (result, callback) {
     this.emit("debug", "Saving tf2 currencies...");
     var self = this;
     var currencies = this._convertCurrencyFormat(result);
+    console.log(currencies);
     this.db.connect(function (connection) {
         connection.query(self._getInsertCurrencyQuery(currencies), function () {
             connection.release();
@@ -464,38 +460,56 @@ TF2Api.prototype._filterBackpackTF = function (defindex) {
 };
 
 TF2Api.prototype._getInsertCurrencyQuery = function (currencies) {
-    var insertConstruction = "INSERT INTO `currency` (`currency_type`,`usd`,`metal`,`keys`,`earbuds`) VALUES ";
+    var insertConstruction = "INSERT INTO `currency` (`currency_type`,`usd`,`metal`,`keys`,`hat`,`earbuds`) VALUES ";
     var values = "";
     for (var i in currencies) {
-        values += "('" + i + "'," + currencies[i].usd + "," + currencies[i].metal + "," + currencies[i].keys + "," + currencies[i].earbuds + "), ";
+        values += "('" + i + "',"
+            + currencies[i].usd + ","
+            + currencies[i].metal + ","
+            + currencies[i].keys + ","
+            + currencies[i].hat + ","
+            + currencies[i].earbuds + "), ";
     }
     return insertConstruction + values.slice(0, values.length - 2) + " ON DUPLICATE KEY UPDATE"
         + " `usd`=VALUES(`usd`),"
         + " `metal`=VALUES(`metal`),"
         + " `keys`=VALUES(`keys`),"
+        + " `hat`=VALUES(`hat`),"
         + " `earbuds`=VALUES(`earbuds`)";
 };
 
 TF2Api.prototype._convertCurrencyFormat = function (result) {
-    //var metal_price = result.raw_usd_value;
-    //var key_price = result.items["Mann Co. Supply Crate Key"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
-    //var earbuds_price = result.items["Earbuds"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
-    var metal_price = 0.11;//;result.raw_usd_value;
-    var key_price = result["Mann Co. Supply Crate Key"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
-    var earbuds_price = result["Earbuds"]["prices"]["6"]["Tradable"]["Craftable"][0]["value"];
+    var metal_usd_price = result.metal.price.value;
+    var hat_usd_price = result.hat.price.value * metal_usd_price;
+    var key_usd_price = result.keys.price.value * metal_usd_price;
+    var earbuds_usd_price = result.earbuds.price.value * key_usd_price;
     return {
         usd: {
             usd: 1,
-            metal: 1 / metal_price,
-            keys: 1 / (key_price * metal_price),
-            earbuds: 1 / (earbuds_price * key_price * metal_price)
+            metal: 1 / metal_usd_price,
+            hat: 1 / hat_usd_price,
+            keys: 1 / key_usd_price,
+            earbuds: 1 / earbuds_usd_price
         },
-        metal: {usd: metal_price, metal: 1, keys: 1 / key_price, earbuds: 1 / (earbuds_price * key_price)},
-        keys: {usd: key_price * metal_price, metal: key_price, keys: 1, earbuds: 1 / earbuds_price},
+        metal: {
+            usd: metal_usd_price,
+            metal: 1,
+            hat: metal_usd_price / hat_usd_price,
+            keys: metal_usd_price / key_usd_price,
+            earbuds: metal_usd_price / earbuds_usd_price
+        },
+        keys: {
+            usd: key_usd_price,
+            metal: key_usd_price / metal_usd_price,
+            hat: key_usd_price / hat_usd_price,
+            keys: 1,
+            earbuds: key_usd_price / earbuds_usd_price
+        },
         earbuds: {
-            usd: earbuds_price * key_price * metal_price,
-            metal: earbuds_price * key_price,
-            keys: earbuds_price,
+            usd: earbuds_usd_price,
+            metal: earbuds_usd_price / metal_usd_price,
+            hat: earbuds_usd_price / hat_usd_price,
+            keys: earbuds_usd_price / key_usd_price,
             earbuds: 1
         }
     };
