@@ -385,14 +385,10 @@ BackpacksApi.prototype.mergeItemWithSchemaItem = function (item, schemaItem) {
                 break;
             }
         }
-        if (right_price) {
-            try {
-                item.relative_price = right_price.price;
-                item.currency = right_price.currency;
-                item.absolute_price = this.tf2.currencies[item.currency]["usd"] * item.relative_price;
-            }catch(e){
-                console.log(item);
-            }
+        if (right_price && right_price.price) {
+            item.relative_price = right_price.price;
+            item.currency = right_price.currency;
+            item.absolute_price = this.tf2.currencies[item.currency]["usd"] * item.relative_price;
         } else {
             item.relative_price = null;
             item.currency = null;
