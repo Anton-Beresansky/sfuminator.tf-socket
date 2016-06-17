@@ -498,6 +498,13 @@ TF2Api.prototype._convertCurrencyFormat = function (result) {
             keys: metal_usd_price / key_usd_price,
             earbuds: metal_usd_price / earbuds_usd_price
         },
+        hat: {
+            usd: hat_usd_price,
+            metal: hat_usd_price/ metal_usd_price,
+            hat: 1,
+            keys: hat_usd_price / key_usd_price,
+            earbuds: hat_usd_price / earbuds_usd_price
+        },
         keys: {
             usd: key_usd_price,
             metal: key_usd_price / metal_usd_price,
