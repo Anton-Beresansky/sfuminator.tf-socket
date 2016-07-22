@@ -90,37 +90,35 @@ BackpacksApi.prototype.read = function (owner, callback, options) {
     this.emit("debug", "Reading backpack...");
     var self = this;
     this.db.connect(function (connection) {
-        //connection.beginTransaction(function () {
-        connection.query("SELECT `status`,`num_backpack_slots`,`last_update_date` as `last_update_date` FROM backpacks WHERE `owner`='" + owner + "' LIMIT 1", function (backpack_array) {
-            if (typeof backpack_array === "object" && backpack_array.length === 1) {
-                var backpack = backpack_array[0];
-                self.readItems(owner, backpack.last_update_date, function (items) {
-                    if (items.hasOwnProperty("result") && items.result === "error") {
-                        //connection.rollbackRelease();
-                        callback({
-                            result: "error",
-                            message: "Wasn't able to read backpack items",
-                            code: "#reading_items"
-                        });
-                    } else {
-                        backpack.last_update_time = parseInt(backpack.last_update_date.getTime() / 1000);
-                        backpack.items = items;
-                        //connection.commitRelease();
-                        callback(self.mergeWithSchema(backpack));
-                    }
-                    connection.release();
-                }, connection, options);
-            } else {
-                //connection.rollbackRelease();
-                connection.release();
-                callback({
-                    result: "error",
-                    message: "No backpack on database for specified owner",
-                    code: "#no_database_backpack"
-                });
-            }
+        connection.beginTransaction(function () {
+            connection.query("SELECT `status`,`num_backpack_slots`,`last_update_date` as `last_update_date` FROM backpacks WHERE `owner`='" + owner + "' LIMIT 1", function (backpack_array) {
+                if (typeof backpack_array === "object" && backpack_array.length === 1) {
+                    var backpack = backpack_array[0];
+                    self.readItems(owner, backpack.last_update_date, function (items) {
+                        if (items.hasOwnProperty("result") && items.result === "error") {
+                            connection.rollbackRelease();
+                            callback({
+                                result: "error",
+                                message: "Wasn't able to read backpack items",
+                                code: "#reading_items"
+                            });
+                        } else {
+                            backpack.last_update_time = parseInt(backpack.last_update_date.getTime() / 1000);
+                            backpack.items = items;
+                            connection.commitRelease();
+                            callback(self.mergeWithSchema(backpack));
+                        }
+                    }, connection, options);
+                } else {
+                    connection.rollbackRelease();
+                    callback({
+                        result: "error",
+                        message: "No backpack on database for specified owner",
+                        code: "#no_database_backpack"
+                    });
+                }
+            });
         });
-        //});
     });
 };
 
