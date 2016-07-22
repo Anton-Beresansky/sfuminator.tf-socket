@@ -207,14 +207,16 @@ BotsController.prototype.preSmeltMetal = function () {
                     self.log.debug("PreSmelting metal, count for " + metalToSmeltDefindexes[i + 1] + " is " + count);
                     var itemsLength = backpack.getItems().length;
                     var filter = {id: []};
-                    while (itemsLength -= 1) {
-                        var itemsToSmelt = backpack.getItems(filter, {defindex: metalToSmeltDefindexes[i]}, 1);
-                        if (itemsToSmelt.length) {
-                            if (!self.sfuminator.shop.reservations.exist(itemsToSmelt[0].getID())) {
-                                bot.steamClient.craftTF2Items(itemsToSmelt);
-                                break;
-                            } else {
-                                filter.id.push(itemsToSmelt[0].getID());
+                    if (itemsLength > 0) {
+                        while (itemsLength -= 1) {
+                            var itemsToSmelt = backpack.getItems(filter, {defindex: metalToSmeltDefindexes[i]}, 1);
+                            if (itemsToSmelt.length) {
+                                if (!self.sfuminator.shop.reservations.exist(itemsToSmelt[0].getID())) {
+                                    bot.steamClient.craftTF2Items(itemsToSmelt);
+                                    break;
+                                } else {
+                                    filter.id.push(itemsToSmelt[0].getID());
+                                }
                             }
                         }
                     }
