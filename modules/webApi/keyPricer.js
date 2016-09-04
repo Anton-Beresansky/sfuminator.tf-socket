@@ -63,6 +63,10 @@ KeyPricer.prototype.get = function () {
     return new Price((this.sell_price + this.buy_price) / 2, Price.REFINED_METAL);
 };
 
+KeyPricer.prototype.getMarketPrice = function () {
+    return new Price(this.get().toScrap(), Price.SCRAP_METAL);
+};
+
 KeyPricer.prototype.makeAverage = function (trades) {
     var groupedPrices = this._getGroupedPrices(trades);
     var num = 0, den = 0;
@@ -133,7 +137,7 @@ KeyPricer.prototype.weightTrades = function (trades) {
 };
 
 KeyPricer.prototype._getTradePriority = function (index, trades) {
-    return Math.pow(Math.E, -((index + 1) * 5) / (trades.length + 2)); //tau = nTrades / 5
+    return Math.pow(Math.E, -((index + 1) * 11) / (trades.length + 2)); //tau = nTrades / 11
 };
 
 KeyPricer.prototype._getPriceWeight = function (price, groupedPrices) {

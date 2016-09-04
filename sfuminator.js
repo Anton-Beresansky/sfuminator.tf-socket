@@ -28,16 +28,20 @@ function Sfuminator(webApi, db) {
     this.log.setLevel(0);
     this.admins = CFG.getAdmins();
     this.interrupts = new Interrupts([
-        {name: "updatePrices", delay: 60000, tag: "internal"},
-        {name: "updateKeyPrice", delay: 10000000, tag: "global"},
-        {name: "updateShopInventory", delay: 4000, tag: "internal"},
-        {name: "updateActiveTrades", delay: 1500, tag: "internal"},
-        {name: "updateStats", delay: 1000, tag: "global"},
-        {name: "updateTradeStatus", delay: 1000, tag: "global"},
-        {name: "preSmeltMetal", delay: 8000, tag: "internal"},
-        {name: "manageBotItemsDistribution", delay: 900000, tag: "internal"},
-        {name: "cleanBuggedReservations_WhyDoIEvenHaveToPutSomethingLikeThis", delay: 900000, tag: "global"}
+        {name: "updatePrices", delay: 60 * 1000, tag: "internal"},  //1 Minute
+        {name: "updateKeyPrice", delay: 2 * 60 * 60 * 1000, tag: "global"}, // 2 Hours
+        {name: "updateTF2Data", delay: 3 * 60 * 60 * 1000, tag: "global"}, //3 Hours
+        {name: "updateShopInventory", delay: 4 * 1000, tag: "internal"}, //4 Seconds
+        {name: "updateActiveTrades", delay: 1.5 * 1000, tag: "internal"}, //1.5 Seconds
+        {name: "updateStats", delay: 1000, tag: "global"},  //1 Second
+        {name: "updateTradeStatus", delay: 1000, tag: "global"}, //1 Second
+        {name: "preSmeltMetal", delay: 8 * 1000, tag: "internal"}, //8 Seconds
+        {name: "manageBotItemsDistribution", delay: 15 * 60 * 1000, tag: "internal"}, //15 Minutes
+        {name: "cleanBuggedReservations_WhyDoIEvenHaveToPutSomethingLikeThis", delay: 15 * 60 * 1000, tag: "global"} //15 Minutes
     ]);
+    /**
+     * @type {AjaxResponses}
+     */
     this.responses = new AjaxResponses(this);
     /**
      * @type {Users}
@@ -78,6 +82,8 @@ Sfuminator.prototype.init = function () {
             self.stats.load();
         });
     });
+
+
 };
 
 /**
@@ -98,6 +104,9 @@ Sfuminator.prototype.bindInterrupts = function () {
         } catch (e) {
             self.log.error("Key pricing procedure is not working anymore. Most likely HTML has been changed somewhere... " + e);
         }
+    });
+    this.interrupts.on("updateTF2Data", function () {
+        self.webApi.tf2.update();
     });
     this.interrupts.on("updateStats", function () {
         self.stats.update();

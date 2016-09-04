@@ -37,6 +37,7 @@ function TF2Constants() {
 
     this.attributeDefindexes = {
         Australium: 2027,
-        Paint: 142
+        Paint: 142,
+        Particle: 134
     };
 }

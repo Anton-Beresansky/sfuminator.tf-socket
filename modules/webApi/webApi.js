@@ -16,26 +16,26 @@ function WebApi(db_items, steamApi) {
      */
     this.steamApi = steamApi;
     /**
+     * @type {KeyPricer}
+     */
+    this.keyPricer = new KeyPricer();
+    /**
      * @type {TF2Api}
      */
-    this.tf2 = new TF2API(this.db_items, this.steamApi, "***REMOVED***", {debug: true});
+    this.tf2 = new TF2API(this, "***REMOVED***", {debug: true});
     /**
      * @type {BackpacksApi}
      */
     this.backpacks = new BackpacksAPI(this.db_items, this.steamApi, this.tf2, {debug: true});
-    /**
-     * @type {KeyPricer}
-     */
-    this.keyPricer = new KeyPricer();
 
     this.onceReadyCallbacks = [];
     this.ready = false;
+    this.update();
     this._bindHandlers();
 }
 
 WebApi.prototype._bindHandlers = function () {
     var self = this;
-    this.tf2.startAutoUpdate();
     this.tf2.on("schema_loaded", function () {
         self.ready = true;
         self._handleOnceReady();
@@ -50,10 +50,22 @@ WebApi.prototype.onceReady = function (callback) {
     }
 };
 
+WebApi.prototype.update = function (callback) {
+    var self = this;
+    this.getKeyPrice(function () {
+        self.tf2.update(function () {
+            if (typeof callback == "function") {
+                callback();
+            }
+        });
+    });
+};
+
 WebApi.prototype.getKeyPrice = function (callback) {
-    this.keyPricer.fetch(function (price) {
+    var self = this;
+    this.keyPricer.fetch(function () {
         if (typeof callback === "function") {
-            callback(price);
+            callback(self.keyPricer.get());
         }
     })
 };

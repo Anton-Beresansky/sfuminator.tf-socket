@@ -16,6 +16,10 @@ function Price(price, initCurrency) {
     this.currency = TF2Currency;
 
     if (initCurrency) {
+        if (initCurrency === "keys") {
+            price = price * new Price(this.currency.keys.metal, "metal").toScrap();
+            initCurrency = "scrap";
+        }
         if (initCurrency === "scrap") {
             initCurrency = "metal";
             price = price / 9;
@@ -54,7 +58,7 @@ Price.prototype.toMetal = function () {
  */
 Price.prototype.toKeys = function () {
     if (!this._keyPrice) {
-        this._keyPrice = this.absolute_price * this.currency.usd.keys;
+        this._keyPrice = parseInt((this.toScrap() / new Price(1, "keys").toScrap()) * 100) / 100;
     }
     return this._keyPrice;
 };

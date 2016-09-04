@@ -139,7 +139,11 @@ Stats.prototype.fetchNewItems = function () {
         finalList.push(itemList[i].valueOf());
     }
     if (!this.stats.hasOwnProperty("new_items") || (JSON.stringify(finalList) !== JSON.stringify(this.stats.new_items.items))) {
-        this.stats.new_items = {items: finalList, last_update_date: new Date().getTime()};
+        this.stats.new_items = {
+            result: "success",
+            items: finalList,
+            currency: this.shop.tf2Currency.valueOf(),
+            last_update_date: new Date().getTime()};
     }
 };
 

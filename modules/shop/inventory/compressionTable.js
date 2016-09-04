@@ -13,6 +13,7 @@ function CompressionLookup() {
         image_url_large: "d",
         used_by_classes: "e",
         quality: "f",
+        particle: "g",
         shop: "h"
     };
     this.items_group = "i";
@@ -21,9 +22,8 @@ function CompressionLookup() {
         level: "y",
         paint_color: "z",
         reserved_to: "w",
-        relative_price: "m",
-        currency: "n",
-        real_id: "o"
+        price: "m",
+        real_id: "n"
     };
     this.values = {
         currency: {
@@ -37,11 +37,19 @@ function CompressionLookup() {
             hats: 1,
             strange: 2
         },
-        image_url: function (url) {
-            return url.slice(45);
+        image_url: function (shopItem) {
+            if (shopItem.getItem().isPaint()) {
+                return shopItem.getItem().image_url;
+            } else {
+                return shopItem.getItem().image_url.slice(45);
+            }
         },
-        image_url_large: function (url) {
-            return url.slice(45);
+        image_url_large: function (shopItem) {
+            if (shopItem.getItem().isPaint()) {
+                return shopItem.getItem().image_url_large;
+            } else {
+                return shopItem.getItem().image_url_large.slice(45);
+            }
         }
     }
 }
