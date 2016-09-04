@@ -61,6 +61,9 @@ function AjaxResponses(sfuminator) {
     this.partnerAssetsLimit = function (limit) {
         return {result: "error", message: "Sorry, you can sell only " + limit + " items per trade", code: "hat_limit"};
     };
+    this.assetsPriceLimit = function (limit) {
+        return {result: "error", message: "Sorry, this trade exceed maximum items value of " + limit + " keys"};
+    };
     this.itemExceedCount = function (item, excess) {
         return {
             result: "error",

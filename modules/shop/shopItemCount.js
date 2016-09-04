@@ -6,6 +6,7 @@ var TF2Item = require("../../modules/tf2/tf2Item.js");
 
 /**
  * Keeps count of the items available in the shop
+ * @class ShopItemCount
  * @returns {ShopItemCount}
  */
 function ShopItemCount() {
@@ -113,6 +114,7 @@ ShopItemCount.prototype.makeCounter = function (item) {
 
 /**
  * General purpose Shop Item Counter Class
+ * @class ShopItemCounter
  * @param {Object} identifiers Parameters that identify this counter
  * @returns {ShopItemCounter}
  */
@@ -120,6 +122,13 @@ function ShopItemCounter(identifiers) {
     this.count = 0;
     this.identifiers = identifiers;
 }
+
+/**
+ * @returns {number}
+ */
+ShopItemCounter.prototype.getCount = function () {
+    return this.count;
+};
 
 /**
  * Increase counter, should be used with ShopItemCounter.canAdd

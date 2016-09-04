@@ -11,7 +11,13 @@ var ShopItem = require("./inventory/shopItem.js");
  * @constructor
  */
 function ShopTradeCurrency(shopTrade) {
+    /**
+     * @type {ShopTrade}
+     */
     this.shopTrade = shopTrade;
+    /**
+     * @type Shop
+     */
     this.shop = this.shopTrade.shop;
 
     this.iSmelted = 0;
@@ -23,11 +29,6 @@ function ShopTradeCurrency(shopTrade) {
     });
 
     this.currencyTradeBalance = this.getTradeBalance();
-    this.sortedCurrencyDefindexes = [
-        TF2Constants.defindexes.RefinedMetal,
-        TF2Constants.defindexes.ReclaimedMetal,
-        TF2Constants.defindexes.ScrapMetal
-    ];
     events.EventEmitter.call(this);
 }
 
@@ -81,7 +82,7 @@ ShopTradeCurrency.prototype.reserve = function () {
     // > Getting currency items
     if (this.getSignedTradeBalance() > 0) { //We have to receive currency, our items worth more
         this.log.debug("We have to receive currency " + this.getTradeBalance());
-        this.balanceAssets(partnerCurrencyItems, ourCurrencyItems);
+        this.balanceWeSell(partnerCurrencyItems, ourCurrencyItems);
     } else if (this.getSignedTradeBalance() < 0) { //We have to give currency, their items worth more
         this.log.debug("We have to give currency " + this.getTradeBalance());
         this.balanceWeBuy(ourCurrencyItems, partnerCurrencyItems);
@@ -196,12 +197,13 @@ ShopTradeCurrency.prototype.getOurCurrencyShopItems = function () {
 
 ShopTradeCurrency.prototype.balanceWeBuy = function (shopCurrencyItems, theirCurrencyItems) {
     var i, p;
-    for (p = 0; p < this.sortedCurrencyDefindexes.length; p += 1) {
+    var sortedCurrencyDefindexes = this.getSortedCurrencyDefindexes("weBuy");
+    for (p = 0; p < sortedCurrencyDefindexes.length; p += 1) {
         for (i = 0; i < shopCurrencyItems.length; i += 1) {
             var shopCurrencyItem = shopCurrencyItems[i];
             if (
                 !this.shop.reservations.exist(shopCurrencyItem.getID())
-                && shopCurrencyItem.getItem().getDefindex() === this.sortedCurrencyDefindexes[p]
+                && shopCurrencyItem.getItem().getDefindex() === sortedCurrencyDefindexes[p]
             ) {
                 if (this.getSignedTradeBalance() + shopCurrencyItem.getPrice() <= 0) {
                     this.assets.push(shopCurrencyItem);
@@ -231,10 +233,10 @@ ShopTradeCurrency.prototype.balanceWeBuy = function (shopCurrencyItems, theirCur
         }
 
         //Then try to balance with partner currency
-        for (p = 0; p < this.sortedCurrencyDefindexes.length; p += 1) {
+        for (p = 0; p < sortedCurrencyDefindexes.length; p += 1) {
             for (i = 0; i < theirCurrencyItems.length; i += 1) {
                 var theirCurrencyItem = theirCurrencyItems[i];
-                if (theirCurrencyItem.getItem().getDefindex() === this.sortedCurrencyDefindexes[p]) {
+                if (theirCurrencyItem.getItem().getDefindex() === sortedCurrencyDefindexes[p]) {
                     if (this.getSignedTradeBalance() + extraChangeCurrency.getPrice() - theirCurrencyItem.getPrice() >= 0) {
                         this.assets.push(theirCurrencyItem);
                     }
@@ -253,21 +255,19 @@ ShopTradeCurrency.prototype.balanceWeBuy = function (shopCurrencyItems, theirCur
 };
 
 
-ShopTradeCurrency.prototype.balanceAssets = function (currencyGiverItems, currencyReceiverItems) {
+ShopTradeCurrency.prototype.balanceWeSell = function (currencyGiverItems, currencyReceiverItems) {
     var p, i;
-    /**
-     * @type {ShopItem}
-     */
+    var sortedCurrencyDefindexes = this.getSortedCurrencyDefindexes("weSell");
     this.log.debug("Trying to compensate with currency giver items...", 1);
     //Trying to compensate with the currency we own
     //This procedure will result in a perfect compensation or something that's slightly less
-    for (p = 0; p < this.sortedCurrencyDefindexes.length; p += 1) {
+    for (p = 0; p < sortedCurrencyDefindexes.length; p += 1) {
         for (i = 0; i < currencyGiverItems.length; i += 1) {
             var currencyGiverItem = currencyGiverItems[i];
             //If not reserved or just mine
             if (currencyGiverItem.isMineItem() || !this.shop.reservations.exist(currencyGiverItem.getID())) {
                 //If it is the type we are looking for (eg ref/rec/scrap)
-                if (currencyGiverItem.getItem().getDefindex() === this.sortedCurrencyDefindexes[p]) {
+                if (currencyGiverItem.getItem().getDefindex() === sortedCurrencyDefindexes[p]) {
                     //If by adding this currency balance won't overflow
                     if (this.getTradeBalance() + currencyGiverItem.getPrice() <= 0) {
                         this.assets.push(currencyGiverItem);
@@ -305,11 +305,11 @@ ShopTradeCurrency.prototype.balanceAssets = function (currencyGiverItems, curren
         this.log.debug("Giver currency is not precise, looking for receiver change...", 1);
         var currencyTradeBalanceTest = this.getTradeBalance();
         var receiverCurrencyBalancing = [];
-        for (p = 0; p < this.sortedCurrencyDefindexes.length; p += 1) {
+        for (p = 0; p < sortedCurrencyDefindexes.length; p += 1) {
             for (i = 0; i < currencyReceiverItems.length; i += 1) {
                 var currencyReceiverItem = currencyReceiverItems[i];
                 //If it is the type we are looking for (eg ref/rec/scrap)
-                if (currencyReceiverItem.getItem().getDefindex() === this.sortedCurrencyDefindexes[p]) {
+                if (currencyReceiverItem.getItem().getDefindex() === sortedCurrencyDefindexes[p]) {
                     //If by adding this currency balance won't underflow
                     if (currencyTradeBalanceTest + extraChangeCurrency.getPrice() - currencyReceiverItem.getPrice() >= 0) {
                         receiverCurrencyBalancing.push(currencyReceiverItem);
@@ -344,4 +344,56 @@ ShopTradeCurrency.prototype.setSmeltingItem = function (shopItem) {
  */
 ShopTradeCurrency.prototype.getSmeltingItem = function () {
     return this.smeltingItem;
+};
+
+ShopTradeCurrency.prototype.getSortedCurrencyDefindexes = function (action) {
+    /*if (action == "weBuy") {
+     if (this.canBuyWithKeys()) {
+     return ShopTradeCurrency.sortedCurrencyDefindexes.default;
+     } else {
+     return ShopTradeCurrency.sortedCurrencyDefindexes.metalFirst;
+     }
+     } else if (action == "weSell") {
+     return ShopTradeCurrency.sortedCurrencyDefindexes.default;
+     } else {
+     return ShopTradeCurrency.sortedCurrencyDefindexes.default;
+     }*/
+    if (action == "weBuy" && !this.canBuyWithKeys()) {
+        return ShopTradeCurrency.SORTED_CURRENCY_DEFINDEXES.METAL_FIRST;
+    } else {
+        return ShopTradeCurrency.SORTED_CURRENCY_DEFINDEXES.DEFAULT;
+    }
+};
+
+ShopTradeCurrency.prototype.canBuyWithKeys = function () {
+    var currencyItems = this.getOurCurrencyShopItems();
+    var mannCoKey, refinedMetal;
+    for (var i = 0; i < currencyItems.length; i += 1) {
+        if (currencyItems[i].getItem().getDefindex() === TF2Constants.defindexes.MannCoKey) {
+            mannCoKey = currencyItems[i];
+        } else if (currencyItems[i].getItem().getDefindex() === TF2Constants.defindexes.RefinedMetal) {
+            refinedMetal = currencyItems[i];
+        }
+        if (mannCoKey && refinedMetal) {
+            return (this.shop.count.get(mannCoKey).getCount() / this.shop.count.get(refinedMetal).getCount()) > ShopTradeCurrency.KEYS_REFINED_MINIMUM_RATIO
+        }
+    }
+    return false;
+};
+
+ShopTradeCurrency.KEYS_REFINED_MINIMUM_RATIO = 0.15; // Out of 100 refined, minimum of 15 keys
+
+ShopTradeCurrency.SORTED_CURRENCY_DEFINDEXES = {
+    DEFAULT: [
+        TF2Constants.defindexes.MannCoKey,
+        TF2Constants.defindexes.RefinedMetal,
+        TF2Constants.defindexes.ReclaimedMetal,
+        TF2Constants.defindexes.ScrapMetal
+    ],
+    METAL_FIRST: [
+        TF2Constants.defindexes.RefinedMetal,
+        TF2Constants.defindexes.ReclaimedMetal,
+        TF2Constants.defindexes.ScrapMetal,
+        TF2Constants.defindexes.MannCoKey
+    ]
 };

@@ -29,7 +29,6 @@ function ShopInventory(shop) {
      * @type {ShopItem[]}
      */
     this.items = [];
-    this.count = []; //[{defindex: Int, quality: Int, craftable: Bool, count: Int}]
     this.last_update_date = 0;
     this.busyFetchAttempts = 0;
     this.fetching = false;

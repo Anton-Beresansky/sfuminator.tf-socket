@@ -41,7 +41,7 @@ function ShopTrade(sfuminator, partner) {
     this.log = new Logs({applicationName: "Shop Trade " + this.partner.getSteamid(), color: "green"});
     this._available_modes = ["offer", "manual"];
     this.last_update_date = new Date();
-    this.assets_limit = {partner: 20, shop: 20};
+    this.assets_limit = {partner: 40, shop: 40, max_key_price: 6};
     this.itemsReserved = false;
     this.itemsReady = false;
     this.onceItemsReservedCallbacks = [];
@@ -298,7 +298,8 @@ ShopTrade.prototype.valueOf = function () {
         status: this.getStatus(),
         statusInfo: this.getStatusInfo(),
         last_update_date: this.getLastUpdateDate().getTime(),
-        items: this.getPlate()
+        items: this.getPlate(),
+        currency: this.shop.tf2Currency.valueOf()
     };
 };
 
@@ -401,6 +402,9 @@ ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
             if (self.getPartner().getTF2Backpack().getCurrencyAmount() < self.currency.getSignedTradeBalance()) {
                 self.emit("tradeRequestResponse", self.ajaxResponses.notEnoughCurrency);
                 callback(false);
+            } else if (self.getAssetsPrice().toKeys() > self.assets_limit.max_key_price) {
+                self.emit("tradeRequestResponse", self.ajaxResponses.assetsPriceLimit(self.assets_limit.max_key_price));
+                callback(false);
             } else {
                 callback(true);
             }
@@ -409,6 +413,17 @@ ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
         this.emit("tradeRequestResponse", this.ajaxResponses.noItems);
         callback(false);
     }
+};
+
+/**
+ * @returns {Price}
+ */
+ShopTrade.prototype.getAssetsPrice = function () {
+    var scrapPrice = 0;
+    for (var i = 0; i < this.assets.length; i += 1) {
+        scrapPrice += this.assets[i].getPrice().toScrap();
+    }
+    return new Price(scrapPrice, Price.SCRAP_METAL);
 };
 
 /**

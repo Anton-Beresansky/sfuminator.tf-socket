@@ -37,7 +37,9 @@ function ShopItem(shop, item, mine) {
 ShopItem.TYPE = {
     HATS: "hats",
     CURRENCY: "currency",
-    STRANGE: "strange"
+    STRANGE: "strange",
+    TAUNT: "taunt",
+    PAINT: "paint"
 };
 
 ShopItem.prototype.setID = function (id) {
@@ -95,6 +97,10 @@ ShopItem.prototype.getType = function () {
                 return ShopItem.TYPE.STRANGE;
             } else if (this.isCurrency()) {
                 return ShopItem.TYPE.CURRENCY;
+            } else if (this.item.isTaunt()) {
+                return ShopItem.TYPE.TAUNT;
+            } else if (this.item.isPaint()) {
+                return ShopItem.TYPE.PAINT;
             }
         }
         return "";
@@ -179,9 +185,11 @@ ShopItem.prototype.getMinePrice = function () {
         var originalPrice = item.getPrice();
         if (item.isHat()) {
             //Cut price we pay if maximum exceeded
-            if (originalPrice.toMetal() > this.shop.ratio.hats.weBuy.maximum) {
-                originalPrice = new Price(this.shop.ratio.hats.weBuy.maximum, Price.REFINED_METAL);
-            }
+            /*
+             if (originalPrice.toMetal() > this.shop.ratio.hats.weBuy.maximum) {
+             originalPrice = new Price(this.shop.ratio.hats.weBuy.maximum, Price.REFINED_METAL);
+             }
+             */
 
             //Apply ratio to price
             if (originalPrice.toMetal() === 1.66) {
@@ -195,20 +203,33 @@ ShopItem.prototype.getMinePrice = function () {
             }
 
             //Compensate price if it's lower than the minimum we pay
-            if (finalPrice.toMetal() < this.shop.ratio.hats.weBuy.minimum) {
-                finalPrice = new Price(this.shop.ratio.hats.weBuy.minimum, Price.REFINED_METAL);
+            /*if (finalPrice.toMetal() < this.shop.ratio.hats.weBuy.minimum) {
+             finalPrice = new Price(this.shop.ratio.hats.weBuy.minimum, Price.REFINED_METAL);
+             }*/
+            if (finalPrice.toScrap() === 0) {
+                finalPrice = new Price(1, Price.SCRAP_METAL);
             }
         } else if (item.isStrangeWeapon()) {
             //Cut
-            if (originalPrice.toMetal() > this.shop.ratio.strange.weBuy.maximum) {
-                originalPrice = new Price(this.shop.ratio.strange.weBuy.maximum, Price.REFINED_METAL);
-            }
+            /*
+             if (originalPrice.toMetal() > this.shop.ratio.strange.weBuy.maximum) {
+             originalPrice = new Price(this.shop.ratio.strange.weBuy.maximum, Price.REFINED_METAL);
+             }
+             */
+
             //Ratio
             finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.strange.weBuy.normal), Price.SCRAP_METAL);
             //Compensate
-            if (finalPrice.toMetal() < this.shop.ratio.strange.weBuy.minimum) {
-                finalPrice = new Price(this.shop.ratio.strange.weBuy.minimum, Price.REFINED_METAL);
+            /*if (finalPrice.toMetal() < this.shop.ratio.strange.weBuy.minimum) {
+             finalPrice = new Price(this.shop.ratio.strange.weBuy.minimum, Price.REFINED_METAL);
+             }*/
+            if (finalPrice.toScrap() === 0) {
+                finalPrice = new Price(1, Price.SCRAP_METAL);
             }
+        } else if (item.isTaunt()) {
+            finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.hats.weBuy.normal), Price.SCRAP_METAL);
+        } else if (item.isPaint()) {
+            finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.hats.weBuy.normal), Price.SCRAP_METAL);
         } else {
             finalPrice = Price(0);
         }
@@ -262,8 +283,7 @@ function ShopItemDataStructure(shopItem) {
     this.image_url = shopItem.item.image_url;
     this.image_url_large = shopItem.item.image_url_large;
     this.used_by_classes = shopItem.item.used_by_classes;
-    this.currency = Price.REFINED_METAL;
-    this.relative_price = shopItem.getPrice().toMetal();
+    this.price = shopItem.getPrice().toScrap();
     this.shop = shopItem.section;
     this.reserved_to = shopItem.getReservation().getHolder();
     if (shopItem.isMineItem() && shopItem.item.isPainted()) {
@@ -271,6 +291,9 @@ function ShopItemDataStructure(shopItem) {
     }
     if (this.id !== shopItem.getItem().getID()) {
         this.real_id = shopItem.getItem().getID();
+    }
+    if (shopItem.getItem().isUnusual()) {
+        this.particle = shopItem.getItem().getParticle();
     }
 }
 
@@ -299,7 +322,7 @@ ShopItem.prototype.getCompressed = function () {
                 compressedItem[CompressionLookup.schema[property]] = itemValue[property];
             } else if (typeof CompressionLookup.values[property] === "function") {
                 //Schema - Compression lookup via function
-                compressedItem[CompressionLookup.schema[property]] = CompressionLookup.values[property](itemValue[property]);
+                compressedItem[CompressionLookup.schema[property]] = CompressionLookup.values[property](this);
             } else {
                 //Schema - Compression lookup via set of values
                 compressedItem[CompressionLookup.schema[property]] = CompressionLookup.values[property][itemValue[property]];
@@ -314,7 +337,7 @@ ShopItem.prototype.getCompressed = function () {
                 compressedAttributes[CompressionLookup.unique_identifiers[property]] = itemValue[property];
             } else if (typeof CompressionLookup.values[property] === "function") {
                 //Item - Compression lookup via function
-                compressedAttributes[CompressionLookup.unique_identifiers[property]] = CompressionLookup.values[property](itemValue[property]);
+                compressedAttributes[CompressionLookup.unique_identifiers[property]] = CompressionLookup.values[property](this);
             } else {
                 //Item - Compression lookup via set of values
                 compressedAttributes[CompressionLookup.unique_identifiers[property]] = CompressionLookup.values[property][itemValue[property]];

@@ -159,6 +159,14 @@ TF2Item.prototype.isHat = function () {
         || (this.craft_material_type === "hat");
 };
 
+TF2Item.prototype.isTaunt = function () {
+    return this.item_slot === "taunt";
+};
+
+TF2Item.prototype.isPaint = function () {
+    return this.name.slice(0, "Paint Can".length) === "Paint Can";
+};
+
 TF2Item.prototype.isStrangeWeapon = function () {
     return (this.craft_material_type === "weapon")
         && (this.getQuality() === TF2Constants.quality.Strange);
@@ -166,6 +174,14 @@ TF2Item.prototype.isStrangeWeapon = function () {
 
 TF2Item.prototype.isAustralium = function () {
     return this.attributeExist(TF2Constants.attributeDefindexes.Australium);
+};
+
+TF2Item.prototype.isUnusual = function () {
+    return this.quality === TF2Constants.quality.Unusual;
+};
+
+TF2Item.prototype.getParticle = function () {
+    return this.getAttribute(TF2Constants.attributeDefindexes.Particle).getFloatValue();
 };
 
 /**
@@ -177,8 +193,7 @@ TF2Item.prototype.isCurrency = function () {
     return (this.defindex === TF2Constants.defindexes.ScrapMetal
         || this.defindex === TF2Constants.defindexes.ReclaimedMetal
         || this.defindex === TF2Constants.defindexes.RefinedMetal
-            //We are removing mann co key from currency for now.
-            /*|| this.defindex === TF2Constants.defindexes.MannCoKey*/) && this.isTradable();
+        || this.defindex === TF2Constants.defindexes.MannCoKey) && this.isTradable();
 };
 
 /**
@@ -190,7 +205,7 @@ TF2Item.prototype.getPaintColor = function () {
 };
 
 TF2Item.prototype.isPainted = function () {
-    return this.attributeExist(TF2Constants.attributeDefindexes.Paint);
+    return this.attributeExist(TF2Constants.attributeDefindexes.Paint) && !this.isPaint();
 };
 
 TF2Item.prototype.attributeExist = function (defindex) {

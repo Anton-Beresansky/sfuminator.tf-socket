@@ -29,6 +29,9 @@ function Shop(sfuminator) {
     this.tf2Currency = TF2Currency;
     this.tf2Currency.setWebApi(this.webApi);
     this.bots = this.getBots();
+    /**
+     * @type {ShopInventory}
+     */
     this.inventory = new ShopInventory(this);
     /**
      * @type {Reservations}
@@ -37,7 +40,9 @@ function Shop(sfuminator) {
     this.instanceID = new Date().getTime();
     this.countLimit = {
         hats: {Strange: 2, Vintage: 3, Genuine: 3, Haunted: 3, _any: 5, _price: {over: 7, limit: 3}},
-        strange: {_any: 5, _price: {over: 7, limit: 3}}
+        strange: {_any: 5, _price: {over: 7, limit: 3}},
+        taunt: {_any: 4},
+        paint: {_any: 4}
     };
     /**
      * @type {ShopItemCount}
@@ -152,8 +157,11 @@ Shop.prototype.sectionExist = function (section) {
  * @param {String} type
  */
 Shop.prototype.getClientBackpack = function (type) {
-    return this.sections[type].getCompressedItems();
-
+    return {
+        result: "success",
+        items: this.sections[type].getCompressedItems(),
+        currency: this.tf2Currency.valueOf()
+    }
 };
 
 /**
@@ -168,7 +176,7 @@ Shop.prototype.getLimit = function (item) {
     }
     var itemQualityName = item.getItem().getQualityName();
     var qualityLimit = (countLimit.hasOwnProperty(itemQualityName)) ? countLimit[itemQualityName] : countLimit._any;
-    if (item.getItem().getPrice().toMetal() > countLimit._price.over) {
+    if (countLimit._price && item.getItem().getPrice().toMetal() > countLimit._price.over) {
         if (countLimit._price.limit < qualityLimit) {
             return countLimit._price.limit;
         }
@@ -183,16 +191,17 @@ Shop.prototype.getLimit = function (item) {
  */
 Shop.prototype.makeMine = function (backpack) {
     this.log.debug("Getting mine items, bp: " + backpack.getOwner(), 1);
-    if (!backpack.hasErrored()) {
-        return this.filterMineItems(backpack).getCompressedItems();
-    } else {
-        return {
-            result: "error",
-            message: backpack.getErrorMessage(),
-            timestamp: parseInt(backpack.last_update_date.getTime() / 1000),
-            items: this.filterMineItems(backpack).getCompressedItems()
-        };
+    var response = {
+        result: "success",
+        items: this.filterMineItems(backpack).getCompressedItems(),
+        currency: this.tf2Currency.valueOf()
+    };
+    if (backpack.hasErrored()) {
+        response.result = "error";
+        response.message = backpack.getErrorMessage();
+        response.timestamp = parseInt(backpack.last_update_date.getTime() / 1000);
     }
+    return response;
 };
 
 var ShopItem = require("./shop/inventory/shopItem.js");
@@ -244,11 +253,14 @@ Shop.prototype.canBeSold = function (item) {
  */
 Shop.prototype.verifyMineItemPriceRange = function (item) {
     var originalPrice = item.getItem().getPrice(); //Be sure to check on actual item price not shop price
-    if (item.getType() === ShopItem.TYPE.HATS) {
-        return originalPrice.toMetal() <= (this.ratio.hats.weSell.maximum) && originalPrice.toMetal() >= this.ratio.hats.weSell.minimum;
-    } else if (item.getType() === ShopItem.TYPE.STRANGE) {
-        return originalPrice.toMetal() <= (this.ratio.strange.weSell.maximum) && originalPrice.toMetal() >= this.ratio.strange.weSell.minimum;
-    }
+    /*if (item.getType() === ShopItem.TYPE.HATS) {
+     //return originalPrice.toMetal() <= (this.ratio.hats.weSell.maximum) && originalPrice.toMetal() >= this.ratio.hats.weSell.minimum;
+     return originalPrice.toMetal() >= this.ratio.hats.weSell.minimum;
+     } else if (item.getType() === ShopItem.TYPE.STRANGE) {
+     //return originalPrice.toMetal() <= (this.ratio.strange.weSell.maximum) && originalPrice.toMetal() >= this.ratio.strange.weSell.minimum;
+     return originalPrice.toMetal() >= this.ratio.strange.weSell.minimum;
+     }*/
+    return originalPrice.toScrap() > 0 && originalPrice.toKeys() < 5;
 };
 
 /**
