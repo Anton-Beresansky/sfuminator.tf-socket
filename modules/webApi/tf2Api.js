@@ -100,6 +100,10 @@ TF2Api.prototype.loadItemSchema = function (callback) {
                         finalSchema[thisItem.defindex].price[thisItem.quality] = [self._getPriceObject_Load(thisItem)];
                     }
                 }
+                if (thisItem.image_url[0] === "[") {
+                    finalSchema[thisItem.defindex].image_url = JSON.parse(thisItem.image_url)[0];
+                    finalSchema[thisItem.defindex].image_url_large = JSON.parse(thisItem.image_url_large)[0];
+                }
             }
             self.schema = finalSchema;
             if (typeof callback === "function") {
@@ -222,7 +226,7 @@ TF2Api.prototype.updateSchema = function (callback) {
     var self = this;
     this.isSchemaUpToDate(function (newVersion) {
         self.emit("debug", "New version is: " + newVersion);
-        if (newVersion > 0 || true) {
+        if (newVersion > 0) {
             self.downloadSchema(newVersion, function () {
                 if (typeof callback === "function") {
                     callback();
@@ -437,7 +441,8 @@ TF2Api.prototype._injectMarketImages = function (items, callback) {
         i += 1;
         if (i < items.length) {
             if ((items[i].hasOwnProperty("tool") && items[i].tool.type == "paint_can" && items[i].item_name !== "Paint Can")
-                || items[i].item_quality == 15) {
+            //|| items[i].item_quality == 15
+            ) {
                 self._getMarketImageInjectedItem(items[i], function (item) {
                     items[i] = item;
                     nextItem();
