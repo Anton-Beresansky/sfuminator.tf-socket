@@ -301,7 +301,11 @@ Sfuminator.prototype.fetchShopInventory = function (request, callback) {
             break;
         default:
             if (this.shop.sectionExist(data.type)) {
-                callback(this.shop.getClientBackpack(data.type));
+                if (this.shop.sectionHasItems(data.type)) {
+                    callback(this.shop.getClientBackpack(data.type));
+                } else {
+                    callback(this.responses.sectionHasNoItems);
+                }
             } else {
                 callback(this.responses.sectionNotFound);
             }

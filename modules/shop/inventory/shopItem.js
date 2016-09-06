@@ -99,7 +99,7 @@ ShopItem.prototype.getType = function () {
                 return ShopItem.TYPE.CURRENCY;
             } else if (this.item.isTaunt()) {
                 return ShopItem.TYPE.TAUNT;
-            } else if (this.item.isPaint()) {
+            } else if (this.item.isPaint() && this.item.isCraftable()) {
                 return ShopItem.TYPE.PAINT;
             }
         }
