@@ -333,7 +333,7 @@ Sfuminator.prototype.getUpdates = function (request) {
             response.methods.setQueue = this.status.getQueue(user.getSteamid());
         }
     }
-    if (data.hasOwnProperty("section") && data.section && this.shop.sectionExist(data.section.type)) { //Items
+    if (data.hasOwnProperty("section") && data.section && this.shop.sectionHasItems(data.section.type)) { //Items
         var itemChanges = this.shop.sections[data.section.type].getClientChanges(data.section.last_update_date);
         if (itemChanges !== false) {
             response.methods.updateItemsVersioning = itemChanges;
