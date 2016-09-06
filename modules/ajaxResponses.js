@@ -25,6 +25,7 @@ function AjaxResponses(sfuminator) {
         code: "items_already_reserved"
     };
     this.sectionNotFound = {result: "error", message: "Shop section not found", code: "section_not_found"};
+    this.sectionHasNoItems = {result: "error", message: "There are no items here", code: "section_has_no_items"};
     this.itemCantBeSold = {result: "error", message: "Selected item can't be sold", code: "cant_sell_item"};
     this.alreadyInTrade = {result: "error", message: "You are already in trade", code: "already_in_trade"};
     this.notInTrade = {result: "error", message: "You are not in trade", code: "not_in_trade"};

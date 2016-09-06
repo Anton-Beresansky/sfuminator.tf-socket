@@ -149,6 +149,15 @@ Shop.prototype.getItem = function (id) {
  * @returns {Boolean}
  */
 Shop.prototype.sectionExist = function (section) {
+    for (var sectionType in ShopItem.TYPE) {
+        if (ShopItem.TYPE[sectionType] === section) {
+            return true;
+        }
+    }
+    return false;
+};
+
+Shop.prototype.sectionHasItems = function (section) {
     return this.sections.hasOwnProperty(section);
 };
 
