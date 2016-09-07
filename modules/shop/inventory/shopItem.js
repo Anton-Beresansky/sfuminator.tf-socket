@@ -229,7 +229,8 @@ ShopItem.prototype.getMinePrice = function () {
         } else if (item.isTaunt()) {
             finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.hats.weBuy.normal), Price.SCRAP_METAL);
         } else if (item.isPaint()) {
-            finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.hats.weBuy.normal), Price.SCRAP_METAL);
+            //A bit higher than normal (0.01)
+            finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.hats.weBuy.lowTier), Price.SCRAP_METAL);
         } else {
             finalPrice = Price(0);
         }
