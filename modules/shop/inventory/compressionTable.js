@@ -35,7 +35,9 @@ function CompressionLookup() {
         shop: {
             mine: 0,
             hats: 1,
-            strange: 2
+            strange: 2,
+            taunt: 3,
+            paint: 4
         },
         image_url: function (shopItem) {
             if (shopItem.getItem().isPaint()) {
