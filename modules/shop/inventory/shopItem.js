@@ -281,8 +281,8 @@ function ShopItemDataStructure(shopItem) {
     this.level = shopItem.item.level;
     this.quality = shopItem.item.getQuality();
     this.name = shopItem.item.getFullName();
-    this.image_url = shopItem.item.image_url;
-    this.image_url_large = shopItem.item.image_url_large;
+    this.image_url = shopItem.item.getImageUrl();
+    this.image_url_large = shopItem.item.getImageUrl(true);
     this.used_by_classes = shopItem.item.used_by_classes;
     this.price = shopItem.getPrice().toScrap();
     this.shop = shopItem.section;

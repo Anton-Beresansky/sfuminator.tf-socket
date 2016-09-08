@@ -41,16 +41,16 @@ function CompressionLookup() {
         },
         image_url: function (shopItem) {
             if (shopItem.getItem().isPaint()) {
-                return shopItem.getItem().image_url;
+                return shopItem.getItem().getImageUrl();
             } else {
-                return shopItem.getItem().image_url.slice(45);
+                return shopItem.getItem().getImageUrl().slice(45);
             }
         },
         image_url_large: function (shopItem) {
             if (shopItem.getItem().isPaint()) {
-                return shopItem.getItem().image_url_large;
+                return shopItem.getItem().getImageUrl(true);
             } else {
-                return shopItem.getItem().image_url_large.slice(45);
+                return shopItem.getItem().getImageUrl(true).slice(45);
             }
         }
     }
