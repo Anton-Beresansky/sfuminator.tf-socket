@@ -98,7 +98,7 @@ TF2Item.prototype.getName = function () {
  * @returns {String}
  */
 TF2Item.prototype.getQualityName = function () {
-    return TF2Constants.qualities[this.getQuality()];
+    return TF2Constants.namedQualities[this.getQuality()];
 };
 
 /**
@@ -115,6 +115,26 @@ TF2Item.prototype.getLevel = function () {
 
 TF2Item.prototype.getDefindex = function () {
     return this.defindex;
+};
+
+TF2Item.prototype.getImageUrl = function (large) {
+    var image_url = this.image_url;
+    if (large) {
+        image_url = this.image_url_large;
+    }
+    if (image_url instanceof Array) {
+        var url = image_url[0];
+        if (this.isDecorated()) {
+            url = image_url[this.getDecoratedWearing()];
+        }
+        if (large) {
+            return url;
+        } else {
+            return url + "/128fx128f";
+        }
+
+    }
+    return image_url;
 };
 
 TF2Item.prototype.isTradable = function () {
@@ -165,6 +185,18 @@ TF2Item.prototype.isTaunt = function () {
 
 TF2Item.prototype.isPaint = function () {
     return this.name.slice(0, "Paint Can".length) === "Paint Can";
+};
+
+TF2Item.prototype.isDecorated = function () {
+    return this.getQuality() === TF2Constants.quality.DecoratedWeapon;
+};
+
+TF2Item.prototype.getDecoratedWearingName = function () {
+    return TF2Constants.namedDecoratedWearings[this.getDecoratedWearing()];
+};
+
+TF2Item.prototype.getDecoratedWearing = function () {
+    return parseInt(this.getAttribute(TF2Constants.attributeDefindexes.DecoratedWear).getFloatValue() * 5) - 1;
 };
 
 TF2Item.prototype.isStrangeWeapon = function () {

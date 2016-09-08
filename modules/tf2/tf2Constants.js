@@ -9,11 +9,15 @@ function TF2Constants() {
         MannCoKey: 5021
     };
 
-    this.qualities = [
+    this.namedQualities = [
         "Normal", "Genuine", "rarity2", "Vintage", "rarity3",
         "Unusual", "Unique", "Community", "Valve", "Self-Made",
         "Customized", "Strange", "Completed", "Haunted",
         "Collector's", "Decorated Weapon"
+    ];
+
+    this.namedDecoratedWearings = [
+        "Factory New", "Minimal Wear", "Field-Tested", "Well-Worn", "Battle Scarred"
     ];
 
     this.quality = {
@@ -38,6 +42,15 @@ function TF2Constants() {
     this.attributeDefindexes = {
         Australium: 2027,
         Paint: 142,
-        Particle: 134
+        Particle: 134,
+        DecoratedWear: 725
     };
+
+    this.decoratedWearAttribute = {
+        "Factory New": 0.2,
+        "Minimal Wear": 0.4,
+        "Field-Tested": 0.6,
+        "Well-Worn": 0.8,
+        "Battle Scarred": 1
+    }
 }

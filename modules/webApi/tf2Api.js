@@ -101,8 +101,8 @@ TF2Api.prototype.loadItemSchema = function (callback) {
                     }
                 }
                 if (thisItem.image_url[0] === "[") {
-                    finalSchema[thisItem.defindex].image_url = JSON.parse(thisItem.image_url)[0];
-                    finalSchema[thisItem.defindex].image_url_large = JSON.parse(thisItem.image_url_large)[0];
+                    finalSchema[thisItem.defindex].image_url = JSON.parse(thisItem.image_url);
+                    finalSchema[thisItem.defindex].image_url_large = JSON.parse(thisItem.image_url_large);
                 }
             }
             self.schema = finalSchema;
@@ -441,7 +441,7 @@ TF2Api.prototype._injectMarketImages = function (items, callback) {
         i += 1;
         if (i < items.length) {
             if ((items[i].hasOwnProperty("tool") && items[i].tool.type == "paint_can" && items[i].item_name !== "Paint Can")
-            //|| items[i].item_quality == 15
+                || items[i].item_quality == 15
             ) {
                 self._getMarketImageInjectedItem(items[i], function (item) {
                     items[i] = item;
@@ -480,7 +480,8 @@ TF2Api.prototype._hasItemMarketImage = function (defindex, callback) {
         connection.query("SELECT `image_url`,`image_url_large` FROM `schema` WHERE defindex=" + defindex, function (result, isEmpty) {
             connection.release();
             if (!isEmpty) {
-                if (result[0].image_url[0] === "[" && result[0].image_url_large[0] === "[") {
+                if (result[0].image_url[0] === "[" && result[0].image_url_large[0] === "["
+                && result[0].image_url[1] !== "]" && result[0].image_url_large[1] !== "]") {
                     callback(result[0].image_url, result[0].image_url_large);
                 } else {
                     callback(false);
@@ -521,28 +522,34 @@ TF2Api.prototype._fetchMarketItemImageURL = function (schemaItem, callback) {
                         var $ = cheerio.load(body);
                         callback($(".market_listing_largeimage > img").attr("src").slice(0, -10));
                     } catch (e) {
-                        self.log.error("Something went wrong fetching the item page (" + name + ")");
+                        self.log.error("Something went wrong fetching the item page (" + name + ") " + schemaItem.defindex);
                         console.log(e);
                         callback("");
                     }
                 } else {
-                    self.log.error("Something went wrong fetching the item page (actually steam fault) (" + name + ")");
-                    callback("");
+                    self.log.error("Something went wrong fetching the item page (actually steam fault) (" + name + ") " + schemaItem.defindex);
+                    self.log.debug("Steam si angry we shall finish here...");
+                    callback("steam_angry");
                 }
             });
         };
         var next = function () {
-            setTimeout(function () {
-                i += 1;
-                if (i < names.length) {
-                    fetch(names[i], function (url) {
+            i += 1;
+            if (i < names.length) {
+                fetch(names[i], function (url) {
+                    if (url === "steam_angry") {
+                        i = names.length;
+                        callback("[]");
+                    } else {
                         images.push(url);
-                        next();
-                    });
-                } else {
-                    callback(JSON.stringify(images))
-                }
-            }, 2500);
+                        setTimeout(function () {
+                            next();
+                        }, 2500);
+                    }
+                });
+            } else {
+                callback(JSON.stringify(images))
+            }
         };
         next();
     };
