@@ -2,6 +2,7 @@ module.exports = TF2Api;
 
 var events = require("events");
 var API = require("../../lib/api.js");
+var VDF = require("vdf");
 var Logs = require("../../lib/logs.js");
 var request = require("request");
 var cheerio = require("cheerio");
@@ -398,35 +399,30 @@ TF2Api.prototype._injectMarketData = function (schema, callback) {
 };
 
 TF2Api.prototype._injectMarketNames = function (items, callback) {
-    this._fetchDefindexNameLookup(function (defindexLookup) {
+    this._fetchNameLookup(function (nameLookup) {
         for (var i = 0; i < items.length; i += 1) {
-            if (items[i].item_quality === 15) {
-                items[i].item_name = defindexLookup[items[i].defindex];
+            if (nameLookup.hasOwnProperty(items[i].name)) {
+                items[i].item_name = nameLookup[items[i].name];
+                if (items[i].item_name.slice(-items[i].item_type_name.length) !== items[i].item_type_name) {
+                    items[i].item_name += " " + items[i].item_type_name;
+                }
             }
         }
         callback(items);
     });
 };
 
-TF2Api.prototype._fetchDefindexNameLookup = function (callback) {
+TF2Api.prototype._fetchNameLookup = function (callback) {
     var self = this;
-    request('https://wiki.alliedmods.net/Team_fortress_2_item_definition_indexes', function (error, response, body) {
+    var request = require("request");
+    request('https://wiki.teamfortress.com/w/images/c/cf/Tf_english.txt', function (error, response, body) {
         if (!error && response.statusCode === 200) {
-            try {
-                var $ = cheerio.load(body);
-                var defindexLookup = {};
-                $("tr").each(function () {
-                    var defindexCell = $(this).find("th").first();
-                    if (defindexCell.attr("scope") === "row") {
-                        defindexLookup[defindexCell.text().trim()] = $(this).find("td").first().text().trim();
-                    }
-                });
-                callback(defindexLookup);
-            } catch (e) {
-                self.log.error("Something went wrong fetching the defindex page");
-                console.log(e);
-                callback(null);
+            var result = VDF.parse(body);
+            for (var i in result) {
+                var lookupTable = result[i].Tokens;
+                break;
             }
+            callback(lookupTable);
         } else {
             self.log.error("Something went wrong fetching the defindex page (actually their fault)");
             callback(null);
@@ -481,7 +477,7 @@ TF2Api.prototype._hasItemMarketImage = function (defindex, callback) {
             connection.release();
             if (!isEmpty) {
                 if (result[0].image_url[0] === "[" && result[0].image_url_large[0] === "["
-                && result[0].image_url[1] !== "]" && result[0].image_url_large[1] !== "]") {
+                    && result[0].image_url[1] !== "]" && result[0].image_url_large[1] !== "]") {
                     callback(result[0].image_url, result[0].image_url_large);
                 } else {
                     callback(false);
@@ -509,7 +505,7 @@ TF2Api.prototype._fetchMarketItemImageURL = function (schemaItem, callback) {
         names.push(schemaItem.item_name);
     } else if (schemaItem.item_quality == 15) {
         for (var i = 0; i < TF2Api.DECORATED_WEARING.length; i += 1) {
-            names.push(schemaItem.item_name + " " + schemaItem.item_type_name + " (" + TF2Api.DECORATED_WEARING[i] + ")");
+            names.push(schemaItem.item_name + " (" + TF2Api.DECORATED_WEARING[i] + ")");
         }
     }
 
@@ -544,7 +540,7 @@ TF2Api.prototype._fetchMarketItemImageURL = function (schemaItem, callback) {
                         images.push(url);
                         setTimeout(function () {
                             next();
-                        }, 2500);
+                        }, 15000);
                     }
                 });
             } else {
