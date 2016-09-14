@@ -197,7 +197,12 @@ SfuminatorRequest.prototype.isReadable = function () {
  * @returns {Boolean}
  */
 SfuminatorRequest.prototype.hasRootKey = function () {
-    return this.data && this.data.hasOwnProperty("rootKey") && this.data.rootKey === this._rootKey;
+    try {
+        return this.data && this.data.hasOwnProperty("rootKey") && this.data.rootKey === this._rootKey;
+    } catch (e) {
+        this.log.error("Can't call hasOwnProperty!");
+        return false;
+    }
 };
 
 /**
