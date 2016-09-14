@@ -102,8 +102,12 @@ BotsController.prototype.assignBot = function (shopTrade) {
         }
     }
 
-    shopTrade.setBot(assignedBot.getUser());
-    return true;
+    if (assignedBot) {
+        shopTrade.setBot(assignedBot.getUser());
+        return true;
+    } else {
+        return false;
+    }
 };
 
 /**

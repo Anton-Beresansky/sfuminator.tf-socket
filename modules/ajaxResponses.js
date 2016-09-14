@@ -35,6 +35,11 @@ function AjaxResponses(sfuminator) {
         code: "not_enough_metal"
     };
     this.botIsNotAvailable = {result: "error", message: "Sorry, bot can't trade right now", code: "bot_cannot_trade"};
+    this.unableToAssignBot = {
+        result: "error",
+        message: "Sorry, there was an unexpected error, we were unable to assign a bot to your trade, please retry later",
+        code: "unable_to_assign_bot"
+    };
     this.cannotGatherItems = {
         result: "error",
         message: "Sorry, there was a problem when gathering items from bots, please retry later",
@@ -63,7 +68,10 @@ function AjaxResponses(sfuminator) {
         return {result: "error", message: "Sorry, you can sell only " + limit + " items per trade", code: "hat_limit"};
     };
     this.assetsPriceLimit = function (limit) {
-        return {result: "error", message: "Sorry, this trade exceed maximum items value of " + limit + " keys"};
+        return {
+            result: "error",
+            message: "Sorry, this trade exceed the maximum total items value of " + limit + " keys, please retry removing one or more items"
+        };
     };
     this.itemExceedCount = function (item, excess) {
         return {

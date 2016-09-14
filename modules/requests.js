@@ -197,7 +197,7 @@ SfuminatorRequest.prototype.isReadable = function () {
  * @returns {Boolean}
  */
 SfuminatorRequest.prototype.hasRootKey = function () {
-    return this.data.hasOwnProperty("rootKey") && this.data.rootKey === this._rootKey;
+    return this.data && this.data.hasOwnProperty("rootKey") && this.data.rootKey === this._rootKey;
 };
 
 /**
