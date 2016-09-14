@@ -34,7 +34,7 @@ function TraderBot(user, sfuminator) {
      */
     this.interactions = new BotInteractions();
 
-    this.log = new Logs({applicationName: "Trader bot " + this.steamid, color: "grey", dim: true});
+    this.log = new Logs({applicationName: "Trader bot " + this.steamid, color: "red", dim: true});
     var self = this;
     this.steamClient.login();
     this.steamClient.onceLoggedIn(function () {
@@ -154,12 +154,18 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
             self.finalizeSendShopTrade(shopTrade);
         });
     } else {
-        if (this.steamClient.isFriend(partnerSteamid)) {
+        if (this.steamClient.isFriend(partnerSteamid) && this.steamClient.getFriend(partnerSteamid)) {
             shopTrade.onceItemsAreReady(function () {
                 self.steamClient.getFriend(partnerSteamid).sendMessage(self.interactions.getMessage("tradeOffer_hello", sfuminatorUser));
                 self.finalizeSendShopTrade(shopTrade);
             });
         } else {
+            //Test purpose
+            if (this.steamClient.isFriend(partnerSteamid) && !this.steamClient.getFriend(partnerSteamid)) {
+                this.log.test(partnerSteamid + " is friend but no friend instance found, adding partner...");
+            }
+            //
+
             this.steamClient.addFriend(partnerSteamid);
             shopTrade.setAsWaitingForFriendRelation();
             shopTrade.on('friendRequestTimeout', function () {

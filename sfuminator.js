@@ -384,12 +384,17 @@ Sfuminator.prototype.requestTrade = function (request, mode, callback) {
             callback(response);
         });
         trade.verifyItems(function (success) {
-            if (success && self.botsController.assignBot(trade)) {
-                trade.consolidate(function () {
-                    self.log.debug("Trade request approved (id: " + trade.getID() + " ~ " + user.getSteamid() + ")");
-                    callback(self.responses.tradeRequestSuccess(trade));
-                    self.botsController.startOffNewShopTrade(trade);
-                });
+            if (success) {
+                if (self.botsController.assignBot(trade)) {
+                    trade.consolidate(function () {
+                        self.log.debug("Trade request approved (id: " + trade.getID() + " ~ " + user.getSteamid() + ")");
+                        callback(self.responses.tradeRequestSuccess(trade));
+                        self.botsController.startOffNewShopTrade(trade);
+                    });
+                } else {
+                    self.log.error("Wasn't able to assign bot");
+                    callback(self.responses.unableToAssignBot);
+                }
             }
         });
     } else {
