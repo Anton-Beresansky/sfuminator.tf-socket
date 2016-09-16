@@ -23,7 +23,7 @@ function Shop(sfuminator) {
     this.db = this.sfuminator.db;
     this.interrupts = this.sfuminator.interrupts;
     this.users = this.sfuminator.users;
-    this.log = new Logs({applicationName: "Shop", color: "green"});
+    this.log = new Logs({applicationName: "Shop", color: "grey", dim: true});
 
     this.ratio = new ShopRatio(this.db);
     this.tf2Currency = TF2Currency;
