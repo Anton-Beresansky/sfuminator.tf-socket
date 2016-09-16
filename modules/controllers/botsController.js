@@ -87,6 +87,9 @@ BotsController.prototype.assignBot = function (shopTrade) {
     //Verify that all bots are available for the requested items
     for (i = 0; i < ownerList.length; i += 1) {
         if (!this.getBot(ownerList[i].owner).isAvailable()) {
+            var unavailableBot = this.getBot(ownerList[i].owner);
+            this.log.warning(unavailableBot.getUser().getCredentials().getUsername() +
+                " is unavailable: l(" + unavailableBot.steamClient.isLogged() + ") a(" + unavailableBot.available + ")");
             shopTrade.emit("tradeRequestResponse", this.sfuminator.responses.botIsNotAvailable);
             return false;
         }
