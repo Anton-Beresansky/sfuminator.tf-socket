@@ -14,6 +14,7 @@ function CompressionLookup() {
         used_by_classes: "e",
         quality: "f",
         particle: "g",
+        decorated_grade: "gg",
         shop: "h"
     };
     this.items_group = "i";
@@ -37,7 +38,8 @@ function CompressionLookup() {
             hats: 1,
             strange: 2,
             taunt: 3,
-            paint: 4
+            paint: 4,
+            market: 5
         },
         image_url: function (shopItem) {
             if (shopItem.getItem().isPaint()) {

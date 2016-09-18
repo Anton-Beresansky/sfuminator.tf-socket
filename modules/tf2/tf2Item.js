@@ -72,7 +72,8 @@ TF2Item.prototype.getOriginalID = function () {
 TF2Item.prototype.getFullName = function () {
     if (!this.full_name) {
         var qualityName = this.getQualityName();
-        this.full_name = ((qualityName === "Unique") ? "" : (qualityName + " ")) + this.getName();
+        this.full_name = ((qualityName === "Unique" || this.isDecorated()) ? "" : (qualityName + " "))
+            + this.getName() + (this.isDecorated() ? (" (" + this.getDecoratedWearingName() + ")") : "");
     }
     return this.full_name;
 };
@@ -175,6 +176,7 @@ TF2Item.prototype.getPrice = function () {
 TF2Item.prototype.isHat = function () {
     return (this.hasOwnProperty("item_type_name")
         && (this.item_type_name === "#TF_Wearable_Hat"))
+        || (this.item_type_name === "Costume Piece")
         || (this.item_type_name === "Hat")
         || (this.craft_material_type === "hat");
 };
@@ -197,6 +199,22 @@ TF2Item.prototype.getDecoratedWearingName = function () {
 
 TF2Item.prototype.getDecoratedWearing = function () {
     return parseInt(this.getAttribute(TF2Constants.attributeDefindexes.DecoratedWear).getFloatValue() * 5) - 1;
+};
+
+TF2Item.prototype.getDecoratedGradeName = function () {
+    return TF2Constants.namedDecoratedGrade[this.getDecoratedGrade()];
+};
+
+TF2Item.prototype.getDecoratedGrade = function () {
+    return TF2Constants.decoratedGrade[this.decorated_grade];
+};
+
+TF2Item.prototype.isTool = function () {
+    return this.item_type_name === "Tool";
+};
+
+TF2Item.prototype.isStrangePart = function () {
+    return this.item_type_name === "Strange Part";
 };
 
 TF2Item.prototype.isStrangeWeapon = function () {
