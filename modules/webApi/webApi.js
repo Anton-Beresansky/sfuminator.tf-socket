@@ -52,13 +52,15 @@ WebApi.prototype.onceReady = function (callback) {
 
 WebApi.prototype.update = function (callback) {
     var self = this;
-    this.getKeyPrice(function () {
-        self.tf2.update(function () {
-            if (typeof callback == "function") {
-                callback();
-            }
+    setTimeout(function () {
+        self.getKeyPrice(function () {
+            self.tf2.update(function () {
+                if (typeof callback == "function") {
+                    callback();
+                }
+            });
         });
-    });
+    }, 2000);
 };
 
 WebApi.prototype.getKeyPrice = function (callback) {

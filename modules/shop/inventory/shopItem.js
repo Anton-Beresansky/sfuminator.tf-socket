@@ -107,6 +107,15 @@ ShopItem.prototype.getType = function () {
     }
 };
 
+ShopItem.prototype.canBeMarketed = function () {
+    var gameItem = this.getItem();
+    if (gameItem instanceof TF2Item) {
+        return !this.isHiddenType() && (this.getType() ||
+            (gameItem.isTradable() && gameItem.isCraftable() && (gameItem.isDecorated() || gameItem.isTool() || gameItem.isStrangePart())))
+    }
+    return false;
+};
+
 ShopItem.prototype.isHiddenType = function () {
     for (var i = 0; i < this.shop.hiddenSections.length; i += 1) {
         if (this.shop.hiddenSections[i] === this.getType()) {
@@ -147,12 +156,20 @@ ShopItem.prototype.setAsMineSection = function () {
     this.section = "mine";
 };
 
+ShopItem.prototype.setAsMarketSection = function () {
+    this.section = "market";
+};
+
 /**
  * Establish if Shop Item belongs to Section of type "mine"
  * @returns {Boolean}
  */
 ShopItem.prototype.isMineItem = function () {
     return this.section === "mine";
+};
+
+ShopItem.prototype.isMarketItem = function () {
+    return this.section === "market";
 };
 
 /**
@@ -287,7 +304,7 @@ function ShopItemDataStructure(shopItem) {
     this.price = shopItem.getPrice().toScrap();
     this.shop = shopItem.section;
     this.reserved_to = shopItem.getReservation().getHolder();
-    if (shopItem.isMineItem() && shopItem.item.isPainted()) {
+    if ((shopItem.isMineItem() || shopItem.isMarketItem()) && shopItem.item.isPainted()) {
         this.paint_color = shopItem.item.getPaintColor();
     }
     if (this.id !== shopItem.getItem().getID()) {
@@ -295,6 +312,9 @@ function ShopItemDataStructure(shopItem) {
     }
     if (shopItem.getItem().isUnusual()) {
         this.particle = shopItem.getItem().getParticle();
+    }
+    if (shopItem.getItem().isDecorated()) {
+        this.decorated_grade = shopItem.getItem().getDecoratedGrade();
     }
 }
 
@@ -317,7 +337,7 @@ ShopItem.prototype.getCompressed = function () {
     var itemValue = this.valueOf();
     var compressedItem = {}, property;
     for (property in CompressionLookup.schema) {
-        if (itemValue.hasOwnProperty(property) && itemValue[property]) {
+        if (itemValue.hasOwnProperty(property) && typeof itemValue[property] !== "undefined") {
             if (!CompressionLookup.values.hasOwnProperty(property)) {
                 //Schema - Direct compression lookup
                 compressedItem[CompressionLookup.schema[property]] = itemValue[property];
@@ -332,7 +352,7 @@ ShopItem.prototype.getCompressed = function () {
     }
     var compressedAttributes = {};
     for (property in CompressionLookup.unique_identifiers) {
-        if (itemValue.hasOwnProperty(property) && itemValue[property]) {
+        if (itemValue.hasOwnProperty(property) && typeof itemValue[property] !== "undefined") {
             if (!CompressionLookup.values.hasOwnProperty(property)) {
                 //Item - Direct compression lookup
                 compressedAttributes[CompressionLookup.unique_identifiers[property]] = itemValue[property];

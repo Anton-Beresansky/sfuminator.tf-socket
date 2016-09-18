@@ -34,14 +34,13 @@ module.exports = BackpacksApi;
 var events = require("events");
 
 /**
- * @param db
- * @param steam
- * @param tf2
+ * @param db {Database}
+ * @param steam {SteamAPI}
+ * @param tf2 {TF2Api}
  * @param options
  * @constructor
  */
 function BackpacksApi(db, steam, tf2, options) {
-    var self = this;
     this.db = db;
     this.steam = steam;
     this.tf2 = tf2;
@@ -371,6 +370,9 @@ BackpacksApi.prototype.mergeItemWithSchemaItem = function (item, schemaItem) {
     } else if (this._itemHasAttribute(187, item)) {
         var attribute = this._getItemAttribute(187, item);
         additional = attribute.float_value;
+    }
+    if (item.quality === 15) {
+        item.decorated_grade = this.tf2.decoratedRarities[item.name];
     }
     var right_price = null;
     if (prices && prices.length > 0) {

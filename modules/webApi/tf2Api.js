@@ -3,6 +3,7 @@ module.exports = TF2Api;
 var events = require("events");
 var API = require("../../lib/api.js");
 var VDF = require("vdf");
+var FS = require("fs");
 var Logs = require("../../lib/logs.js");
 var request = require("request");
 var cheerio = require("cheerio");
@@ -20,6 +21,7 @@ function TF2Api(webApi, backpacktf_key, options) {
     this.steam = webApi.steamApi;
     this.bptftf_key = backpacktf_key;
 
+    this.fetchingItemsGame = false;
     this.updateInterval = (options && options.hasOwnProperty("update_interval")) ? options.update_interval : (4 * 60 * 60000); //default 4 hours
     this.log = new Logs({applicationName: "TF2 Api"});
     this.debug = (options && options.hasOwnProperty("debug")) ? options.debug : false; //default false
@@ -49,9 +51,11 @@ TF2Api.prototype.loadSchema = function (callback) {
     var self = this;
     this.loadItemSchema(function () {
         self.loadCurrencies(function () {
-            if (typeof callback === "function") {
-                callback();
-            }
+            self.readItemsGame(function () {
+                if (typeof callback === "function") {
+                    callback();
+                }
+            });
         });
     });
 };
@@ -229,9 +233,11 @@ TF2Api.prototype.updateSchema = function (callback) {
         self.emit("debug", "New version is: " + newVersion);
         if (newVersion > 0) {
             self.downloadSchema(newVersion, function () {
-                if (typeof callback === "function") {
-                    callback();
-                }
+                self.fetchItemsGame(function () {
+                    if (typeof callback === "function") {
+                        callback();
+                    }
+                });
             });
         } else {
             if (typeof callback === "function") {
@@ -335,6 +341,67 @@ TF2Api.prototype.downloadSchema = function (newVersion, callback) {
             self.emit("steam_error");
         }
     });
+};
+
+TF2Api.ITEMS_GAME_PATH = "./items_game.txt";
+TF2Api.FETCH_ITEMS_GAME_TIMEOUT = 5000 * 20;
+TF2Api.prototype.fetchItemsGame = function (callback) {
+    var self = this;
+    if (!this.fetchingItemsGame) {
+        setTimeout(function () {
+            if (self.fetchingItemsGame) {
+                self.fetchingItemsGame = false;
+                callback();
+            }
+        }, TF2Api.FETCH_ITEMS_GAME_TIMEOUT);
+    }
+    this.fetchingItemsGame = true;
+    var request = require("request");
+    request('http://git.optf2.com/schema-tracking/plain/Team%20Fortress%202%20Client%20Schema?h=teamfortress2', function (error, response, body) {
+        if (!error && response.statusCode === 200) {
+            self.fetchingItemsGame = false;
+            self.items_game = VDF.parse(body).items_game;
+            self._parseDecoratedRarities();
+            FS.writeFile(TF2Api.ITEMS_GAME_PATH, JSON.stringify(self.items_game), callback);
+        } else {
+            self.log.error("Something went wrong fetching the defindex page (actually their fault)");
+            if (self.fetchingItemsGame) {
+                self.fetchItemsGame(callback);
+            }
+        }
+    });
+};
+
+TF2Api.prototype.readItemsGame = function (callback) {
+    var self = this;
+    FS.exists(TF2Api.ITEMS_GAME_PATH, function (exist) {
+        if (exist) {
+            self.log.debug("Loading local items_game...");
+            FS.readFile(TF2Api.ITEMS_GAME_PATH, function (err, file) {
+                self.items_game = JSON.parse(file);
+                self._parseDecoratedRarities();
+                callback();
+            });
+        } else {
+            self.log.debug("Local items_game not present, will fetch and save");
+            self.fetchItemsGame(function () {
+                callback();
+            });
+        }
+    });
+};
+
+TF2Api.prototype._parseDecoratedRarities = function () {
+    var decoratedRarities = {};
+    var item_collections = this.items_game.item_collections;
+    for (var collection in item_collections) {
+        for (var rarity in item_collections[collection].items) {
+            for (var item_name in item_collections[collection].items[rarity]) {
+                decoratedRarities[item_name] = rarity;
+            }
+        }
+    }
+    this.decoratedRarities = decoratedRarities;
 };
 
 TF2Api.prototype.saveSchema = function (newVersion, schema, callback) {

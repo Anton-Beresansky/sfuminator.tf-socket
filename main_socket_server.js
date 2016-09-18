@@ -2,6 +2,12 @@
  * TODO Test when buyer has only keys and when seller has only keys
  */
 
+process.on('warning', function (warning) {
+    console.warn(warning.name);    // Print the warning name
+    console.warn(warning.message); // Print the warning message
+    console.warn(warning.stack);   // Print the stack trace
+});
+
 var Database = require('./lib/database.js');
 
 //>Items rework

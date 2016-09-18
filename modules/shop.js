@@ -198,13 +198,18 @@ Shop.prototype.getLimit = function (item) {
  * @param {Backpack} backpack
  * @returns {Object} Client formatted response
  */
-Shop.prototype.makeMine = function (backpack) {
+Shop.prototype.makeUserInventory = function (backpack, shopType) {
     this.log.debug("Getting mine items, bp: " + backpack.getOwner(), 1);
     var response = {
         result: "success",
-        items: this.filterMineItems(backpack).getCompressedItems(),
         currency: this.tf2Currency.valueOf()
     };
+    if (shopType && shopType === "market") {
+        response.items = this.filterMarketItems(backpack).getCompressedItems();
+        response.market_ratio =  (1 - this.ratio.hats.weBuy.normal) / 2;
+    } else {
+        response.items = this.filterMineItems(backpack).getCompressedItems();
+    }
     if (backpack.hasErrored()) {
         response.result = "error";
         response.message = backpack.getErrorMessage();
@@ -237,6 +242,30 @@ Shop.prototype.filterMineItems = function (backpack) {
     }
     mySection.commit();
     return mySection;
+};
+
+Shop.prototype.filterMarketItems = function (backpack) {
+    var mySection = new Section(this, "market");
+    if (backpack.hasTF2Items()) {
+        var items = backpack.getItems();
+        if (items) {
+            for (var i = 0; i < items.length; i += 1) {
+                var marketItem = new ShopItem(this, items[i]);
+                marketItem.setAsMarketSection();
+                if (this.canBeMarketed(marketItem)) {
+                    mySection.add(marketItem);
+                } else {
+                    marketItem = null;
+                }
+            }
+        }
+    }
+    mySection.commit();
+    return mySection;
+};
+
+Shop.prototype.canBeMarketed = function (item) {
+    return item.canBeMarketed();
 };
 
 /**

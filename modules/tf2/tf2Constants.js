@@ -20,6 +20,15 @@ function TF2Constants() {
         "Factory New", "Minimal Wear", "Field-Tested", "Well-Worn", "Battle Scarred"
     ];
 
+    this.namedDecoratedGrade = [
+        "Civilian Grade",
+        "Freelance Grade",
+        "Mercenary Grade",
+        "Commando Grade",
+        "Assassin Grade",
+        "Elite Grade"
+    ];
+
     this.quality = {
         Normal: 0,
         Genuine: 1,
@@ -39,18 +48,27 @@ function TF2Constants() {
         DecoratedWeapon: 15
     };
 
-    this.attributeDefindexes = {
-        Australium: 2027,
-        Paint: 142,
-        Particle: 134,
-        DecoratedWear: 725
-    };
-
     this.decoratedWearAttribute = {
         "Factory New": 0.2,
         "Minimal Wear": 0.4,
         "Field-Tested": 0.6,
         "Well-Worn": 0.8,
         "Battle Scarred": 1
-    }
+    };
+
+    this.decoratedGrade = {
+        common: 0,
+        uncommon: 1,
+        rare: 2,
+        mythical: 3,
+        legendary: 4,
+        ancient: 5
+    };
+
+    this.attributeDefindexes = {
+        Australium: 2027,
+        Paint: 142,
+        Particle: 134,
+        DecoratedWear: 725
+    };
 }
