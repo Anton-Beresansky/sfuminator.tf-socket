@@ -173,6 +173,7 @@ TransferNode.prototype.accomplish = function (tradeOffer) {
                 self._afterTransferItemsUpdate(itemsToReceive, itemsReceived);
                 self.log.debug(self.senderOffer.getTradeOfferID() + " completed");
                 self.unlockItems();
+                self.receiver.steamClient.disableOnTradeOfferChangeListener(tradeOffer.id);
                 self.finished = true;
                 if (typeof self._onceFinishedCallback === "function") {
                     self._onceFinishedCallback();
@@ -182,6 +183,7 @@ TransferNode.prototype.accomplish = function (tradeOffer) {
                     self.log.warning("Transfer didn't accomplish correctly, retrying");
                     self.accomplish(tradeOffer);
                 } else {
+                    self.receiver.steamClient.disableOnTradeOfferChangeListener(tradeOffer.id);
                     self.log.error(err);
                     self.emit("error");
                 }
