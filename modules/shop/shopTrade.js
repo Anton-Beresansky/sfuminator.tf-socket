@@ -461,7 +461,8 @@ ShopTrade.prototype.getShopItemCount = function () {
 ShopTrade.prototype.readyItems = function () {
     var self = this;
     this.onceItemsReserved(function () {
-        self.transferNeeded = self.getItemsToTransfer().length > 0;
+        var assetsToTransfer = self.getItemsToTransfer();
+        self.transferNeeded = assetsToTransfer.length > 0;
         if (self.transferNeeded) {
             self.setStatusInfo(TradeConstants.statusInfo.active.TRANSFERRING);
             self.commit();
