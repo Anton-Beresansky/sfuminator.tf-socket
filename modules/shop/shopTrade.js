@@ -179,6 +179,16 @@ ShopTrade.prototype.cancel = function (statusInfo) {
             self.unsetSteamTrade();
         });
     }
+    if (this.transferNeeded) {
+        if (!this.transferCluster.isCompleted()) {
+            this.log.debug("Cancelling transfer node");
+            for (var i = 0; i < this.transferCluster.nodes; i += 1) {
+                if (!this.transferCluster.nodes[i].isFinished()) {
+                    this.transferCluster.nodes[i].senderOffer.cancel();
+                }
+            }
+        }
+    }
     this.log.debug("Trade " + this.getID() + " has been cancelled");
 };
 
@@ -451,12 +461,12 @@ ShopTrade.prototype.getShopItemCount = function () {
 ShopTrade.prototype.readyItems = function () {
     var self = this;
     this.onceItemsReserved(function () {
-        var assetsToTransfer = self.getItemsToTransfer();
-        if (assetsToTransfer.length) {
+        self.transferNeeded = self.getItemsToTransfer().length > 0;
+        if (self.transferNeeded) {
             self.setStatusInfo(TradeConstants.statusInfo.active.TRANSFERRING);
             self.commit();
             var assignedTraderBot = self.sfuminator.getBotsController().getBot(self.getAssignedBotUser().getSteamid());
-            self.sfuminator.getBotsController().transfer(assignedTraderBot, assetsToTransfer, function (err) {
+            self.transferCluster = self.sfuminator.getBotsController().transfer(assignedTraderBot, assetsToTransfer, function (err) {
                 if (!err) {
                     self.emit("itemsTransferred");
                 } else {

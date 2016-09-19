@@ -108,6 +108,9 @@ function TransferNode(sender, receiver) {
         color: "blue"
     });
 
+    /**
+     * @type {SteamTradeOffer}
+     */
     this.senderOffer = new SteamTradeOffer(this.sender.steamClient, this.receiver.getSteamid());
     this.senderOffer.setToken(this.receiver.steamClient.getCredentials().getTradeToken());
     Events.EventEmitter.call(this);
