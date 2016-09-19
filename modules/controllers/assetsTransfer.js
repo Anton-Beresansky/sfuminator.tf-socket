@@ -183,7 +183,9 @@ TransferNode.prototype.accomplish = function (tradeOffer) {
             } else {
                 if (self.accomplishRetries < TransferNode.ACCOMPLISH_ATTEMPTS) {
                     self.log.warning("Transfer didn't accomplish correctly, retrying");
-                    self.accomplish(tradeOffer);
+                    setTimeout(function () {
+                        self.accomplish(tradeOffer);
+                    }, 2000);
                 } else {
                     self.receiver.steamClient.disableOnTradeOfferChangeListener(tradeOffer.id);
                     self.sender.steamClient.disableOnTradeOfferChangeListener(tradeOffer.id);
