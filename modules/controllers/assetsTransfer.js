@@ -185,6 +185,15 @@ TransferNode.prototype.accomplish = function (tradeOffer) {
             }
         });
     });
+    if (!this.receiver.steamClient.tradeOfferHasListener(tradeOffer.id)) {
+        this.log.debug("Adding listener on trade changes (" + tradeOffer.id + ")");
+        self.receiver.steamClient.onTradeOfferChange(tradeOffer.id, function (offer) {
+            if (offer.state === SteamTradeOffer.SteamTradeStatus.Accepted && !self.finished) {
+                self.log.debug("Accomplish procedure didn't finish yet, bypassing trade state (" + tradeOffer.id + ")");
+                tradeOffer.state = offer.state;
+            }
+        });
+    }
 };
 
 TransferNode.prototype.onceFinished = function (callback) {
