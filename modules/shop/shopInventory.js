@@ -230,7 +230,6 @@ ShopInventory.prototype._parseTF2ItemsToRemove = function (newItems) {
 ShopInventory.prototype.makeShopItem = function (item) {
     var shopItem = new ShopItem(this.shop, item);
     if (this.ids.hasLookup(shopItem) && this.getItem(this.ids.make(shopItem))) {
-        this.log.test("Updated shop item with a new item id");
         this.getItem(this.ids.make(shopItem)).item = item;
     } else {
         shopItem.setID(this.ids.make(shopItem));
