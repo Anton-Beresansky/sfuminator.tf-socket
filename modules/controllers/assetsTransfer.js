@@ -162,6 +162,7 @@ TransferNode.prototype.start = function () {
     });
 };
 
+TransferNode.ACCOMPLISH_ATTEMPTS = 10;
 TransferNode.prototype.accomplish = function (tradeOffer) {
     var self = this;
     var itemsToReceive = tradeOffer.itemsToReceive;
@@ -180,7 +181,7 @@ TransferNode.prototype.accomplish = function (tradeOffer) {
                     self._onceFinishedCallback();
                 }
             } else {
-                if (self.accomplishRetries < 5) {
+                if (self.accomplishRetries < TransferNode.ACCOMPLISH_ATTEMPTS) {
                     self.log.warning("Transfer didn't accomplish correctly, retrying");
                     self.accomplish(tradeOffer);
                 } else {
