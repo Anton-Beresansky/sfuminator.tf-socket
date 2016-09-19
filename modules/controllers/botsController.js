@@ -178,6 +178,7 @@ BotsController.prototype.getUnrelatedAvailableBot = function (steamid) {
  * @param {TraderBot} receiver
  * @param {ShopItem[]} items
  * @param {Function} [callback] null if success, error otherwise
+ * @return {TransferNodesCluster}
  */
 BotsController.prototype.transfer = function (receiver, items, callback) {
     var cluster = new TransferNodesCluster(this, receiver);
@@ -193,6 +194,7 @@ BotsController.prototype.transfer = function (receiver, items, callback) {
     cluster.on("error", function () {
         callback(new Error());
     });
+    return cluster;
 };
 
 BotsController.prototype.preSmeltMetal = function () {
