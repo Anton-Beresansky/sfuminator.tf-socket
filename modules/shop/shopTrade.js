@@ -501,11 +501,21 @@ ShopTrade.prototype.reserveItems = function () {
 };
 
 ShopTrade.prototype.onceItemsReserved = function (callback) {
-    this.onceItemsReservedCallbacks.push(callback);
+    if (this.itemsReserved) {
+        this.log.debug("Items are reserved, bypassing event");
+        callback();
+    } else {
+        this.onceItemsReservedCallbacks.push(callback);
+    }
 };
 
 ShopTrade.prototype.onceItemsAreReady = function (callback) {
-    this.onceItemsAreReadyCallbacks.push(callback);
+    if (this.itemsReady) {
+        this.log.debug("Items are ready, bypassing event");
+        callback();
+    } else {
+        this.onceItemsAreReadyCallbacks.push(callback);
+    }
 };
 
 /**
