@@ -56,23 +56,12 @@ function BotCommands(sfuminator) {
                     }
                     var prelievoAmount = new Price(-chiaviAmount, "keys");
                     shopTrade.getCurrencyHandler().forceStartingBalance(prelievoAmount);
+                    shopTrade.getCurrencyHandler().bypassKeysRefinedRatio();
                     shopTrade.onceItemsReserved(function () {
-
-                        self.log.debug("Checking if I'm sending just keys");
-                        for (var i = 0; i < shopTrade.assets.length; i += 1) {
-                            if (shopTrade.assets[i].getItem().getDefindex() !== TF2Constants.defindexes.MannCoKey) {
-                                self.log.debug("Found not key item, removing: " + shopTrade.assets[i].getItem().getFullName());
-                            }
-                        }
-                        if (shopTrade.assets.length) {
-                            var steamTrade = bot.createSteamTrade(shopTrade);
-                            steamTrade.setMessage("Here's a prelievo of " + (-prelievoAmount.toKeys()) + " chiavi");
-                            steamTrade.make();
-                            bot.steamClient.sendMessage(steamid, "Sending you a prelievo of " + (-prelievoAmount.toKeys()) + " chiavi. (current stock " + totalKeysAmount + ")");
-                        } else {
-                            shopTrade.dereserveShopItems();
-                            bot.steamClient.sendMessage(steamid, "Keeping Refined/Keys ratio up, can't send trade.");
-                        }
+                        var steamTrade = bot.createSteamTrade(shopTrade);
+                        steamTrade.setMessage("Here's a prelievo of " + (-prelievoAmount.toKeys()) + " chiavi");
+                        steamTrade.make();
+                        bot.steamClient.sendMessage(steamid, "Sending you a prelievo of " + (-prelievoAmount.toKeys()) + " chiavi. (current stock " + totalKeysAmount + ")");
                     });
                     shopTrade.getPartner().getTF2Backpack().getCached(function () { //Be sure to load partner bp first
                         shopTrade.reserveItems();
