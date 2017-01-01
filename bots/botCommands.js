@@ -3,6 +3,7 @@ module.exports = BotCommands;
 var Price = require('./../modules/price.js');
 var ShopTrade = require('./../modules/shop/shopTrade.js');
 var TF2Constants = require('./../modules/tf2/tf2Constants.js');
+var Logs = require('./../lib/logs.js');
 
 /**
  * @parameter {Sfuminator} sfuminator
@@ -13,6 +14,7 @@ function BotCommands(sfuminator) {
      * @type {Sfuminator}
      */
     this.sfuminator = sfuminator;
+    this.log = new Logs({applicationName: "botCommands", color: "yellow", dim: true});
     var self = this;
     this.commands = {
         preleva: function (steamid, command, bot) {
@@ -56,14 +58,13 @@ function BotCommands(sfuminator) {
                     shopTrade.getCurrencyHandler().forceStartingBalance(prelievoAmount);
                     shopTrade.onceItemsReserved(function () {
 
-                        var tradeContainsJustKeys = true;
-                        var assets = shopTrade.getAssets();
-                        for (var i = 0; i < assets.length; i += 1) {
-                            if (assets[i].getItem().getDefindex() !== TF2Constants.defindexes.MannCoKey) {
-                                tradeContainsJustKeys = false;
+                        self.log.debug("Checking if I'm sending just keys");
+                        for (var i = 0; i < shopTrade.assets.length; i += 1) {
+                            if (shopTrade.assets[i].getItem().getDefindex() !== TF2Constants.defindexes.MannCoKey) {
+                                self.log.debug("Found not key item, removing: " + shopTrade.assets[i].getItem().getFullName());
                             }
                         }
-                        if (tradeContainsJustKeys) {
+                        if (shopTrade.assets[i].length) {
                             var steamTrade = bot.createSteamTrade(shopTrade);
                             steamTrade.setMessage("Here's a prelievo of " + (-prelievoAmount.toKeys()) + " chiavi");
                             steamTrade.make();
