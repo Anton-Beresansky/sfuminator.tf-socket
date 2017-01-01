@@ -20,6 +20,7 @@ function ShopTradeCurrency(shopTrade) {
      */
     this.shop = this.shopTrade.shop;
 
+    this.isKeysRefinedRatioEnabled = true;
     this.iSmelted = 0;
     this.importAssets();
 
@@ -69,6 +70,10 @@ ShopTradeCurrency.prototype.getSignedTradeBalance = function () {
  */
 ShopTradeCurrency.prototype.forceStartingBalance = function (price) {
     this.forcedBalance = price.toScrap();
+};
+
+ShopTradeCurrency.prototype.bypassKeysRefinedRatio = function () {
+    this.isKeysRefinedRatioEnabled = false;
 };
 
 ShopTradeCurrency.prototype.reserve = function () {
@@ -366,6 +371,10 @@ ShopTradeCurrency.prototype.getSortedCurrencyDefindexes = function (action) {
 };
 
 ShopTradeCurrency.prototype.canBuyWithKeys = function () {
+    if (!this.isKeysRefinedRatioEnabled) {
+        this.log.warning("Bypassing keys/refined ratio");
+        return true;
+    }
     var currencyItems = this.getOurCurrencyShopItems();
     var mannCoKey, refinedMetal;
     for (var i = 0; i < currencyItems.length; i += 1) {
