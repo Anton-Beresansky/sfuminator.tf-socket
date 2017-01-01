@@ -64,7 +64,7 @@ function BotCommands(sfuminator) {
                                 self.log.debug("Found not key item, removing: " + shopTrade.assets[i].getItem().getFullName());
                             }
                         }
-                        if (shopTrade.assets[i].length) {
+                        if (shopTrade.assets.length) {
                             var steamTrade = bot.createSteamTrade(shopTrade);
                             steamTrade.setMessage("Here's a prelievo of " + (-prelievoAmount.toKeys()) + " chiavi");
                             steamTrade.make();
