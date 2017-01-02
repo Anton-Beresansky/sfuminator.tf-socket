@@ -2,8 +2,6 @@ module.exports = BotCommands;
 
 var Price = require('./../modules/price.js');
 var ShopTrade = require('./../modules/shop/shopTrade.js');
-var TF2Constants = require('./../modules/tf2/tf2Constants.js');
-var Logs = require('./../lib/logs.js');
 
 /**
  * @parameter {Sfuminator} sfuminator
@@ -14,11 +12,10 @@ function BotCommands(sfuminator) {
      * @type {Sfuminator}
      */
     this.sfuminator = sfuminator;
-    this.log = new Logs({applicationName: "botCommands", color: "yellow", dim: true});
     var self = this;
     this.commands = {
         preleva: function (steamid, command, bot) {
-            var prelievoAmount = new Price(-BotCommands.defaultPrelievoAmount, "metal");
+            var prelievoAmount = new Price(-100, "metal");
             if (!isNaN(command.getMainParameter())) {
                 prelievoAmount = new Price(-command.getMainParameter(), "metal");
             }
@@ -37,40 +34,6 @@ function BotCommands(sfuminator) {
                 });
             }
         },
-        chiavi: function (steamid, command, bot) {
-            var shopTrade = new ShopTrade(self.sfuminator, self.sfuminator.users.get(steamid));
-            if (bot) {
-                shopTrade.setBot(bot);
-
-                var currencyItems = shopTrade.getCurrencyHandler().getOurCurrencyShopItems();
-                var totalKeysAmount = 0;
-                for (var i = 0; i < currencyItems.length; i += 1) {
-                    if (currencyItems[i].getItem().getDefindex() === TF2Constants.defindexes.MannCoKey) {
-                        totalKeysAmount += 1;
-                    }
-                }
-                if (totalKeysAmount > BotCommands.minChiaviLimit) {
-                    var chiaviAmount = totalKeysAmount - BotCommands.minChiaviLimit;
-                    if (chiaviAmount > BotCommands.minChiaviLimit) {
-                        chiaviAmount = BotCommands.minChiaviLimit;
-                    }
-                    var prelievoAmount = new Price(-chiaviAmount, "keys");
-                    shopTrade.getCurrencyHandler().forceStartingBalance(prelievoAmount);
-                    shopTrade.getCurrencyHandler().bypassKeysRefinedRatio();
-                    shopTrade.onceItemsReserved(function () {
-                        var steamTrade = bot.createSteamTrade(shopTrade);
-                        steamTrade.setMessage("Here's a prelievo of " + (-prelievoAmount.toKeys()) + " chiavi");
-                        steamTrade.make();
-                        bot.steamClient.sendMessage(steamid, "Sending you a prelievo of " + (-prelievoAmount.toKeys()) + " chiavi. (current stock " + totalKeysAmount + ")");
-                    });
-                    shopTrade.getPartner().getTF2Backpack().getCached(function () { //Be sure to load partner bp first
-                        shopTrade.reserveItems();
-                    });
-                } else {
-                    bot.steamClient.sendMessage(steamid, "There are " + totalKeysAmount + " keys in stock, can't send trade.");
-                }
-            }
-        },
         c: function (steamid, command, bot) {
             bot.steamClient.sendMessage(steamid, bot.steamClient.credentials.getTwoFactorCode());
         },
@@ -79,9 +42,6 @@ function BotCommands(sfuminator) {
         }
     }
 }
-
-BotCommands.minChiaviLimit = 100;
-BotCommands.defaultPrelievoAmount = 100;
 
 /**
  * @param steamid

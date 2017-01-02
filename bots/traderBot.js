@@ -155,55 +155,40 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
         });
     } else {
         if (this.steamClient.isFriend(partnerSteamid) && this.steamClient.getFriend(partnerSteamid)) {
-            this._sendShopTradeFriend(shopTrade, partnerSteamid, sfuminatorUser);
+            shopTrade.onceItemsAreReady(function () {
+                self.steamClient.getFriend(partnerSteamid).sendMessage(self.interactions.getMessage("tradeOffer_hello", sfuminatorUser));
+                self.finalizeSendShopTrade(shopTrade);
+            });
         } else {
-            this._sendShopTradeNoFriend(shopTrade, partnerSteamid, sfuminatorUser);
+            //Test purpose
+            if (this.steamClient.isFriend(partnerSteamid) && !this.steamClient.getFriend(partnerSteamid)) {
+                this.log.test(partnerSteamid + " is friend but no friend instance found, adding partner...");
+            }
+            //
+
+            this.steamClient.addFriend(partnerSteamid);
+            shopTrade.setAsWaitingForFriendRelation();
+            shopTrade.on('friendRequestTimeout', function () {
+                self.log.debug("Friend request timeout, removing and cancelling");
+                self.steamClient.removeFriend(partnerSteamid);
+                shopTrade.cancel();
+            });
+            this.steamClient.onFriendWith(partnerSteamid, function () {
+                if (shopTrade.isClosed()) {
+                    return;
+                }
+                self.steamClient.getFriend(partnerSteamid).sendMessage(self.interactions.getMessage("tradeOffer_hello", sfuminatorUser));
+                if (shopTrade.areItemsReady()) {
+                    self.finalizeSendShopTrade(shopTrade);
+                } else {
+                    shopTrade.onceItemsAreReady(function () {
+                        self.finalizeSendShopTrade(shopTrade);
+                    });
+                }
+            });
         }
     }
     shopTrade.readyItems();
-};
-
-TraderBot.prototype._sendShopTradeFriend = function (shopTrade, partnerSteamid, sfuminatorUser) {
-    var self = this;
-    shopTrade.onceItemsAreReady(function () {
-        if (self.steamClient.getFriend(partnerSteamid)) {
-            self.steamClient.getFriend(partnerSteamid).sendMessage(self.interactions.getMessage("tradeOffer_hello", sfuminatorUser));
-            self.finalizeSendShopTrade(shopTrade);
-        } else {
-            self.log.test("Somehow it was friend but once ready... no friend...");
-            self._sendShopTradeNoFriend(shopTrade, partnerSteamid, sfuminatorUser);
-        }
-    });
-};
-
-TraderBot.prototype._sendShopTradeNoFriend = function (shopTrade, partnerSteamid, sfuminatorUser) {
-    var self = this;
-    //Test purpose
-    if (this.steamClient.isFriend(partnerSteamid) && !this.steamClient.getFriend(partnerSteamid)) {
-        this.log.test(partnerSteamid + " is friend but no friend instance found, adding partner...");
-    }
-    //
-
-    this.steamClient.addFriend(partnerSteamid);
-    shopTrade.setAsWaitingForFriendRelation();
-    shopTrade.on('friendRequestTimeout', function () {
-        self.log.debug("Friend request timeout, removing and cancelling");
-        self.steamClient.removeFriend(partnerSteamid);
-        shopTrade.cancel();
-    });
-    this.steamClient.onFriendWith(partnerSteamid, function () {
-        if (shopTrade.isClosed()) {
-            return;
-        }
-        self.steamClient.getFriend(partnerSteamid).sendMessage(self.interactions.getMessage("tradeOffer_hello", sfuminatorUser));
-        if (shopTrade.areItemsReady()) {
-            self.finalizeSendShopTrade(shopTrade);
-        } else {
-            shopTrade.onceItemsAreReady(function () {
-                self.finalizeSendShopTrade(shopTrade);
-            });
-        }
-    });
 };
 
 /**
