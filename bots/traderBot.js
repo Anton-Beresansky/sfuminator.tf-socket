@@ -299,7 +299,9 @@ TraderBot.prototype._bindShopTrade = function (shopTrade) {
             self.sendTradingMessage(shopTrade, self.interactions.getMessage("trade_complete", sfuminatorUser));
         }
         if (shopTrade.isUsingTradeOfferToken()) {
-            self.interactions.postReputationComment(partnerSteamid);
+            if (self.interactions.getInteraction(shopTrade.getPartner()).canBeRepped()) {
+                self.interactions.postReputationComment(partnerSteamid);
+            }
         }
     });
 };
