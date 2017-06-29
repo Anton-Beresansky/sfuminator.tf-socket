@@ -32,6 +32,8 @@
 
 module.exports = BackpacksApi;
 var events = require("events");
+var ItemsDatabase = require('./itemsDatabase.js');
+var Loglog = require('log-log');
 
 /**
  * @param db {Database}
@@ -44,143 +46,84 @@ function BackpacksApi(db, steam, tf2, options) {
     this.db = db;
     this.steam = steam;
     this.tf2 = tf2;
-    this.debug = ((options && options.hasOwnProperty("debug")) ? options.debug : false);
+    this.itemsDatabase = new ItemsDatabase(db);
+    this.log = Loglog.create({applicationName: "BackpacksApi", color: 'magenta'});
+    this.log.disableDebug();
     events.EventEmitter.call(this);
 }
 
 require("util").inherits(BackpacksApi, events.EventEmitter);
 
-BackpacksApi.prototype.get = function (owner, callback, options) {
-    this.emit("debug", "Getting backpack " + owner);
+BackpacksApi.FETCH_ANTI_SPAM_INTERVAL = 3000;
+
+/**
+ * @param currentBackpack {Backpack}
+ * @param callback {[function]}
+ * @param options {[object]}
+ */
+BackpacksApi.prototype.get = function (currentBackpack, callback, options) {
+    var owner = currentBackpack.getOwner();
+    this.log.debug("Getting backpack " + owner);
     var self = this;
     this.db.connect(function (connection) {
         connection.query("SELECT `last_update_date` FROM `backpacks` WHERE `owner`='" + owner + "'", function (result) {
             connection.release();
             if (result[0] && result[0].hasOwnProperty("last_update_date")) { //Backpack is stored in database
-                var lastUpdateSecondsAgo = (new Date() - result[0].last_update_date) / 1000;
-                if (lastUpdateSecondsAgo < 2) {
-                    self.read(owner, callback, options);
+                if (self.fetchAntiSpam(result[0].last_update_date)) {
+                    self.fetch(currentBackpack, callback, options);
                 } else {
-                    self.fetch(owner, callback, options);
+                    self.log.debug("Preventing fetch spam. Backpack stored is less than " + BackpacksApi.FETCH_ANTI_SPAM_INTERVAL + "ms old.");
+                    callback(new Error("anti_spam"));
                 }
             } else {
-                self.fetch(owner, callback, options);
+                self.fetch(currentBackpack, callback, options);
             }
         });
     });
 };
 
-BackpacksApi.prototype.fetch = function (steamid, callback, options) {
-    this.emit("debug", "Fetching backpack...");
-    var self = this;
-    this.steam.getPlayerItems(steamid, function (response) {
-        if (response.hasOwnProperty("result") && response.result.hasOwnProperty("status")) {
-            var backpack = response.result;
-            callback(self.mergeWithSchema(backpack));
-            self.storeBackpack(steamid, backpack);
-            backpack = null;
-        } else {
-            callback({result: "error", message: "Couldn't fetch backpack", code: "#steam_api_down"});
-        }
-    });
+BackpacksApi.prototype.fetchAntiSpam = function (databaseLastStoredImage) {
+    return (new Date() - databaseLastStoredImage) > BackpacksApi.FETCH_ANTI_SPAM_INTERVAL;
 };
 
 BackpacksApi.prototype.read = function (owner, callback, options) {
     this.emit("debug", "Reading backpack...");
     var self = this;
-    this.db.connect(function (connection) {
-        connection.beginTransaction(function () {
-            connection.query("SELECT `status`,`num_backpack_slots`,`last_update_date` as `last_update_date` FROM backpacks WHERE `owner`='" + owner + "' LIMIT 1", function (backpack_array) {
-                if (typeof backpack_array === "object" && backpack_array.length === 1) {
-                    var backpack = backpack_array[0];
-                    self.readItems(owner, backpack.last_update_date, function (items) {
-                        if (items.hasOwnProperty("result") && items.result === "error") {
-                            connection.rollbackRelease();
-                            callback({
-                                result: "error",
-                                message: "Wasn't able to read backpack items",
-                                code: "#reading_items"
-                            });
-                        } else {
-                            backpack.last_update_time = parseInt(backpack.last_update_date.getTime() / 1000);
-                            backpack.items = items;
-                            connection.commitRelease();
-                            callback(self.mergeWithSchema(backpack));
-                        }
-                    }, connection, options);
+    this.itemsDatabase.readInventory(owner, function (err, backpack) {
+        callback(err, self.mergeWithSchema(backpack));
+    }, options);
+};
+
+/**
+ * @param currentBackpack {Backpack}
+ * @param callback
+ * @param options
+ */
+BackpacksApi.prototype.fetch = function (currentBackpack, callback, options) {
+    var steamid = currentBackpack.getOwner();
+    this.log.debug(steamid + ": Fetching backpack...");
+    var self = this;
+    this.steam.getPlayerItems(steamid, function (response) {
+        if (response.hasOwnProperty("result") && response.result.hasOwnProperty("status")) {
+            var backpack = response.result;
+            var itemsStoringNeeded = backpack.hasOwnProperty("items") && currentBackpack.willChange(backpack.items);
+            callback(null, self.mergeWithSchema(backpack));
+            self.itemsDatabase.saveBackpackStatus(steamid, backpack, function () {
+                if (itemsStoringNeeded) {
+                    self.storeBackpack(steamid, backpack);
+                    self.itemsDatabase.saveInventory(steamid, backpack);
                 } else {
-                    connection.rollbackRelease();
-                    callback({
-                        result: "error",
-                        message: "No backpack on database for specified owner",
-                        code: "#no_database_backpack"
-                    });
+                    self.log.debug("Skipping backpack store, no changes occurred");
                 }
             });
-        });
+        } else {
+            callback(new Error("steam_api_down"), {
+                result: "error",
+                message: "Couldn't fetch backpack",
+                code: "#steam_api_down"
+            });
+        }
     });
-};
-
-BackpacksApi.prototype.readItems = function (owner, date, callback, connection, options) {
-    var mode = "full";
-    if (options && options.hasOwnProperty("mode")) {
-        mode = options.mode;
-    }
-    switch (mode) {
-        case "full":
-            this._getFullItems(owner, date, function (items) {
-                callback(items);
-            }, connection);
-            break;
-        case "simple":
-            this._getSimpleItems(owner, date, function (items) {
-                callback(items);
-            }, connection);
-            break;
-        case "noob":
-            var self = this;
-            var mysql_formatted_date = _dateJStoMysql(date);
-            connection.query("SELECT `id`,`original_id`,`defindex`,`level`,`quantity`,`origin`,`flag_cannot_trade`,`flag_cannot_craft`,`quality` FROM `items` WHERE `owner`='" + owner + "' AND `last_update_date`='" + mysql_formatted_date + "'", function (items) {
-                var row_pointer = 0;
-                var nextRow = function () {
-                    self.getItemAttributes(items[row_pointer].id, function (attributes) {
-                        items[row_pointer].attributes = attributes;
-                        row_pointer += 1;
-                        if (row_pointer < items.length) {
-                            nextRow();
-                        } else {
-                            callback(items);
-                        }
-                    }, connection);
-                };
-                if (typeof items === "object" && items.length > 0) {
-                    nextRow();
-                } else {
-                    callback(items);
-                }
-            });
-            break;
-        default:
-            callback({result: "error", message: "Unknown item mode selection", code: "#wrong_mode_item_selection"});
-    }
-};
-
-BackpacksApi.prototype.getItemAttributes = function (id, callback, connection) {
-    var query = function (connection, destroy) {
-        connection.query("SELECT `defindex`,`value`,`float_value`,`steamid` FROM `attributes` WHERE id=" + id, function (attributes) {
-            if (destroy) {
-                connection.release();
-            }
-            callback(attributes);
-        });
-    };
-    if (connection) {
-        query(connection);
-    } else {
-        this.db.connect(function (connection) {
-            query(connection, true);
-        });
-    }
 };
 
 BackpacksApi.prototype.storeBackpack = function (owner, backpack) {
@@ -188,98 +131,33 @@ BackpacksApi.prototype.storeBackpack = function (owner, backpack) {
     this.db.connect(function (connection) {
         connection.beginTransaction(function () {
             connection.query("SELECT @now := NOW()", function () {
-                connection.query(self._getInsertIntoBackpacksQuery(owner, backpack), function () {
-                    if (backpack.hasOwnProperty("items") && backpack.items.length > 0) {
-                        connection.query(self._getInsertIntoItemsQuery(owner, backpack.items), function () {
-                            var attributes_query = self._getInsertIntoAttributesQuery(connection, backpack.items);
-                            if (attributes_query) {
-                                connection.query(attributes_query, function () {
-                                    connection.commitRelease();
-                                    backpack = null;
-                                    connection = null;
-                                });
-                            } else {
+                //  connection.query(self._getInsertIntoBackpacksQuery(owner, backpack), function () {
+                if (backpack.hasOwnProperty("items") && backpack.items.length > 0) {
+                    connection.query(self._getInsertIntoItemsQuery(owner, backpack.items), function () {
+                        var attributes_query = self._getInsertIntoAttributesQuery(connection, backpack.items);
+                        if (attributes_query) {
+                            connection.query(attributes_query, function () {
                                 connection.commitRelease();
                                 backpack = null;
                                 connection = null;
-                            }
-                        });
-                    } else {
-                        connection.commitRelease();
-                        backpack = null;
-                        connection = null;
-                    }
-                });
+                            });
+                        } else {
+                            connection.commitRelease();
+                            backpack = null;
+                            connection = null;
+                        }
+                    });
+                } else {
+                    connection.commitRelease();
+                    backpack = null;
+                    connection = null;
+                }
+                //  });
             });
         });
     });
 };
 
-BackpacksApi.prototype._getSimpleItems = function (owner, date, callback, connection) {
-    var mysql_formatted_date = _dateJStoMysql(date);
-    connection.query("SELECT `id`,`original_id`,`defindex`,`level`,`quantity`,`origin`,`flag_cannot_trade`,`flag_cannot_craft`,`quality` FROM `items` WHERE `owner`='" + owner + "' AND `last_update_date`='" + mysql_formatted_date + "'", function (items) {
-        callback(items);
-    });
-};
-BackpacksApi.prototype._getFullItems = function (owner, date, callback, connection) {
-    var self = this;
-    var mysql_formatted_date = _dateJStoMysql(date);
-    connection.query("SELECT items.`id`,items.`original_id`,items.`defindex`,items.`level`,items.`quantity`,items.`origin`,items.`flag_cannot_trade`,items.`flag_cannot_craft`,items.`quality`,attributes.`defindex` as `attr_defindex`,attributes.`value`,attributes.`float_value`,attributes.`steamid` FROM `items` LEFT JOIN `attributes` ON items.`id`=attributes.`id` WHERE items.`owner`='" + owner + "' AND items.`last_update_date`='" + mysql_formatted_date + "'", function (dbItems) {
-        var items = [];
-        for (var i = 0; i < dbItems.length; i += 1) {
-            var itemIndex = self._getItemIndex(dbItems[i].id, items);
-            var thisAttribute = null;
-            if (dbItems[i].attr_defindex) {
-                thisAttribute = {defindex: dbItems[i].attr_defindex, value: dbItems[i].value};
-                if (dbItems[i].float_value) {
-                    thisAttribute.float_value = dbItems[i].float_value;
-                }
-                if (dbItems[i].steamid) {
-                    thisAttribute.steamid = dbItems[i].steamid;
-                }
-            }
-            if (itemIndex >= 0 && dbItems[i].attr_defindex) {
-                if (items[itemIndex].hasOwnProperty("attributes")) {
-                    items[itemIndex].attributes.push(thisAttribute);
-                } else {
-                    items[itemIndex].attributes = [thisAttribute];
-                }
-            } else {
-                items.push(self._compressItem(dbItems[i], thisAttribute));
-            }
-        }
-        callback(items);
-    });
-};
-BackpacksApi.prototype._compressItem = function (item, attribute) {
-    var cmxItem = {
-        id: item.id,
-        original_id: item.original_id,
-        defindex: item.defindex,
-        level: item.level,
-        quantity: item.quantity,
-        quality: item.quality
-    };
-    var optionalValues = ["origin", "flag_cannot_trade", "flag_cannot_craft"];
-    for (var i = 0; i < optionalValues.length; i += 1) {
-        var property = optionalValues[i];
-        if (item[property]) {
-            cmxItem[property] = item[property];
-        }
-    }
-    if (attribute) {
-        cmxItem.attributes = [attribute];
-    }
-    return cmxItem;
-};
-BackpacksApi.prototype._getItemIndex = function (id, list) {
-    for (var i = 0; i < list.length; i += 1) {
-        if (list[i].id === id) {
-            return i;
-        }
-    }
-    return -1;
-};
 BackpacksApi.prototype._getInsertIntoBackpacksQuery = function (owner, backpack) {
     return "INSERT INTO `backpacks`"
         + " (`owner`, `status`, `num_backpack_slots`, `last_update_date`)"
@@ -290,6 +168,7 @@ BackpacksApi.prototype._getInsertIntoBackpacksQuery = function (owner, backpack)
         + ",`num_backpack_slots`=" + (backpack.hasOwnProperty("num_backpack_slots") ? backpack.num_backpack_slots : null)
         + ",`last_update_date`=@now";
 };
+
 BackpacksApi.prototype._getInsertIntoItemsQuery = function (owner, items) {
     var insertConstruction = "INSERT INTO `items` (`owner`,`id`,`original_id`,`defindex`,`level`,`quantity`,`origin`,`flag_cannot_trade`,`flag_cannot_craft`,`quality`,`last_update_date`) VALUES ";
     var values = "";
@@ -306,6 +185,7 @@ BackpacksApi.prototype._getInsertIntoItemsQuery = function (owner, items) {
     return insertConstruction + values.slice(0, values.length - 2) + " ON DUPLICATE KEY UPDATE"
         + " `last_update_date`=@now";
 };
+
 BackpacksApi.prototype._getInsertIntoAttributesQuery = function (connection, items) {
     var insertConstruction = "INSERT IGNORE INTO `attributes` (`id`,`defindex`,`value`,`float_value`,`steamid`) VALUES";
     var values = "";
@@ -326,6 +206,7 @@ BackpacksApi.prototype._getInsertIntoAttributesQuery = function (connection, ite
         return null;
     }
 };
+
 function _dateJStoMysql(dbDate) {
     return dbDate.getFullYear() + "-"
         + ("0" + (dbDate.getMonth() + 1)).slice(-2) + "-"
@@ -336,7 +217,7 @@ function _dateJStoMysql(dbDate) {
 }
 
 BackpacksApi.prototype.mergeWithSchema = function (backpack) {
-    if (backpack.hasOwnProperty("items")) {
+    if (backpack && backpack.hasOwnProperty("items")) {
         var items = backpack.items;
         var schema = this.tf2.schema;
         for (var i = 0; i < items.length; i += 1) {
