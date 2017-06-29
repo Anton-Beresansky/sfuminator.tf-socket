@@ -72,32 +72,32 @@ WebApi.prototype.getKeyPrice = function (callback) {
     })
 };
 
-WebApi.prototype.getBackpack = function (data, answer) {
+/**
+ * @param currentBackpack {Backpack}
+ * @param callback {function}
+ * @param options {object}
+ */
+WebApi.prototype.getBackpack = function (currentBackpack, callback, options) {
     var self = this;
-    this.backpacks.get(data.steamid, function (steamBackpack) {
-        if (steamBackpack.hasOwnProperty("result") && steamBackpack.result === "error") {
-            self.backpacks.read(data.steamid, function (dbBackpack) {
-                if (dbBackpack.hasOwnProperty("result") && dbBackpack.result === "error") {
-                    if (typeof answer === "function") {
-                        answer(steamBackpack);
-                    }
-                } else {
-                    if (typeof answer === "function") {
-                        answer(dbBackpack);
-                    }
-                }
-                answer = null;
-                steamBackpack = null;
-                dbBackpack = null;
+    //Abstraction layer added for multiple games
+    this.backpacks.get(currentBackpack, function (err, steamBackpack) {
+        if (!err) {
+            end(null, steamBackpack);
+        } else if (err.message === "steam_api_down") {
+            self.backpacks.read(currentBackpack, function (err, dbBackpack) {
+                //We just hope there won't be errors :D
+                end(err, err ? steamBackpack : dbBackpack);
             });
-        } else {
-            if (typeof answer === "function") {
-                answer(steamBackpack);
-            }
-            answer = null;
-            steamBackpack = null;
+        } else if (err.message === "anti_spam") {
+            end(err);
         }
-    }, data.options);
+    }, options);
+
+    var end = function (err, bp) {
+        if (typeof callback === "function") {
+            callback(err, bp);
+        }
+    }
 };
 
 WebApi.prototype._handleOnceReady = function () {

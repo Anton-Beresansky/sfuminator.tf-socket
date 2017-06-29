@@ -79,8 +79,16 @@ Backpack.prototype.getCached = function (callback) {
 Backpack.prototype.get = function (callback) {
     var self = this;
     this.fetching = true;
-    this.webApi.getBackpack({steamid: this.getOwner(), game: this.game.getID()}, function (result) {
-        var backpackWillChange = self._willChange(result.items);
+    this.webApi.getBackpack(this, function (err, result) {
+        if (err && err.message === "anti_spam") {
+            self.log.warning("Fetch spam prevented, skipping get");
+            if (typeof callback === "function") {
+                callback(self);
+            }
+            return;
+        }
+
+        var backpackWillChange = self.willChange(result.items);
         for (var i in result) {
             self[i] = result[i];
         }
@@ -268,38 +276,12 @@ Backpack.prototype.getErrorMessage = function () {
 };
 
 /**
- * Encode backpack fetching error
- * @param {Object} newBackpack Result from webApi fetching
- */
-Backpack.prototype._encodeFetchingError = function (newBackpack) {
-    this.error = false;
-    if (newBackpack.hasOwnProperty("result") && newBackpack.result === "error") {
-        if (newBackpack.code === "#steam_api_down") {
-            this.error = true;
-            this._error_code = newBackpack.code;
-            this.error_message = "Sorry, steam servers didn't respond, we couldn't retrive your backpack. Try again later";
-        }
-    } else if (newBackpack.hasOwnProperty("last_update_date")) {
-        this.last_update_date = new Date(newBackpack.last_update_date);
-        this.error = true;
-        this._error_code = "#database_backpack";
-        this.error_message = "Steam servers didn't respond, this is the last known image of your backpack (~timestamp)";
-    } else if (newBackpack.hasOwnProperty("status")) {
-        if (newBackpack.status !== 1) {
-            this.error = true;
-            this._error_code = "#backpack_status_" + newBackpack.status;
-            this.error_message = "Sorry, but we couldn't retrive your backpack. It seems that your backpack is set to private, you can set it to public in your steam privacy settings.";
-        }
-    }
-};
-
-/**
  * Procedure to check if backpack will change, fired right after a new fetch request
  * @param {Object[]} newItems
  * @returns {boolean}
  * @private
  */
-Backpack.prototype._willChange = function (newItems) {
+Backpack.prototype.willChange = function (newItems) {
     if (newItems instanceof Array) {
         if (this.items instanceof Array) {
             if (newItems.length !== this.items.length) {
@@ -325,6 +307,32 @@ Backpack.prototype._willChange = function (newItems) {
         }
     } else {
         return false;
+    }
+};
+
+/**
+ * Encode backpack fetching error
+ * @param {Object} newBackpack Result from webApi fetching
+ */
+Backpack.prototype._encodeFetchingError = function (newBackpack) {
+    this.error = false;
+    if (newBackpack.hasOwnProperty("result") && newBackpack.result === "error") {
+        if (newBackpack.code === "#steam_api_down") {
+            this.error = true;
+            this._error_code = newBackpack.code;
+            this.error_message = "Sorry, steam servers didn't respond, we couldn't retrive your backpack. Try again later";
+        }
+    } else if (newBackpack.hasOwnProperty("last_update_date")) {
+        this.last_update_date = new Date(newBackpack.last_update_date);
+        this.error = true;
+        this._error_code = "#database_backpack";
+        this.error_message = "Steam servers didn't respond, this is the last known image of your backpack (~timestamp)";
+    } else if (newBackpack.hasOwnProperty("status")) {
+        if (newBackpack.status !== 1) {
+            this.error = true;
+            this._error_code = "#backpack_status_" + newBackpack.status;
+            this.error_message = "Sorry, but we couldn't retrive your backpack. It seems that your backpack is set to private, you can set it to public in your steam privacy settings.";
+        }
     }
 };
 
