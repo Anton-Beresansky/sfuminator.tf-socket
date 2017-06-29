@@ -16,7 +16,7 @@ function ItemsDatabase(db) {
     this.log = LogLog.create({applicationName: "ItemsDatabase", color: "magenta", dim: true});
     this.db = db;
     this.queries = ItemsDatabase.QUERIES;
-    //this.log.disableDebug();
+    this.log.disableDebug();
 }
 
 ItemsDatabase.prototype.readInventory = function (owner, callback, options) {
