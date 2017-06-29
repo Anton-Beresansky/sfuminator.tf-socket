@@ -86,8 +86,8 @@ WebApi.prototype.getBackpack = function (currentBackpack, callback, options) {
         } else if (err.message === "steam_api_down") {
             self.backpacks.read(currentBackpack, function (err, dbBackpack) {
                 //We just hope there won't be errors :D
-                end(err, err ? steamBackpack : dbBackpack);
-            });
+                end(err, err ? 1 : dbBackpack);
+            }, options);
         } else if (err.message === "anti_spam") {
             end(err);
         }

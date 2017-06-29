@@ -86,10 +86,10 @@ BackpacksApi.prototype.fetchAntiSpam = function (databaseLastStoredImage) {
     return (new Date() - databaseLastStoredImage) > BackpacksApi.FETCH_ANTI_SPAM_INTERVAL;
 };
 
-BackpacksApi.prototype.read = function (owner, callback, options) {
+BackpacksApi.prototype.read = function (currentBackpack, callback, options) {
     this.emit("debug", "Reading backpack...");
     var self = this;
-    this.itemsDatabase.readInventory(owner, function (err, backpack) {
+    this.itemsDatabase.readInventory(currentBackpack.getOwner(), function (err, backpack) {
         callback(err, self.mergeWithSchema(backpack));
     }, options);
 };
