@@ -16,7 +16,7 @@ function ItemsDatabase(db) {
     this.log = LogLog.create({applicationName: "ItemsDatabase", color: "magenta", dim: true});
     this.db = db;
     this.queries = ItemsDatabase.QUERIES;
-    this.log.disableDebug();
+    //this.log.disableDebug();
 }
 
 ItemsDatabase.prototype.readInventory = function (owner, callback, options) {
@@ -125,15 +125,22 @@ ItemsDatabase.prototype.readItems = function (owner, callback, connection, optio
     }
 };
 
+ItemsDatabase.prototype.getError = function (error, identifier) {
+    this.log.error((identifier ? (identifier + " ") : "") + error.message);
+    return ItemsDatabase.ERRORS[error];
+};
+
 ItemsDatabase.prototype._getSimpleItems = function (owner, callback, connection) {
+    var self = this;
     connection.query(this.queries.getSimpleItems(owner), function (items) {
-        callback(items);
+        callback(self._decodeDbItems(items));
     });
 };
 
 ItemsDatabase.prototype._getFullItems = function (owner, callback, connection) {
     var self = this;
     connection.query(this.queries.getFullItems(owner), function (dbItems) {
+        dbItems = self._decodeDbItems(dbItems);
         var items = [];
         for (var i = 0; i < dbItems.length; i += 1) {
             var thisAttribute = null;
@@ -153,6 +160,17 @@ ItemsDatabase.prototype._getFullItems = function (owner, callback, connection) {
         }
         callback(items);
     });
+};
+
+ItemsDatabase.prototype._decodeDbItems = function (items) {
+    for (var i = 0; i < items.length; i += 1) {
+        var properties = ItemsDatabase.DECOMPRESS_ITEM_PROPERTIES(new Buffer(items[i].properties.toString('utf8'), 'base64'));
+        for (var property in properties) {
+            items[i][property] = properties[property];
+        }
+        delete items[i].properties;
+    }
+    return items;
 };
 
 ItemsDatabase.prototype._compressItem = function (item, attribute) {
@@ -196,11 +214,6 @@ ItemsDatabase.prototype._getCompressedItemStructure = function (item) {
         quantity: item.quantity,
         quality: item.quality
     };
-};
-
-ItemsDatabase.prototype.getError = function (error, identifier) {
-    this.log.error((identifier ? (identifier + " ") : "") + error.message);
-    return ItemsDatabase.ERRORS[error];
 };
 
 ItemsDatabase.QUERIES = {
