@@ -21,7 +21,7 @@ function ItemsDatabase(db) {
 
 ItemsDatabase.prototype.readInventory = function (owner, callback, options) {
     var self = this;
-    this.log.debug("Reading inventory " + owner);
+    this.log.debug("Reading inventory " + owner, 1);
     this.db.connect(function (connection) {
         connection.beginTransaction(function () {
             connection.query(self.queries.getBackpackInformation(owner), function (backpack_array, isEmpty) {
@@ -62,27 +62,59 @@ ItemsDatabase.prototype.saveBackpackStatus = function (owner, backpack, callback
     });
 };
 
-ItemsDatabase.prototype.saveInventory = function (owner, backpack, callback) {
+ItemsDatabase.prototype.saveInventory = function (owner, newBackpack, callback) {
     var self = this;
-    this.log.debug("Saving inventory " + owner, 1);
+    this.log.debug("Saving inventory " + owner);
     self.db.connect(function (connection) {
         connection.beginTransaction(function () {
             //Not needed as long as we are saving with the backpacksApi.js as well (on full tables)
             //connection.query(self.queries.insertBackpack(owner, backpack), function () {
-            if (backpack.hasOwnProperty("items") && backpack.items.length > 0) { //If backpack contains items
-                connection.query(self.queries.deleteAttributes(owner), function () {
-                    connection.query(self.queries.deleteItems(owner), function () {
-                        connection.query(self.queries.insertItems(owner, backpack.items), function () {
-                            var attributes_query = self.queries.insertAttributes(owner, backpack.items, connection);
-                            if (attributes_query) {
-                                connection.query(attributes_query, function () {
-                                    connection.commitRelease();
-                                    end();
+            if (newBackpack.hasOwnProperty("items") && newBackpack.items.length > 0) { //If backpack contains items idk why we put this tbh
+
+                connection.query(self.queries.getStoredItemIDs(owner), function (result) {
+                    var ids = [];
+                    for (var i = 0; i < result.length; i += 1) {
+                        ids.push(result[i].id);
+                    }
+                    var newItems = newBackpack.items;
+
+                    var idsToDelete = self._save_getIDsToDelete(ids, newItems);
+                    var itemsToInsert = self._save_getItemsToInsert(ids, newItems);
+                    self.log.debug("Will delete " + idsToDelete.length + " and insert " + itemsToInsert.length + " items");
+
+                    var queryDelete = function (callback) {
+                        if (idsToDelete.length) {
+                            connection.query(self.queries.deleteAttributes(idsToDelete), function () {
+                                connection.query(self.queries.deleteItems(idsToDelete), function () {
+                                    callback();
                                 });
-                            } else {
-                                connection.commitRelease();
-                                end();
-                            }
+                            });
+                        } else {
+                            callback();
+                        }
+                    };
+
+                    var queryInsert = function (callback) {
+                        if (itemsToInsert.length) {
+                            connection.query(self.queries.insertItems(owner, itemsToInsert), function () {
+                                var attributes_query = self.queries.insertAttributes(owner, itemsToInsert, connection);
+                                if (attributes_query) {
+                                    connection.query(attributes_query, function () {
+                                        callback();
+                                    });
+                                } else {
+                                    callback();
+                                }
+                            });
+                        } else {
+                            callback();
+                        }
+                    };
+
+                    queryDelete(function () {
+                        queryInsert(function () {
+                            connection.commitRelease();
+                            end();
                         });
                     });
                 });
@@ -93,6 +125,7 @@ ItemsDatabase.prototype.saveInventory = function (owner, backpack, callback) {
         });
     });
     var end = function () {
+        self.log.debug("Save ended " + owner);
         if (typeof callback === "function") {
             callback();
         }
@@ -128,6 +161,40 @@ ItemsDatabase.prototype.readItems = function (owner, callback, connection, optio
 ItemsDatabase.prototype.getError = function (error, identifier) {
     this.log.error((identifier ? (identifier + " ") : "") + error.message);
     return ItemsDatabase.ERRORS[error];
+};
+
+ItemsDatabase.prototype._save_getIDsToDelete = function (oldIDs, newItems) {
+    var toDelete = [];
+    for (var i = 0; i < oldIDs.length; i += 1) {
+        var found = false;
+        for (var p = 0; p < newItems.length; p += 1) {
+            if (oldIDs[i] === newItems[p].id) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            toDelete.push(oldIDs[i]);
+        }
+    }
+    return toDelete;
+};
+
+ItemsDatabase.prototype._save_getItemsToInsert = function (oldIDs, newItems) {
+    var toAdd = [];
+    for (var i = 0; i < newItems.length; i += 1) {
+        var found = false;
+        for (var p = 0; p < oldIDs.length; p += 1) {
+            if (newItems[i].id === oldIDs[p]) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            toAdd.push(newItems[i]);
+        }
+    }
+    return toAdd;
 };
 
 ItemsDatabase.prototype._getSimpleItems = function (owner, callback, connection) {
@@ -217,6 +284,9 @@ ItemsDatabase.prototype._getCompressedItemStructure = function (item) {
 };
 
 ItemsDatabase.QUERIES = {
+    getStoredItemIDs: function (owner) {
+        return "SELECT `id` FROM `latest_items` WHERE `owner`='" + owner + "'";
+    },
     getBackpackInformation: function (owner) {
         return "SELECT `status`,`num_backpack_slots`,`last_update_date` as `last_update_date` FROM backpacks WHERE `owner`='" + owner + "' LIMIT 1";
     },
@@ -239,8 +309,13 @@ ItemsDatabase.QUERIES = {
             + ",`num_backpack_slots`=" + (backpack.hasOwnProperty("num_backpack_slots") ? backpack.num_backpack_slots : null)
             + ",`last_update_date`=NOW()";
     },
-    deleteItems: function (owner) {
-        return "DELETE FROM `latest_items` WHERE `owner`='" + owner + "'";
+    deleteItems: function (ids) {
+        var idList = '';
+        for (var i = 0; i < ids.length; i += 1) {
+            idList += ids[i] + ",";
+        }
+        idList = idList.slice(0, -1);
+        return "DELETE FROM `latest_items` WHERE `id` IN (" + idList + ")";
     },
     insertItems: function (owner, items) {
         var insertConstruction = "INSERT INTO `latest_items` " +
@@ -253,8 +328,13 @@ ItemsDatabase.QUERIES = {
         }
         return insertConstruction + values.slice(0, values.length - 2);
     },
-    deleteAttributes: function (owner) {
-        return "DELETE FROM `latest_attributes` WHERE id IN (SELECT id FROM `latest_items` WHERE `owner`='" + owner + "');";
+    deleteAttributes: function (ids) {
+        var idList = '';
+        for (var i = 0; i < ids.length; i += 1) {
+            idList += ids[i] + ",";
+        }
+        idList = idList.slice(0, -1);
+        return "DELETE FROM `latest_attributes` WHERE id IN (" + idList + ")";
     },
     insertAttributes: function (owner, items, connection) {
         var insertConstruction = "INSERT IGNORE INTO `latest_attributes` (`id`,`defindex`,`value`,`float_value`,`steamid`) VALUES";
