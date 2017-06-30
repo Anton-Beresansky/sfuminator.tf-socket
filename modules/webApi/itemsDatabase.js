@@ -16,7 +16,7 @@ function ItemsDatabase(db) {
     this.log = LogLog.create({applicationName: "ItemsDatabase", color: "magenta", dim: true});
     this.db = db;
     this.queries = ItemsDatabase.QUERIES;
-    this.log.disableDebug();
+    this.log.setDepthLevel(0);
 }
 
 ItemsDatabase.prototype.readInventory = function (owner, callback, options) {
@@ -51,7 +51,7 @@ ItemsDatabase.prototype.readInventory = function (owner, callback, options) {
 
 ItemsDatabase.prototype.saveBackpackStatus = function (owner, backpack, callback) {
     var self = this;
-    this.log.debug("Updating backpack status " + owner);
+    this.log.debug("Updating backpack status " + owner, 1);
     self.db.connect(function (connection) {
         connection.query(self.queries.insertBackpack(owner, backpack), function () {
             connection.release();
@@ -64,7 +64,7 @@ ItemsDatabase.prototype.saveBackpackStatus = function (owner, backpack, callback
 
 ItemsDatabase.prototype.saveInventory = function (owner, backpack, callback) {
     var self = this;
-    this.log.debug("Saving inventory " + owner);
+    this.log.debug("Saving inventory " + owner, 1);
     self.db.connect(function (connection) {
         connection.beginTransaction(function () {
             //Not needed as long as we are saving with the backpacksApi.js as well (on full tables)
@@ -352,19 +352,3 @@ ItemsDatabase.DECOMPRESS_ITEM_PROPERTIES_SCHEMA = {
         return buffer[3] + (buffer[4] << 8);
     }
 };
-
-ItemsDatabase.prototype._printPercentBarStatus = function (now, max) {
-    var barLength = 40;
-    var hashes = parseInt(((now * barLength) / max) + 0.5);
-    var percent = parseInt((now / max) * 100);
-    this.log.debug("[" + Array(hashes + 1).join("#") + Array(barLength - hashes + 1).join(" ") + "] " + percent + "% (" + now + "/" + max + ")")
-};
-
-function _dateJStoMysql(dbDate) {
-    return dbDate.getFullYear() + "-"
-        + ("0" + (dbDate.getMonth() + 1)).slice(-2) + "-"
-        + ("0" + (dbDate.getDate())).slice(-2) + " "
-        + ("0" + dbDate.getHours()).slice(-2) + ":"
-        + ("0" + dbDate.getMinutes()).slice(-2) + ":"
-        + ("0" + dbDate.getSeconds()).slice(-2);
-}
