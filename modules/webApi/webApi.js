@@ -80,7 +80,7 @@ WebApi.prototype.getKeyPrice = function (callback) {
 WebApi.prototype.getBackpack = function (currentBackpack, callback, options) {
     var self = this;
     //Abstraction layer added for multiple games
-    this.backpacks.get(currentBackpack, function (err, steamBackpack) {
+    this.backpacks.read(currentBackpack, function (err, steamBackpack) {
         if (!err) {
             end(null, steamBackpack);
         } else if (err.message === "steam_api_down") {
