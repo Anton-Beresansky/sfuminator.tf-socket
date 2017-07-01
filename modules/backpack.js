@@ -81,7 +81,7 @@ Backpack.prototype.get = function (callback) {
     this.fetching = true;
     this.webApi.getBackpack(this, function (err, result) {
         if (err && err.message === "anti_spam") {
-            self.log.warning("Fetch spam prevented, skipping get");
+            self.log.debug("Fetch spam prevented, skipping get", 1);
             if (typeof callback === "function") {
                 callback(self);
             }

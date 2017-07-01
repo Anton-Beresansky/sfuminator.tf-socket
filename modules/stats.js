@@ -234,7 +234,7 @@ Stats.prototype._getStoreStockQuery = function () {
             }
         }
     }
-    return query.slice(0, query.length - 2) + " ON DUPLICATE KEY UPDATE `count`=VALUES(`count`)";
+    return query.slice(0, query.length - 2) + " ON DUPLICATE KEY UPDATE `count`=VALUES(`count`)"; //Query will fire error if no bot have no items
 };
 /*
  * {

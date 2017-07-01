@@ -27,7 +27,8 @@ ItemsDatabase.prototype.readInventory = function (owner, callback, options) {
             connection.query(self.queries.getBackpackInformation(owner), function (backpack_array, isEmpty) {
                 if (!isEmpty) {
                     var backpack = backpack_array[0];
-
+                    callback(null, backpack, connection);
+                    /*
                     self.readItems(owner, function (items) {
                         if (items.hasOwnProperty("result") && items.result === "error") {
                             connection.rollbackRelease();
@@ -40,6 +41,7 @@ ItemsDatabase.prototype.readInventory = function (owner, callback, options) {
                             callback(null, self.mergeWithItems(backpack, items));
                         }
                     }, connection, options);
+                    */
                 } else {
                     connection.rollbackRelease();
                     callback(new Error(self.getError("backpackNotFound", owner)).message);
