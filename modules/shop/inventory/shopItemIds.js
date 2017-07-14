@@ -1,6 +1,6 @@
 module.exports = ShopItemIDs;
 
-var Logs = require("../../../lib/logs.js");
+var LogLog = require("log-log");
 
 /**
  * ShopItemIds class
@@ -16,7 +16,7 @@ function ShopItemIDs(db) {
      */
     this.lookupTable = {};
     this.currentID = 0;
-    this.log = new Logs({applicationName: "ShopItemIDs", color: "grey", dim: true});
+    this.log = new LogLog.create({applicationName: "ShopItemIDs", color: "grey", dim: true});
 }
 
 /**
@@ -35,6 +35,10 @@ ShopItemIDs.prototype.make = function (shopItem) {
     if (this.exist(unique_id, game_code)) {
         return this.lookup(unique_id, game_code);
     } else {
+        console.log(this.lookupTable[game_code][unique_id]);
+        console.log("Item " + shopItem.getItem().getFullName() + " is not linked..");
+        console.log("Linking " + shopItem.getItem().getID());
+        console.log("Unique: ", unique_id, typeof unique_id);
         this.increase();
         this.link(shopItem);
         return this.currentID;
@@ -102,6 +106,16 @@ ShopItemIDs.prototype.increase = function () {
     });
 };
 
+ShopItemIDs.prototype.updateCurrentID = function () {
+    var self = this;
+    this.getDatabaseCurrentID(function (id) {
+        if (id > this.currentID) {
+            self.log.debug("Updated current id from database " + self.currentID + " to " + id);
+            self.currentID = id;
+        }
+    });
+};
+
 /**
  * Load id system
  * @param {Function} callback
@@ -120,17 +134,10 @@ ShopItemIDs.prototype.load = function (callback) {
  */
 ShopItemIDs.prototype.loadCurrentID = function (callback) {
     var self = this;
-    this.db.connect(function (connection) {
-        connection.query(self._getLoadCurrentIDQuery(), function (rows, empty) {
-            connection.release();
-            if (!empty) {
-                self.currentID = rows[0].version;
-                self.log.debug("Loaded current id to: " + self.currentID);
-                callback();
-            } else {
-                self.log.error("Couldn't load latest id")
-            }
-        });
+    this.getDatabaseCurrentID(function (id) {
+        self.currentID = id;
+        self.log.debug("Loaded current id to: " + self.currentID);
+        callback();
     });
 };
 
@@ -148,12 +155,27 @@ ShopItemIDs.prototype.loadLookup = function (callback) {
                     self._linkLocal(rows[i].item_id, rows[i].game, rows[i].shop_id);
                 }
                 self.log.debug("Loaded lookup table");
+                console.log(rows.length, "elements");
                 callback();
             } else {
                 self.log.error("Load lookup query returned empty");
             }
         });
     })
+};
+
+ShopItemIDs.prototype.getDatabaseCurrentID = function (callback) {
+    var self = this;
+    this.db.connect(function (connection) {
+        connection.query(self._getLoadCurrentIDQuery(), function (rows, empty) {
+            connection.release();
+            if (!empty) {
+                callback(rows[0].version);
+            } else {
+                self.log.error("Couldn't load latest id")
+            }
+        });
+    });
 };
 
 /**
@@ -220,7 +242,7 @@ ShopItemIDs.prototype._getLoadLookupQuery = function () {
 };
 
 ShopItemIDs.prototype._getLoadCurrentIDQuery = function () {
-    return "SELECT version FROM tasks where `of`='shopInventory_id'";
+    return "SELECT version FROM tasks where `of`='shopInventory_id' LIMIT 1";
 };
 
 ShopItemIDs.prototype._getIncreaseIDQuery = function () {
