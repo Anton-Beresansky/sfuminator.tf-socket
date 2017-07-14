@@ -35,10 +35,6 @@ ShopItemIDs.prototype.make = function (shopItem) {
     if (this.exist(unique_id, game_code)) {
         return this.lookup(unique_id, game_code);
     } else {
-        console.log(this.lookupTable[game_code][unique_id]);
-        console.log("Item " + shopItem.getItem().getFullName() + " is not linked..");
-        console.log("Linking " + shopItem.getItem().getID());
-        console.log("Unique: ", unique_id, typeof unique_id);
         this.increase();
         this.link(shopItem);
         return this.currentID;
@@ -109,7 +105,7 @@ ShopItemIDs.prototype.increase = function () {
 ShopItemIDs.prototype.updateCurrentID = function () {
     var self = this;
     this.getDatabaseCurrentID(function (id) {
-        if (id > this.currentID) {
+        if (id > self.currentID) {
             self.log.debug("Updated current id from database " + self.currentID + " to " + id);
             self.currentID = id;
         }
@@ -155,7 +151,6 @@ ShopItemIDs.prototype.loadLookup = function (callback) {
                     self._linkLocal(rows[i].item_id, rows[i].game, rows[i].shop_id);
                 }
                 self.log.debug("Loaded lookup table");
-                console.log(rows.length, "elements");
                 callback();
             } else {
                 self.log.error("Load lookup query returned empty");
