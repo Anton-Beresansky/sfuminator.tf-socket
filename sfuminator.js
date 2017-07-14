@@ -15,7 +15,7 @@ var BotPorting = require('./v3_bot_porting.js');
 var Valve = require("./valve.js");
 
 //Test modules
-var PriceMachine = require('./modules/testing/priceMachine.js');
+//var PriceMachine = require('./modules/testing/priceMachine.js');
 var TestingEnabled = false;
 
 /**
