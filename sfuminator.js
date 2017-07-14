@@ -11,8 +11,12 @@ var Stats = require('./modules/stats.js');
 var TradeStatus = require('./modules/trade/status.js');
 var Interrupts = require('./lib/interrupts.js');
 var BotPorting = require('./v3_bot_porting.js');
-
+var AdminSocket = require('./modules/adminSocket.js');
 var Valve = require("./valve.js");
+
+//Test modules
+var PriceMachine = require('./modules/testing/priceMachine.js');
+var TestingEnabled = false;
 
 /**
  * General purpose Sfuminator class
@@ -32,6 +36,7 @@ function Sfuminator(webApi, db) {
         {name: "updateKeyPrice", delay: 2 * 60 * 60 * 1000, tag: "global"}, // 2 Hours
         {name: "updateTF2Data", delay: 3 * 60 * 60 * 1000, tag: "global"}, //3 Hours
         {name: "updateShopInventory", delay: 4 * 1000, tag: "internal"}, //4 Seconds
+        {name: "updateShopCurrentID", delay: 3000, tag: "internal"},
         {name: "updateActiveTrades", delay: 1.5 * 1000, tag: "internal"}, //1.5 Seconds
         {name: "updateStats", delay: 1000, tag: "global"},  //1 Second
         {name: "updateTradeStatus", delay: 1000, tag: "global"}, //1 Second
@@ -47,10 +52,18 @@ function Sfuminator(webApi, db) {
      * @type {Users}
      */
     this.users = new Users(this);
+    /**
+     * @type {Shop}
+     */
     this.shop = new Shop(this);
     this.botsController = new BotsController(this);
     this.stats = new Stats(this);
     this.status = new TradeStatus(this);
+    this.adminSocket = new AdminSocket(this);
+
+    if (TestingEnabled) {
+        this.priceMachine = new PriceMachine(this);
+    }
 
     this.activeTrades = [];
     this.shopTrade_decay = 10000;
@@ -128,6 +141,9 @@ Sfuminator.prototype.bindInterrupts = function () {
     });
     this.interrupts.on("manageBotItemsDistribution", function () {
         self.botsController.manageItemsDistribution();
+    });
+    this.interrupts.on("updateShopCurrentID", function () {
+        self.shop.inventory.ids.updateCurrentID();
     });
 };
 
@@ -270,6 +286,9 @@ Sfuminator.prototype.onAction = function (request, callback) {
         case "verifyTradeUrlToken":
             this.clientCheckTradeOfferToken(request.getRequesterSteamid(), data.token, callback);
             break;
+        case "adminSocket":
+            this.adminSocket.request(request, callback);
+            break;
         case "i_ve_been_here":
             var justForValve = new Valve(request);
             justForValve.process(callback);
@@ -378,8 +397,7 @@ Sfuminator.prototype.requestTrade = function (request, mode, callback) {
     }
     var user = this.users.get(request.getRequesterSteamid());
     if (!user.hasActiveShopTrade()) {
-        var trade = user.makeShopTrade(data.items);
-        trade.setMode(mode);
+        var trade = this.getTradeObjectFromRequest(request, mode);
         trade.on("tradeRequestResponse", function (response) {
             self.log.debug("Request for trade rejected, response: " + trade.response.code);
             callback(response);
@@ -405,6 +423,29 @@ Sfuminator.prototype.requestTrade = function (request, mode, callback) {
             callback(this.responses.alreadyInTrade);
         }
     }
+};
+
+Sfuminator.prototype.getTradeObjectFromRequest = function (request, mode) {
+    var data = request.getData();
+    var itemList = data.items;
+    if (data.items.hasOwnProperty("market")) {
+        itemList = {market: []};
+        var marketList = {};
+        for (var i = 0; i < data.items.market.length; i += 1) {
+            var item = data.items.market[i];
+            if (item.hasOwnProperty("id") && !isNaN(item.id)
+                && item.hasOwnProperty("price") && !isNaN(item.price)) {
+                itemList.market.push(item.id);
+                marketList[item.id] = item.price;
+            }
+        }
+    }
+    var trade = this.users.get(request.getRequesterSteamid()).makeShopTrade(itemList);
+    trade.setMode(mode);
+    if (marketList) {
+        trade.setAsMarketTrade(marketList);
+    }
+    return trade;
 };
 
 /**
