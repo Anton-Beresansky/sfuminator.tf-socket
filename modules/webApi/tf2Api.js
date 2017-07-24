@@ -198,9 +198,13 @@ TF2Api.prototype.updatePrices = function (callback) {
                                 self.saveItemPrices(response.response.items, function () {
                                     callback();
                                 });
+                            } else {
+                                self.emit("debug", "ERROR: " + JSON.stringify(response));
                             }
                         });
                     });
+                } else {
+                    self.emit("debug", "ERROR: " + JSON.stringify(response));
                 }
             });
 
@@ -212,11 +216,13 @@ TF2Api.prototype.updatePrices = function (callback) {
 };
 
 TF2Api.prototype.arePricesOutdated = function (callback) {
+    var self = this;
     this.db.connect(function (connection) {
         connection.query("SELECT version FROM versioning WHERE id='bptf'", function (result, empty) {
             connection.release();
             var outdated = true;
             if (!empty) {
+                self.emit("debug", "Current bptf version " + result[0].version);
                 if (result[0].version + TF2Api.BPTF_DECAY_TIME > parseInt(new Date().getTime() / 1000)) {
                     outdated = false;
                 }
@@ -277,6 +283,7 @@ TF2Api.prototype.iGetPrices = function (callback) {
     var self = this;
     var myInterface = {
         name: "api",
+        protocol: "https",
         method: {
             name: "IGetPrices",
             version: 4,
@@ -296,6 +303,7 @@ TF2Api.prototype.iGetCurrencies = function (callback) {
     var self = this;
     var myInterface = {
         name: "api",
+        protocol: "https",
         method: {
             name: "IGetCurrencies",
             version: 1,

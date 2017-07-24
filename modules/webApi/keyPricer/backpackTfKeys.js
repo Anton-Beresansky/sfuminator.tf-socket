@@ -4,6 +4,10 @@ var request = require("request");
 var cheerio = require("cheerio");
 var Logs = require("../../../lib/logs.js");
 
+/**
+ *
+ * @constructor
+ */
 function BackpackTFKeys() {
     this._pageToFetch = 5;
     this.sellers = [];
@@ -89,9 +93,12 @@ BackpackTFKeys.prototype.parsePages = function (callback) {
 };
 
 BackpackTFKeys.prototype.fetch = function (pageNumber, callback) {
+    var self = this;
     request('http://backpack.tf/classifieds?item=Mann%20Co.%20Supply%20Crate%20Key&quality=6&tradable=1&craftable=1&page=' + pageNumber, function (error, response, body) {
         if (!error && response.statusCode === 200) {
             callback(body);
+        } else {
+            self.log.error("Can't parse bp.tf classifieds: " + response.statusCode);
         }
     });
 };
