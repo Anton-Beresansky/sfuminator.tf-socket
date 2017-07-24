@@ -37,10 +37,15 @@ KeyPricer.prototype.fetch = function (callback) {
         self.backpackTFKeys.load(function () {
             self.sellers = [];
             self.buyers = [];
-            self.injectSellers(self.backpackTFKeys.getSellers());
-            self.injectBuyers(self.backpackTFKeys.getBuyers());
-            self.injectSellers(self.tradeTFKeys.getSellers());
-            self.injectBuyers(self.tradeTFKeys.getBuyers());
+            var bptfSellers = self.backpackTFKeys.getSellers();
+            var bptfBuyers = self.backpackTFKeys.getBuyers();
+            var tradetfSellers = self.tradeTFKeys.getSellers();
+            var tradetfBuyers = self.tradeTFKeys.getBuyers();
+            self.log.debug("backpack.tf: s" + bptfSellers.length + "/b" + bptfBuyers.length + " | trade.tf: s" + tradetfSellers.length + "/b" + tradetfBuyers.length);
+            self.injectSellers(bptfSellers);
+            self.injectBuyers(bptfBuyers);
+            self.injectSellers(tradetfSellers);
+            self.injectBuyers(tradetfBuyers);
             if (typeof callback === "function") {
                 callback();
             }
