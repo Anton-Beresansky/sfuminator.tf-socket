@@ -214,6 +214,10 @@ SfuminatorRequest.prototype.getCookie = function (cname) {
     return this._cookies[cname];
 };
 
+SfuminatorRequest.prototype.getHeader = function (name) {
+    return this.req.headers[name];
+};
+
 /**
  * Parse request cookies
  */

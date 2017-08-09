@@ -16,7 +16,7 @@ function Stats(sfuminator) {
     this.ticks = {
         getStockCount: {every: 1, c: 0},
         fetchActiveTradeCount: {every: 5, c: 0},
-        fetchTradeCount: {every: 5, c: 0},
+        fetchTradeCount: {every: 60, c: 0},
         fetchScannedProfiles: {every: 30, c: 0},
         fetchNewItems: {every: 2, c: 0},
         storePricedStock: {every: (60 * 15), c: 0},
@@ -186,7 +186,7 @@ Stats.prototype.fetchTradeCount = function () {
 };
 
 Stats.prototype._getTradeCountQuery = function () {
-    return "SELECT COUNT(*) as trade_count FROM `shop_trade_items` JOIN (SELECT `id` FROM `shop_trades` WHERE `status_info`='accepted') as `ids` ON `shop_trade_items`.trade_id=`ids`.id";
+    return "SELECT COUNT(*) as trade_count FROM `shop_trade_items` JOIN (SELECT `id` FROM `shop_trades` WHERE `trade_type`=0 AND `status_info`='accepted') as `ids` ON `shop_trade_items`.trade_id=`ids`.id";
 };
 
 Stats.prototype._getOldTradeCountQuery = function () {

@@ -28,6 +28,18 @@ function TF2Constants() {
         "Assassin Grade",
         "Elite Grade"
     ];
+    
+    this.classes = [
+        "Scout",
+        "Demoman",
+        "Pyro",
+        "Sniper",
+        "Spy",
+        "Heavy",
+        "Soldier",
+        "Engineer",
+        "Medic"
+    ];
 
     this.quality = {
         Normal: 0,

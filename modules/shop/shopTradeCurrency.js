@@ -20,6 +20,7 @@ function ShopTradeCurrency(shopTrade) {
      */
     this.shop = this.shopTrade.shop;
 
+    this.forcedBalance = 0;
     this.iSmelted = 0;
     this.importAssets();
 
@@ -48,14 +49,12 @@ ShopTradeCurrency.prototype.getTradeBalance = function () {
  * @returns {number}
  */
 ShopTradeCurrency.prototype.getSignedTradeBalance = function () {
-    if (!isNaN(this.forcedBalance)) {
-        this.currencyTradeBalance = this.forcedBalance;
-    } else {
-        this.currencyTradeBalance = 0;
-    }
+    this.currencyTradeBalance = this.forcedBalance;
     for (var i = 0; i < this.assets.length; i += 1) {
         var asset = this.assets[i];
-        if (this.assets[i].isMineItem()) {
+        if (this.assets[i].isMarketItem()) {
+            //Balance unchanged if market item
+        } else if (this.assets[i].isMineItem()) {
             this.currencyTradeBalance -= asset.getPrice();
         } else {
             this.currencyTradeBalance += asset.getPrice();
@@ -69,6 +68,41 @@ ShopTradeCurrency.prototype.getSignedTradeBalance = function () {
  */
 ShopTradeCurrency.prototype.forceStartingBalance = function (price) {
     this.forcedBalance = price.toScrap();
+};
+
+ShopTradeCurrency.prototype.addToStartingBalance = function (delta) {
+    this.forcedBalance += delta;
+};
+
+ShopTradeCurrency.prototype.getForcedBalance = function () {
+    return this.forcedBalance;
+};
+
+ShopTradeCurrency.prototype.weHaveEnoughCurrency = function () {
+    return (this.getSignedTradeBalance() >= 0) || (Math.abs(this.getSignedTradeBalance()) < this.getTotalAvailableCurrencyAmount().toScrap());
+};
+
+ShopTradeCurrency.prototype.getTotalAvailableCurrencyAmount = function () {
+    var items = this.getOurCurrencyShopItems();
+    var total = 0;
+    for (var i = 0; i < items.length; i += 1) {
+        if (!items[i].isReserved()) {
+            total += items[i].getPrice().toScrap();
+        }
+    }
+    return new Price(total, "scrap");
+};
+
+/**
+ * @returns {Price}
+ */
+ShopTradeCurrency.prototype.getTotalCurrencyAmount = function () {
+    var items = this.getOurCurrencyShopItems();
+    var total = 0;
+    for (var i = 0; i < items.length; i += 1) {
+        total += items[i].getPrice().toScrap();
+    }
+    return new Price(total, "scrap");
 };
 
 ShopTradeCurrency.prototype.reserve = function () {

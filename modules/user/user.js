@@ -5,6 +5,8 @@ var Logs = require('../../lib/logs.js');
 var Backpack = require('../backpack.js');
 var ShopTrade = require('../shop/shopTrade.js');
 var SteamGames = require('../../lib/steamGames.js');
+var Wallet = require('./wallet.js');
+var Section = require("../shop/shopSection.js");
 
 /**
  * General purpose User class
@@ -21,6 +23,7 @@ function User(steamid, sfuminator) {
     this.steamid = steamid;
     this.sfuminator = sfuminator;
     this.shop = this.sfuminator.shop;
+    this.market = this.sfuminator.shop.market;
     this.db = this.sfuminator.db;
     this.webApi = this.sfuminator.webApi;
     this.tf2Backpack = new Backpack(steamid, SteamGames.TF2, this.webApi);
@@ -28,8 +31,10 @@ function User(steamid, sfuminator) {
     this.decayTime = 1000 * 60 * 60 * 8; // 8hrs
     this.last_use_date = new Date();
     this.databaseHasBeenLoaded = false;
+    this._onceLoadedCallbacks = [];
     this.updateIdentity();
     this.loadDatabaseInfo();
+    this.createMarketerSection();
     this.tf2Backpack.getCached();
     events.EventEmitter.call(this);
 }
@@ -92,11 +97,71 @@ User.prototype.getNumberOfTrades = function () {
 };
 
 /**
+ * @returns {Wallet}
+ */
+User.prototype.getWallet = function () {
+    if (this._canGetDatabaseParameter()) {
+        return this.wallet;
+    } else {
+        return new Wallet(this);
+    }
+};
+
+/**
  * Get TF2 Backpack
  * @returns {Backpack}
  */
 User.prototype.getTF2Backpack = function () {
     return this.tf2Backpack;
+};
+
+User.prototype.isMarketer = function () {
+    return this.market.marketerExists(this.getSteamid());
+};
+
+User.prototype.getMarketedShopItems = function () {
+    var marketedItems = [];
+    var marketItems = this.market.items;
+    for (var i = 0; i < marketItems.length; i += 1) {
+        if (marketItems[i].getMarketer() === this.steamid && marketItems[i].isAvailable()) {
+            marketedItems.push(marketItems[i].getShopItem());
+        }
+    }
+    return marketedItems;
+};
+
+User.prototype.createMarketerSection = function () {
+    this.marketerSection = new Section(this.shop, "marketer");
+    var items = this.getMarketedShopItems();
+    for (var i = 0; i < items.length; i += 1) {
+        this.marketerSection.add(items[i]);
+    }
+    this.marketerSection.commit();
+};
+
+/**
+ * @returns {Section}
+ */
+User.prototype.getMarketerSection = function () {
+    return this.marketerSection;
+};
+
+/**
+ * @param request {SfuminatorRequest}
+ */
+User.prototype.setTradeRequestPage = function (request) {
+    this.tradeRequestPage = request.getHeader("referer");
+};
+
+/**
+ * @param request {SfuminatorRequest}
+ */
+User.prototype.canGetTradeUpdates = function (request) {
+    return this.hasActiveShopTrade() && ((request.getHeader("referer") === this.tradeRequestPage) || !this.tradeRequestPage);
+};
+
+User.prototype.canTrade = function () {
+    return !this.sfuminator.getCannotTradeResponse(this);
 };
 
 /**
@@ -163,6 +228,17 @@ User.prototype.renewExpiration = function () {
     this._startDecay();
 };
 
+User.prototype.onceLoaded = function (callback) {
+    this.databaseHasBeenLoaded ? callback(this) : this._onceLoadedCallbacks.push(callback);
+};
+
+User.prototype._handleOnceLoadedCallbacks = function () {
+    for (var i = 0; i < this._onceLoadedCallbacks.length; i += 1) {
+        this._onceLoadedCallbacks[i](this);
+    }
+    delete this._onceLoadedCallbacks;
+};
+
 /**
  * Cancel current user decay status
  */
@@ -190,10 +266,12 @@ User.prototype.loadDatabaseInfo = function () {
                 self._loadNumberOfTrades(connection, function () {
                     connection.commitRelease();
                     self.databaseHasBeenLoaded = true;
+                    self.emit('databaseLoaded');
                 });
             });
         });
     });
+    this.once('databaseLoaded', this._handleOnceLoadedCallbacks);
 };
 
 /**
@@ -258,11 +336,13 @@ User.prototype._loadUserInfoFromDatabase = function (connection, callback) {
             self.last_login = new Date(dbUser.last_login);
             self.last_visit = new Date(dbUser.last_visit);
             self.tradeToken = dbUser.trade_token;
+            self.wallet = new Wallet(self, dbUser.wallet);
         } else {
             self.first_login = new Date();
             self.last_login = new Date();
             self.last_visit = new Date();
             self.tradeToken = null;
+            self.wallet = new Wallet(self, 0);
         }
         callback();
     });
@@ -306,7 +386,7 @@ User.prototype._getSaveTradeTokenQuery = function () {
 };
 
 User.prototype._getFetchUserInfoQuery = function () {
-    return "SELECT `first_login`,`last_login`,`last_visit`,`trade_token` FROM `users` where `steam_id`='" + this.steamid + "'";
+    return "SELECT `first_login`,`last_login`,`last_visit`,`trade_token`,`wallet` FROM `users` where `steam_id`='" + this.steamid + "'";
 };
 
 User.prototype._getFetchNumberOfTradesQuery = function () {

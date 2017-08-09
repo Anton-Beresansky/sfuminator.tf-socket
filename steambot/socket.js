@@ -14,6 +14,10 @@ sfuminatorAPI.on("error", function (msg) {
     console.log(time + " ERROR @socket_API:" + msg);
 });
 
+/**
+ * @class SfuminatorSocket
+ * @param socket_key
+ */
 function sfuminatorSocket(socket_key) {
     this.key = socket_key;
     this.defaultParameters = {};
