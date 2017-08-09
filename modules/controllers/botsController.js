@@ -34,9 +34,6 @@ function BotsController(sfuminator) {
     this.steamTradeErrorSolver = new SteamTradeErrorSolver(this.sfuminator);
     this.commands = new BotCommands(this.sfuminator);
     this.log = new Logs({applicationName: "Bots Controller", color: "blue", dim: true});
-
-    this.loadBots();
-    this._bindHandlers();
 }
 
 BotsController.prototype._bindHandlers = function () {
@@ -65,6 +62,7 @@ BotsController.prototype.loadBots = function () {
     for (var i = 0; i < tradeBotSteamids.length; i += 1) {
         this.tradeBots.push(new TraderBot(this.sfuminator.shop.getBotUser(tradeBotSteamids[i]), this.sfuminator));
     }
+    this._bindHandlers();
 };
 
 /**
@@ -88,7 +86,7 @@ BotsController.prototype.assignBot = function (shopTrade) {
     for (i = 0; i < ownerList.length; i += 1) {
         if (!this.getBot(ownerList[i].owner).isAvailable()) {
             var unavailableBot = this.getBot(ownerList[i].owner);
-            this.log.warning(unavailableBot.getUser().getCredentials().getUsername() +
+            this.log.warning(unavailableBot.steamClient.getCredentials().getUsername() +
                 " is unavailable: l(" + unavailableBot.steamClient.isLogged() + ") a(" + unavailableBot.available + ")");
             shopTrade.emit("tradeRequestResponse", this.sfuminator.responses.botIsNotAvailable);
             return false;
@@ -356,7 +354,7 @@ BotsController.prototype.manageItemsDistribution = function () {
 BotsController.prototype._getOwnerList = function (assets) {
     var ownerList = [];
     for (var i = 0; i < assets.length; i += 1) {
-        if (!assets[i].isMineItem()) {
+        if (!assets[i].isPartnerItem()) {
             var owner = assets[i].getItem().getOwner();
             var found = false;
             for (var p = 0; p < ownerList.length; p += 1) {

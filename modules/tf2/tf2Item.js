@@ -150,6 +150,10 @@ TF2Item.prototype.isPriced = function () {
     return this.hasOwnProperty("absolute_price") && !isNaN(this.absolute_price);
 };
 
+TF2Item.prototype.injectPrice = function (price) {
+    this.absolute_price = price.toUSD();
+};
+
 /**
  * Get item price
  * @returns {Price}

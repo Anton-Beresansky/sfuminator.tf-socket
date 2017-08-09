@@ -24,6 +24,7 @@ function CompressionLookup() {
         paint_color: "z",
         reserved_to: "w",
         price: "m",
+        mine_price: "mm",
         real_id: "n"
     };
     this.values = {
@@ -38,8 +39,9 @@ function CompressionLookup() {
             hats: 1,
             strange: 2,
             taunt: 3,
-            paint: 4,
-            market: 5
+            other: 4,
+            market: 5,
+            marketer: 6
         },
         image_url: function (shopItem) {
             if (shopItem.getItem().isPaint()) {

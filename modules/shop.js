@@ -6,6 +6,8 @@ var TF2Currency = require("./tf2/tf2Currency.js");
 var TF2Item = require("./tf2/tf2Item.js");
 var ShopRatio = require("./shop/shopRatio.js");
 var ShopInventory = require("./shop/shopInventory.js");
+var ShopItem = require("./shop/inventory/shopItem.js");
+var Market = require('./market.js');
 var Section = require("./shop/shopSection.js");
 var Reservations = require("./shop/shopReservations.js");
 var ItemCount = require("./shop/shopItemCount.js");
@@ -28,7 +30,7 @@ function Shop(sfuminator) {
     this.ratio = new ShopRatio(this.db);
     this.tf2Currency = TF2Currency;
     this.tf2Currency.setWebApi(this.webApi);
-    this.bots = this.getBots();
+    this.bots = [];
     /**
      * @type {ShopInventory}
      */
@@ -37,6 +39,10 @@ function Shop(sfuminator) {
      * @type {Reservations}
      */
     this.reservations = new Reservations(this.db);
+    /**
+     * @type {Market}
+     */
+    this.market = new Market(this);
     this.instanceID = new Date().getTime();
     this.countLimit = {
         hats: {Strange: 2, Vintage: 3, Genuine: 3, Haunted: 3, _any: 5, _price: {over: 7, limit: 3}},
@@ -59,7 +65,6 @@ function Shop(sfuminator) {
 
     events.EventEmitter.call(this);
     var self = this;
-    this.init();
     this.inventory.on("new", function (changes) {
         self.update(changes);
         self.emit("sectionItemsUpdated", changes.toAdd);
@@ -77,6 +82,8 @@ require("util").inherits(Shop, events.EventEmitter);
  */
 Shop.prototype.init = function () {
     var self = this;
+    self.log.debug("Creating bots");
+    self.bots = self.getBots();
     self.log.debug("Updating shop ratios");
     self.ratio.updateHats(function () {
         self.log.debug("Updating currency");
@@ -85,9 +92,12 @@ Shop.prototype.init = function () {
             self.reservations.load(function () {
                 self.log.debug("Loading shop ids");
                 self.inventory.ids.load(function () {
-                    self.log.debug("Loading up inventory...");
-                    self.inventory.update(function () {
-                        self.emit("ready");
+                    self.log.debug("Loading market");
+                    self.market.load(function () {
+                        self.log.debug("Loading up inventory...");
+                        self.inventory.update(function () {
+                            self.emit("ready");
+                        });
                     });
                 });
             });
@@ -164,13 +174,19 @@ Shop.prototype.sectionHasItems = function (section) {
 /**
  * Get client formatted section inventory
  * @param {String} type
+ * @param {String|null} userSteamid
  */
-Shop.prototype.getClientBackpack = function (type) {
-    return {
+Shop.prototype.getClientBackpack = function (type, userSteamid) {
+    var response = {
         result: "success",
         items: this.sections[type].getCompressedItems(),
-        currency: this.tf2Currency.valueOf()
+        currency: this.tf2Currency.valueOf(),
+        wallet: 0
+    };
+    if (userSteamid && this.users.get(userSteamid)) {
+        response.wallet = this.users.get(userSteamid).getWallet().getBalance().toScrap();
     }
+    return response;
 };
 
 /**
@@ -193,9 +209,35 @@ Shop.prototype.getLimit = function (item) {
     return qualityLimit;
 };
 
+Shop.prototype.makeMarketerInventory = function (steamid, isSameAsRequester) {
+    this.log.debug("Getting marketer items: " + steamid);
+    var response = {
+        result: "success",
+        currency: this.tf2Currency.valueOf()
+    };
+    var user = this.users.get(steamid);
+    if (!user.isMarketer()) {
+        response = this.sfuminator.responses.marketerHasNoItems;
+    } else {
+        var section = user.getMarketerSection();
+        response.items = section.getCompressedItems();
+        response.market_ratio = this.getMarketRatio();
+        response.wallet = user.getWallet().getBalance().toScrap();
+        if (isSameAsRequester) {
+            response.taxed = {};
+            var items = section.getItems();
+            for (var i = 0; i < items.length; i += 1) {
+                response.taxed[items[i].getID()] = this.market.getItem(items[i].getID()).getTaxedPrice().toScrap();
+            }
+        }
+    }
+    return response;
+};
+
 /**
  * Get client formatted mine section inventory
  * @param {Backpack} backpack
+ * @param shopType {string}
  * @returns {Object} Client formatted response
  */
 Shop.prototype.makeUserInventory = function (backpack, shopType) {
@@ -206,7 +248,7 @@ Shop.prototype.makeUserInventory = function (backpack, shopType) {
     };
     if (shopType && shopType === "market") {
         response.items = this.filterMarketItems(backpack).getCompressedItems();
-        response.market_ratio =  (1 - this.ratio.hats.weBuy.normal) / 2;
+        response.market_ratio = this.getMarketRatio();
     } else {
         response.items = this.filterMineItems(backpack).getCompressedItems();
     }
@@ -218,7 +260,6 @@ Shop.prototype.makeUserInventory = function (backpack, shopType) {
     return response;
 };
 
-var ShopItem = require("./shop/inventory/shopItem.js");
 /**
  * Make mine section from items
  * @param {Backpack} backpack
@@ -299,6 +340,14 @@ Shop.prototype.verifyMineItemPriceRange = function (item) {
      return originalPrice.toMetal() >= this.ratio.strange.weSell.minimum;
      }*/
     return originalPrice.toScrap() > 0 && originalPrice.toKeys() < 5;
+};
+
+Shop.prototype.getMarketRatio = function () {
+    return (1 - this.ratio.hats.weBuy.normal) / 2;
+};
+
+Shop.prototype.marketToTaxedPrice = function (marketPrice) {
+    return new Price(parseInt(marketPrice.toScrap() * (1 - this.getMarketRatio()) + 0.5), "scrap");
 };
 
 /**

@@ -20,7 +20,7 @@ function Section(shop, type) {
     this.toAdd = [];
     this.toRemove = [];
     this.log = new Logs({applicationName: "Section " + type, color: "green"});
-    if (!this.isMine()) {
+    if (!this.isMine() && !this.isMarket()) {
         this.versioning = new Versioning(40, "section " + type);
         this.log.setLevel(1);
     }
@@ -39,8 +39,8 @@ function Section(shop, type) {
  * }
  */
 Section.prototype.getClientChanges = function (last_update_date) {
-    if (this.isMine()) {
-        this.log.error("Can't get client changes for mine backpack");
+    if (this.isMine() || this.isMarket()) {
+        this.log.error("Can't get client changes for mine/market backpack");
         return;
     }
     last_update_date = new Date(last_update_date);
@@ -119,20 +119,24 @@ Section.prototype.getItems = function () {
  * Add item to this shop section, change will be effective
  * only on commit (see Section.commit)
  * @param {ShopItem} shopItem
+ * @returns {Section}
  */
 Section.prototype.add = function (shopItem) {
     this.toAdd.push(shopItem);
+    return this;
 };
 
 /**
  * Remove item from this shop section, change will be effective
  * only on commit (see Section.commit)
  * @param {ShopItem} shopItem
+ * @returns {Section}
  */
 Section.prototype.remove = function (shopItem) {
     if (this.getItemIndex(shopItem.getID()) >= 0) {
         this.toRemove.push(shopItem);
     }
+    return this;
 };
 
 /**
@@ -142,6 +146,7 @@ Section.prototype.remove = function (shopItem) {
  * used so that they will take effect simultaneously
  * @param {Date} [date] Indicates when changes took place, default value
  * will be when commit is called.
+ * @returns {Section}
  */
 Section.prototype.commit = function (date) {
     if (this.toAdd.length === 0 && this.toRemove.length === 0) {
@@ -153,12 +158,13 @@ Section.prototype.commit = function (date) {
     }
     this.commitRemovals();
     this.commitAdds();
-    if (!this.isMine()) {
+    if (!this.isMine() && !this.isMarket()) {
         this.versioning.add(this.toAdd, this.toRemove, date);
     }
     this.toAdd = [];
     this.toRemove = [];
     this.log.debug("Committed, items in stock: " + this.items.length, 1);
+    return this;
 };
 
 /**
@@ -253,4 +259,8 @@ Section.prototype.getCompressedItemIndex = function (id) {
  */
 Section.prototype.isMine = function () {
     return this.type === "mine";
+};
+
+Section.prototype.isMarket = function () {
+    return this.type === "market";
 };

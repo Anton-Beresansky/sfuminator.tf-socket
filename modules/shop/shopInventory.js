@@ -18,7 +18,6 @@ function ShopInventory(shop) {
     this.sfuminator = shop.sfuminator;
     this.users = shop.sfuminator.users;
     this.db = shop.db;
-    this.bots = this.shop.bots;
 
     this.log = new Logs({applicationName: "Shop Inventory", color: "green"});
     this.log.setLevel(3);
@@ -81,24 +80,24 @@ ShopInventory.prototype.fetchTF2Items = function (callback) {
     }
     this.busyFetchAttempts = 0;
     this.fetching = true;
-    var allItems = [], i = 0;
+    var allItems = [], i = 0, bots = this.shop.bots;
 
     var fetchNext = function () {
-        self.log.debug("Fetching backpack " + self.bots[i].getSteamid(), 4);
-        self.bots[i].getTF2Backpack().get(function (backpack) {
-            if (backpack.hasErrored() && backpack._error_code !== "#database_backpack") {
-                self.log.warning("Couldn't fetch bot " + backpack.getOwner() + " inventory" + ((backpack.getItems().length === 0) ? " (items empty)" : ""));
-            } else {
-                allItems = allItems.concat(backpack.items);
-            }
-            i += 1;
-            if (i === self.bots.length) {
-                self.fetching = false;
-                callback(allItems);
-            } else {
+        if (i < bots.length) {
+            self.log.debug("Fetching backpack " + bots[i].getSteamid(), 4);
+            bots[i].getTF2Backpack().get(function (backpack) {
+                if (backpack.hasErrored() && backpack._error_code !== "#database_backpack") {
+                    self.log.warning("Couldn't fetch bot " + backpack.getOwner() + " inventory" + ((backpack.getItems().length === 0) ? " (items empty)" : ""));
+                } else {
+                    allItems = allItems.concat(backpack.items);
+                }
+                i += 1;
                 fetchNext();
-            }
-        });
+            });
+        } else {
+            self.fetching = false;
+            callback(allItems);
+        }
     };
     fetchNext();
 };

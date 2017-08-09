@@ -23,6 +23,10 @@ function ShopItem(shop, item, mine) {
      * @type {TF2Item}
      */
     this.item = item;
+    /**
+     * @type {Market}
+     */
+    this.market = this.shop.market;
     if (this.item instanceof TF2Item) {
         this.game = SteamGames.TF2;
     }
@@ -39,7 +43,8 @@ ShopItem.TYPE = {
     CURRENCY: "currency",
     STRANGE: "strange",
     TAUNT: "taunt",
-    PAINT: "paint"
+    PAINT: "paint",
+    OTHER: "other"
 };
 
 ShopItem.prototype.setID = function (id) {
@@ -72,6 +77,10 @@ ShopItem.prototype.getItem = function () {
     return this.item;
 };
 
+ShopItem.prototype.getOwner = function () {
+    return this.item.getOwner()
+};
+
 /**
  * Elaborate unique item id game associated for this shopItem
  * @returns {Number}
@@ -99,8 +108,10 @@ ShopItem.prototype.getType = function () {
                 return ShopItem.TYPE.CURRENCY;
             } else if (this.item.isTaunt()) {
                 return ShopItem.TYPE.TAUNT;
-            } else if (this.item.isPaint() && this.item.isCraftable()) {
-                return ShopItem.TYPE.PAINT;
+            } else if (
+                (this.item.isDecorated() || this.item.isTool() || this.item.isStrangePart() || this.item.isPaint())
+                && this.item.isCraftable()) {
+                return ShopItem.TYPE.OTHER;
             }
         }
         return "";
@@ -160,6 +171,10 @@ ShopItem.prototype.setAsMarketSection = function () {
     this.section = "market";
 };
 
+ShopItem.prototype.setMarketPrice = function (marketPrice) {
+    this.marketPrice = marketPrice;
+};
+
 /**
  * Establish if Shop Item belongs to Section of type "mine"
  * @returns {Boolean}
@@ -170,6 +185,18 @@ ShopItem.prototype.isMineItem = function () {
 
 ShopItem.prototype.isMarketItem = function () {
     return this.section === "market";
+};
+
+ShopItem.prototype.isMarketed = function () {
+    return this.market.itemExists(this.getID());
+};
+
+ShopItem.prototype.getMarketer = function () {
+    return this.isMarketed() ? this.market.getItem(this.getID()).getMarketer() : false;
+};
+
+ShopItem.prototype.isPartnerItem = function () {
+    return this.isMineItem() || this.isMarketItem();
 };
 
 /**
@@ -188,8 +215,13 @@ ShopItem.prototype.isCurrency = function () {
 ShopItem.prototype.getPrice = function () {
     if (this.isMineItem() && !this.isCurrency()) {
         return this.getMinePrice();
+    } else if (this.isMarketItem()) {
+        return this.marketPrice || this.getMinePrice() || new Price(0);
+    } else if (this.isMarketed()) {
+        return this.market.getItem(this.getID()).getPrice();
+    } else {
+        return this.item.getPrice();
     }
-    return this.item.getPrice();
 };
 
 ShopItem.prototype.getMinePrice = function () {
@@ -245,7 +277,7 @@ ShopItem.prototype.getMinePrice = function () {
             }
         } else if (item.isTaunt()) {
             finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.hats.weBuy.normal), Price.SCRAP_METAL);
-        } else if (item.isPaint()) {
+        } else if (item.isPaint() || this.item.isDecorated() || this.item.isTool() || this.item.isStrangePart()) {
             //A bit higher than normal (0.01)
             finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.hats.weBuy.lowTier), Price.SCRAP_METAL);
         } else {
@@ -315,6 +347,9 @@ function ShopItemDataStructure(shopItem) {
     }
     if (shopItem.getItem().isDecorated()) {
         this.decorated_grade = shopItem.getItem().getDecoratedGrade();
+    }
+    if (shopItem.isMarketed() || shopItem.isMarketItem()) {
+        this.mine_price = (shopItem.shop.canBeSold(shopItem) ? shopItem.getMinePrice().toScrap() : new Price(0).toScrap());
     }
 }
 

@@ -31,7 +31,12 @@ function AjaxResponses(sfuminator) {
     this.notInTrade = {result: "error", message: "You are not in trade", code: "not_in_trade"};
     this.notEnoughCurrency = {
         result: "error",
-        message: "Sorry, but it seems you don't have enough metal",
+        message: "Sorry, but it seems you don't have enough metal or keys for this trade",
+        code: "not_enough_metal"
+    };
+    this.notEnoughShopCurrency = {
+        result: "error",
+        message: "Sorry, but it seems we don't have enough metal or keys for this trade",
         code: "not_enough_metal"
     };
     this.botIsNotAvailable = {result: "error", message: "Sorry, bot can't trade right now", code: "bot_cannot_trade"};
@@ -110,6 +115,11 @@ function AjaxResponses(sfuminator) {
         message: "Sorry, we were unable to verify your trade url, please retry later",
         code: "cannot_verify_trade_token"
     };
+    this.noMarketPrice = {result: "error", message: "No item price specified", code: "no_market_price"};
+    this.marketPriceTooLow = {result: "error", message: "Specified price is too low", code: "market_price_too_low"};
+    this.walletEmpty = {result: "error", message: "Cannot withdraw, your wallet is empty.", code: "wallet_empty"};
+    this.marketerNotFound = {result: "error", message: "Seller not found", code: "marketer_not_found"};
+    this.marketerHasNoItems = {result: "error", message: "User has no items on market", code: "marketer_no_items"}
 }
 
 /**

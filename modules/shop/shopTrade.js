@@ -2,6 +2,7 @@ module.exports = ShopTrade;
 var events = require("events");
 var Logs = require("../../lib/logs.js");
 var ShopItem = require("./inventory/shopItem.js");
+var Market = require("../market.js");
 var Price = require("../price.js");
 var ItemCount = require("./shopItemCount.js");
 var TradeConstants = require("../trade/tradeConstants.js");
@@ -23,8 +24,18 @@ var ShopTradeCurrency = require("./shopTradeCurrency.js");
  */
 function ShopTrade(sfuminator, partner) {
     this.partner = partner;
+    /**
+     * @type {Sfuminator}
+     */
     this.sfuminator = sfuminator;
+    /**
+     * @type {Shop}
+     */
     this.shop = sfuminator.shop;
+    /**
+     * @type {Market}
+     */
+    this.market = this.shop.market;
     this.ajaxResponses = sfuminator.responses;
     this.response = null;
     this.database = new TradeDb(this, sfuminator.db);
@@ -44,6 +55,7 @@ function ShopTrade(sfuminator, partner) {
     this.assets_limit = {partner: 40, shop: 40, max_key_price: 6};
     this.itemsReserved = false;
     this.itemsReady = false;
+    this.tradeType = ShopTrade.TYPE.NORMAL;
     this.onceItemsReservedCallbacks = [];
     this.onceItemsAreReadyCallbacks = [];
     this.clientChangeError = null;
@@ -55,6 +67,12 @@ function ShopTrade(sfuminator, partner) {
 require("util").inherits(ShopTrade, events.EventEmitter);
 
 ShopTrade.addFriendTimeoutTime = 1000 * 60 * 2; //2 min
+
+ShopTrade.TYPE = {
+    NORMAL: 0,
+    MARKET: 1,
+    WITHDRAW: 2
+};
 
 ShopTrade.prototype._bindHandlers = function () {
     var self = this;
@@ -82,6 +100,23 @@ ShopTrade.prototype._bindHandlers = function () {
         self.response = requestResponse;
         this.cancel();
     });
+};
+
+ShopTrade.prototype.setAsWithdrawTrade = function () {
+    this.tradeType = ShopTrade.TYPE.WITHDRAW;
+};
+
+ShopTrade.prototype.isWithdrawTrade = function () {
+    return this.tradeType === ShopTrade.TYPE.WITHDRAW;
+};
+
+ShopTrade.prototype.setAsMarketTrade = function (prices) {
+    this.marketPrices = prices;
+    this.tradeType = ShopTrade.TYPE.MARKET;
+};
+
+ShopTrade.prototype.isMarketTrade = function () {
+    return this.tradeType === ShopTrade.TYPE.MARKET;
 };
 
 ShopTrade.prototype.consolidate = function (callback) {
@@ -129,6 +164,9 @@ ShopTrade.prototype.setAsSending = function () {
         this.setStatus(TradeConstants.status.HOLD);
         this.setStatusInfo("open"); //Are you sure this is needed?
         this.commit();
+        if (this.isMarketTrade()) {
+            this.market.importItems(this.getAssets(), Market.ITEM_STATUS.IN_TRANSIT);
+        }
         this.log.debug("Sending trade...");
     }
 };
@@ -189,6 +227,9 @@ ShopTrade.prototype.cancel = function (statusInfo) {
             }
         }
     }
+    if (this.isMarketTrade()) {
+        this.market.cancelInTransitItems(this.getAssets());
+    }
     this.log.debug("Trade " + this.getID() + " has been cancelled");
 };
 
@@ -205,6 +246,27 @@ ShopTrade.prototype.setAsAccepted = function () {
     //Old interface porting
     this.sfuminator.botPorting.increaseHatTradeCount(this.getPartner().getSteamid());
     this.sfuminator.botPorting._anticipateItemRemoval(this);
+
+    //If market -> store market item somehow
+    var assets = this.getAssets(), i;
+    if (this.isMarketTrade()) {
+        for (i = 0; i < assets.length; i += 1) {
+            this.market.setItemAsAvailable(assets[i]);
+        }
+    } else if (this.isWithdrawTrade()) {
+        this.getPartner().getWallet().updateBalance(this.getCurrencyHandler().forcedBalance);
+    } else { //Add up to wallet balance only if trade is NOT Market trade or Withdraw trade
+        for (i = 0; i < assets.length; i += 1) {
+            if (assets[i].isMarketed()) {
+                if (this.getPartner().getSteamid() === assets[i].getMarketer()) {
+                    this.market.setItemAsWithdrawn(assets[i]);
+                } else {
+                    this.market.setItemAsSold(assets[i]);
+                }
+            }
+        }
+        this.getPartner().getWallet().updateBalance(-this.walletFunds);
+    }
 };
 
 /**
@@ -226,7 +288,7 @@ ShopTrade.prototype.commit = function (callback) {
 ShopTrade.prototype.injectSteamTrade = function (steamTrade) {
     this.steamTrade = steamTrade;
     for (var i = 0; i < this.assets.length; i += 1) {
-        if (this.assets[i].isMineItem()) {
+        if (this.assets[i].isPartnerItem()) {
             this.steamTrade.addThemItem(this.assets[i].getTradeOfferAsset());
         } else {
             this.steamTrade.addMyItem(this.assets[i].getTradeOfferAsset());
@@ -272,6 +334,9 @@ ShopTrade.prototype.getClientChanges = function (last_update_date) {
             if (this.clientChangeError) {
                 result.error = this.clientChangeError;
             }
+            if (this.getStatusInfo() === TradeConstants.statusInfo.closed.ACCEPTED) {
+                result.wallet = this.getPartner().getWallet().getBalance().toScrap();
+            }
             var additional = this.getClientChangesAdditional();
             if (additional) {
                 result.additional = additional;
@@ -300,7 +365,7 @@ ShopTrade.prototype.getClientChangesAdditional = function () {
  * @returns {{botSteamid: String, partnerID: String, mode: ShopTrade.mode, status: String, statusInfo: String, last_update_date: number, items: {me: ShopTradeAssetDataStructure[], them: ShopTradeAssetDataStructure[], full_list: SectionItemDataStructure[]}}}
  */
 ShopTrade.prototype.valueOf = function () {
-    return {
+    var result = {
         botSteamid: this.getAssignedBotUser().getSteamid(),
         botUsername: this.getAssignedBotUser().getName(),
         partnerID: this.getPartner().getSteamid(),
@@ -309,8 +374,13 @@ ShopTrade.prototype.valueOf = function () {
         statusInfo: this.getStatusInfo(),
         last_update_date: this.getLastUpdateDate().getTime(),
         items: this.getPlate(),
-        currency: this.shop.tf2Currency.valueOf()
+        currency: this.shop.tf2Currency.valueOf(),
+        wallet: this.getPartner().getWallet().getBalance().toScrap()
     };
+    if (this.isMarketTrade()) {
+        result.market_ratio = this.shop.getMarketRatio();
+    }
+    return result;
 };
 
 /**
@@ -321,108 +391,48 @@ ShopTrade.prototype.valueOf = function () {
  */
 ShopTrade.prototype.load = function (callback) {
     var self = this;
-    this.database.load(function (rows) {
-        var trade = rows[0];
-        self.setID(trade.id);
-        self.setStatus(trade.status);
-        self.setStatusInfo(trade.status_info);
-        self.setMode(trade.mode);
-        self.setBot(self.sfuminator.users.get(trade.bot_steamid));
-        var items = {};
-        for (var i = 0; i < rows.length; i += 1) {
-            var iRow = rows[i];
-            if (items.hasOwnProperty(iRow.shop_type)) {
-                items[iRow.shop_type].push(iRow.shop_id);
-            } else {
-                items[iRow.shop_type] = [iRow.shop_id];
+    this.getPartner().onceLoaded(function () {
+        self.database.load(function (rows) {
+            var trade = rows[0];
+            self.setID(trade.id);
+            self.setStatus(trade.status);
+            self.setStatusInfo(trade.status_info);
+            self.setMode(trade.mode);
+            self.setBot(self.sfuminator.users.get(trade.bot_steamid));
+            var items = {};
+            for (var i = 0; i < rows.length; i += 1) {
+                var iRow = rows[i];
+                if (items.hasOwnProperty(iRow.shop_type)) {
+                    items[iRow.shop_type].push(iRow.shop_id);
+                } else {
+                    items[iRow.shop_type] = [iRow.shop_id];
+                }
             }
-        }
-        self.setItems(items);
-        self.log.debug("Loaded items: " + JSON.stringify(items), 0);
-        self.verifyItems(function (success) {
-            self.log.debug("Loaded trade " + self.getID() + ", verification success: " + ((success) ? success : JSON.stringify(self.response)));
-            self.logAssets();
-            if (typeof callback === "function") {
-                callback(self);
+            self.setItems(items);
+            self.log.debug("Loaded items: " + JSON.stringify(items), 0);
+            if (items.hasOwnProperty("market")) {
+                self.setAsMarketTrade(self.market.getShopTradePrices(items.market));
+                self.log.debug("Setting market trade: " + JSON.stringify(self.marketPrices));
             }
-            if (!success) {
-                self.log.warning("Assets list is empty, considering trade as accepted");
-                self.setAsAccepted();
-                self.log.warning("Cancelling reservations...");
-                for (var section in items) {
-                    for (var i = 0; i < items[section].length; i += 1) {
-                        self.shop.reservations.cancel(items[section][i]);
+            self.verifyItems(function (success) {
+                self.log.debug("Loaded trade " + self.getID() + ", verification success: " + ((success) ? success : JSON.stringify(self.response)));
+                self.logAssets();
+                if (typeof callback === "function") {
+                    callback(self);
+                }
+                if (!success) {
+                    self.log.warning("Assets list is empty, considering trade as accepted");
+                    self.setAsAccepted();
+                    self.log.warning("Cancelling reservations...");
+                    for (var section in items) {
+                        for (var i = 0; i < items[section].length; i += 1) {
+                            self.shop.reservations.cancel(items[section][i]);
+                        }
                     }
                 }
-            }
+            });
         });
     });
-};
-
-/**
- * Verify that set items can be shop traded
- * @param {Function} callback When executed will pass a Boolean value
- * that establish if items are valid.
- */
-ShopTrade.prototype.verifyItems = function (callback) {
-    var self = this;
-    this.emptyAssets();
-    this.log.debug("Verifying items");
-    for (var section in this.items) {
-        if (this.shop.sectionExist(section) && this.items[section] instanceof Array) {
-            for (var i = 0; i < this.items[section].length; i += 1) {
-                if (this.verifyShopItem(this.items[section][i], section)) {
-                    this.assets.push(this.shop.inventory.getItem(this.items[section][i]));
-                } else {
-                    callback(false);
-                    return;
-                }
-            }
-        } else if (section !== "mine") {
-            this.emit("tradeRequestResponse", this.ajaxResponses.sectionNotFound);
-            callback(false);
-            return;
-        }
-    }
-    if (this.getShopItemCount() > this.assets_limit.shop) {
-        this.emit("tradeRequestResponse", this.ajaxResponses.shopAssetsLimit(this.assets_limit.shop));
-        callback(false);
-        return;
-    }
-    if (this.items.hasOwnProperty("mine") && this.items.mine instanceof Array) {
-        this.verifyMineItems(function (success) {
-            if (success) {
-                self._verifyItemsFinalStep(callback);
-            } else {
-                callback(false);
-            }
-        }, function (shopItem) {
-            self.assets.push(shopItem);
-        });
-    } else {
-        this._verifyItemsFinalStep(callback);
-    }
-};
-
-ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
-    if (this.assets.length) {
-        this.currency.importAssets(); //If I don't put this it will think balance is still 0 :(
-        var self = this;
-        this.getPartner().getTF2Backpack().getCached(function () {
-            if (self.getPartner().getTF2Backpack().getCurrencyAmount() < self.currency.getSignedTradeBalance()) {
-                self.emit("tradeRequestResponse", self.ajaxResponses.notEnoughCurrency);
-                callback(false);
-            } else if (self.getAssetsPrice().toKeys() > self.assets_limit.max_key_price) {
-                self.emit("tradeRequestResponse", self.ajaxResponses.assetsPriceLimit(self.assets_limit.max_key_price));
-                callback(false);
-            } else {
-                callback(true);
-            }
-        });
-    } else {
-        this.emit("tradeRequestResponse", this.ajaxResponses.noItems);
-        callback(false);
-    }
 };
 
 /**
@@ -478,7 +488,11 @@ ShopTrade.prototype.readyItems = function () {
             self.emit("itemsTransferred");
         }
     });
-    this.reserveItems();
+    if (this.getCurrencyHandler().weHaveEnoughCurrency()) {
+        this.reserveItems();
+    } else {
+        this.emit("tradeRequestResponse", self.sfuminator.responses.notEnoughShopCurrency);
+    }
 };
 
 ShopTrade.prototype.areItemsReserved = function () {
@@ -515,7 +529,7 @@ ShopTrade.prototype.reserveShopItems = function () {
     this.log.debug("Reserving items", 3);
     this.logAssets(3);
     for (var i = 0; i < this.assets.length; i += 1) {
-        if (!this.assets[i].isMineItem()) {
+        if (!this.assets[i].isPartnerItem()) {
             this.shop.reservations.add(this.getPartner().getSteamid(), this.assets[i].getID());
         }
     }
@@ -541,7 +555,7 @@ ShopTrade.prototype.dereserveShopItems = function () {
 ShopTrade.prototype.getItemsToTransfer = function () {
     var assetsToTransfer = [];
     for (var i = 0; i < this.assets.length; i += 1) {
-        if (!this.assets[i].isMineItem() && this.assets[i].getItem().getOwner() !== this.getAssignedBotUser().getSteamid()) {
+        if (!this.assets[i].isPartnerItem() && this.assets[i].getItem().getOwner() !== this.getAssignedBotUser().getSteamid()) {
             assetsToTransfer.push(this.assets[i]);
         }
     }
@@ -557,7 +571,7 @@ ShopTrade.prototype.getPlate = function () {
     var plate = {me: [], them: [], full_list: []};
     for (var i = 0; i < this.assets.length; i += 1) {
         if (!this.assets[i].isCurrency()) {
-            if (this.assets[i].isMineItem()) {
+            if (this.assets[i].isPartnerItem()) {
                 plate.them.push(new ShopTradeAssetDataStructure(this.assets[i]));
             } else {
                 plate.me.push(new ShopTradeAssetDataStructure(this.assets[i]));
@@ -735,12 +749,143 @@ ShopTrade.prototype.getLastUpdateDate = function () {
 };
 
 /**
+ * Verify that set items can be shop traded
+ * @param {Function} callback When executed will pass a Boolean value
+ * that establish if items are valid.
+ */
+ShopTrade.prototype.verifyItems = function (callback) {
+    var self = this;
+    this.emptyAssets();
+    this.log.debug("Verifying items");
+
+    if (this.isWithdrawTrade()) {
+        callback(true);
+    } else if (this.isMarketTrade()) {
+        this._verifyPartnerItems(function (success) {
+            callback(success ? true : false);
+        }, function (shopItem) {
+            var itemID = shopItem.getItem().getID();
+            if (self.marketPrices.hasOwnProperty(itemID)) {
+                var marketPrice = new Price(self.marketPrices[itemID], "scrap");
+                if (self.shop.marketToTaxedPrice(marketPrice) > shopItem.getPrice()) {
+                    shopItem.setMarketPrice(marketPrice);
+                    self.assets.push(shopItem);
+                } else {
+                    self.emit("tradeRequestResponse", self.ajaxResponses.marketPriceTooLow);
+                    return false;
+                }
+            } else {
+                self.emit("tradeRequestResponse", self.ajaxResponses.noMarketPrice);
+                return false;
+            }
+        });
+    } else {
+        if (!this._verifyShopItems(callback)) {
+            return;
+        }
+        if (this.getShopItemCount() > this.assets_limit.shop) {
+            this.emit("tradeRequestResponse", this.ajaxResponses.shopAssetsLimit(this.assets_limit.shop));
+            callback(false);
+            return;
+        }
+        if (this.items.hasOwnProperty("mine") && this.items.mine instanceof Array) {
+            this._verifyPartnerItems(function (success) {
+                if (success) {
+                    self._verifyItemsFinalStep(callback);
+                } else {
+                    callback(false);
+                }
+            }, function (shopItem) {
+                self.assets.push(shopItem);
+            });
+        } else {
+            this._verifyItemsFinalStep(callback);
+        }
+    }
+};
+
+ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
+    if (this.assets.length) {
+        this.currency.importAssets(); //If I don't put this it will think balance is still 0 :(
+        this._filterWithdrawableAssets(); //Force balance if withdrawable items are present
+        this._injectWalletFunds(); //Order is important here, be sure to purge withdrawable first then use wallet
+        var self = this;
+        this.getPartner().getTF2Backpack().getCached(function () {
+            if (self.getPartner().getTF2Backpack().getCurrencyAmount() < self.currency.getSignedTradeBalance()) {
+                self.emit("tradeRequestResponse", self.ajaxResponses.notEnoughCurrency);
+                callback(false);
+            } else if (self.getAssetsPrice().toKeys() > self.assets_limit.max_key_price) {
+                self.emit("tradeRequestResponse", self.ajaxResponses.assetsPriceLimit(self.assets_limit.max_key_price));
+                callback(false);
+            } else {
+                callback(true);
+            }
+        });
+    } else {
+        this.emit("tradeRequestResponse", this.ajaxResponses.noItems);
+        callback(false);
+    }
+};
+
+ShopTrade.prototype._filterWithdrawableAssets = function () {
+    for (var i = 0; i < this.assets.length; i += 1) {
+        var item = this.assets[i];
+        if (item.isMarketed() && item.getMarketer() === this.getPartner().getSteamid()) {
+            this.getCurrencyHandler().addToStartingBalance(-item.getPrice().toScrap());
+        }
+    }
+};
+
+ShopTrade.prototype._injectWalletFunds = function () {
+    this.log.debug("Injecting wallet funds on balance... " + this.getCurrencyHandler().getSignedTradeBalance());
+    this.walletFunds = new Price(0);
+    if (this.getCurrencyHandler().getSignedTradeBalance() > 0) {
+        this.walletFunds = this.getPartner().getWallet().getBalance();
+        if (this.getCurrencyHandler().getSignedTradeBalance() < this.walletFunds.toScrap()) {
+            this.walletFunds = new Price(this.getCurrencyHandler().getSignedTradeBalance(), "scrap");
+        }
+    }
+    this.getCurrencyHandler().addToStartingBalance(-this.walletFunds.toScrap());
+    this.log.debug("Will use " + this.walletFunds.toMetal() + "ref from wallet funds");
+};
+
+ShopTrade.prototype._verifyShopItems = function (callback) {
+    for (var section in this.items) {
+        if (this.shop.sectionExist(section) && this.items[section] instanceof Array) {
+            for (var i = 0; i < this.items[section].length; i += 1) {
+                if (this._verifyShopItem(this.items[section][i], section)) {
+                    var shopItem = this.shop.inventory.getItem(this.items[section][i]);
+                    var found = false;
+                    for (var p = 0; p < this.assets.length; p += 1) {
+                        if (this.assets[p].getID() === shopItem.getID()) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        this.assets.push(shopItem);
+                    }
+                } else {
+                    callback(false);
+                    return false;
+                }
+            }
+        } else if (section !== "mine") {
+            this.emit("tradeRequestResponse", this.ajaxResponses.sectionNotFound);
+            callback(false);
+            return false;
+        }
+    }
+    return true;
+};
+
+/**
  * Verify if shop section item can be traded given its id and section
  * @param {Number} idToCheck
  * @param {String} section
  * @returns {Boolean}
  */
-ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
+ShopTrade.prototype._verifyShopItem = function (idToCheck, section) {
     if (!this.shop.sections[section].itemExist(idToCheck)) {
         this.emit("tradeRequestResponse", this.ajaxResponses.itemsSelectedNotFound);
         return false;
@@ -758,25 +903,33 @@ ShopTrade.prototype.verifyShopItem = function (idToCheck, section) {
  * @param {Function} onAcceptedItem
  * Executed every time a item has been accepted as tradable, TF2Item is passed.
  */
-ShopTrade.prototype.verifyMineItems = function (callback, onAcceptedItem) {
+ShopTrade.prototype._verifyPartnerItems = function (callback, onAcceptedItem) {
     var self = this;
     var itemCount = new ItemCount();
+    var partnerItems = this.items.mine;
+    if (this.isMarketTrade()) {
+        partnerItems = this.items.market;
+    }
     this.getPartner().getTF2Backpack().getCached(function (backpack) {
-        for (var i = 0; i < self.items.mine.length; i += 1) {
-            var itemID = self.items.mine[i];
+        for (var i = 0; i < partnerItems.length; i += 1) {
+            var itemID = partnerItems[i];
             if (!backpack.itemExist(itemID)) {
                 self.emit("tradeRequestResponse", self.ajaxResponses.itemNotFound);
                 callback(false);
                 return;
             }
             var item = new ShopItem(self.shop, backpack.getItem(itemID));
-            item.setAsMineSection();
-            if (!self.shop.canBeSold(item)) {
+            self.isMarketTrade() ? item.setAsMarketSection() : item.setAsMineSection();
+            if ((!self.isMarketTrade() && !self.shop.canBeSold(item)) || (self.isMarketTrade() && !self.shop.canBeMarketed(item))) {
                 self.emit("tradeRequestResponse", self.ajaxResponses.itemCantBeSold);
                 callback(false);
                 return;
             } else {
-                onAcceptedItem(item);
+                var success = onAcceptedItem(item);
+                if (success === false) {
+                    callback(false);
+                    return;
+                }
                 itemCount.add(item);
                 var netCount = (itemCount.get(item) + self.shop.count.get(item)) - self.shop.getLimit(item);
                 if (netCount > 0) {
@@ -918,12 +1071,20 @@ TradeDb.prototype.save = function (callback) {
             connection.query(self._getSaveQuery(), function (result) {
                 self.trade.setID(result.insertId);
                 self.log.debug("Saving trade: " + self.trade.getID());
-                connection.query(self._getSaveItemsQuery(), function () {
+                if (self.trade.getAssets().length) {
+                    connection.query(self._getSaveItemsQuery(), function () {
+                        connection.commitRelease();
+                        if (typeof callback === "function") {
+                            callback();
+                        }
+                    });
+                } else {
+                    self.log.warning("No assets to save on db for this trade");
                     connection.commitRelease();
                     if (typeof callback === "function") {
                         callback();
                     }
-                });
+                }
             });
         });
     });
@@ -954,14 +1115,16 @@ TradeDb.prototype._getLoadQuery = function () {
     if (!isNaN(this.trade.getID())) {
         additionalIdentifier = "AND id=" + this.trade.getID();
     }
-    return "SELECT `id`,`steamid`,`bot_steamid`,`mode`,`status`,`status_info`, `item_id`, `shop_id`, `shop_type`, `scrapPrice`, `last_update_date` FROM "
-        + "(SELECT `id`,`steamid`,`mode`,`status`,`status_info`,`last_update_date`,`bot_steamid` FROM shop_trades WHERE steamid='" + this.trade.getPartner().getSteamid() + "' " + additionalIdentifier + " ORDER BY last_update_date DESC LIMIT 1) as myTrade "
-        + "JOIN shop_trade_items ON myTrade.id=shop_trade_items.trade_id ";
+    return "SELECT `id`,`steamid`,`bot_steamid`,`mode`,`trade_type`,`forced_balance`,`status`,`status_info`, `item_id`, `shop_id`, `shop_type`, `scrapPrice`, `last_update_date` FROM "
+        + "(SELECT `id`,`steamid`,`mode`,`trade_type`,`forced_balance`,`status`,`status_info`,`last_update_date`,`bot_steamid` FROM shop_trades WHERE steamid='" + this.trade.getPartner().getSteamid() + "' " + additionalIdentifier + " ORDER BY last_update_date DESC LIMIT 1) as myTrade "
+        + "LEFT JOIN shop_trade_items ON myTrade.id=shop_trade_items.trade_id";
 };
 TradeDb.prototype._getSaveQuery = function () {
-    return "INSERT INTO `shop_trades` (`steamid`,`mode`,`status`,`status_info`,`bot_steamid`) VALUES ("
+    return "INSERT INTO `shop_trades` (`steamid`,`mode`,`trade_type`,`forced_balance`,`status`,`status_info`,`bot_steamid`) VALUES ("
         + "'" + this.trade.getPartner().getSteamid() + "',"
         + "'" + this.trade.getMode() + "',"
+        + "" + this.trade.tradeType + ","
+        + "" + this.trade.getCurrencyHandler().forcedBalance + ","
         + "'" + this.trade.getStatus() + "',"
         + "'" + this.trade.getStatusInfo() + "',"
         + "'" + this.trade.getAssignedBotUser().getSteamid() + "'"

@@ -85,6 +85,7 @@ Sfuminator.prototype.init = function () {
     var self = this;
     this.shop.on("ready", function () {
         self.log.debug("Shop is ready");
+        self.botsController.loadBots();
         self.interrupts.startInternals();
         self.interrupts.startGlobals();
         self.bindInterrupts();
@@ -95,8 +96,7 @@ Sfuminator.prototype.init = function () {
             self.stats.load();
         });
     });
-
-
+    this.shop.init();
 };
 
 /**
@@ -286,6 +286,21 @@ Sfuminator.prototype.onAction = function (request, callback) {
         case "verifyTradeUrlToken":
             this.clientCheckTradeOfferToken(request.getRequesterSteamid(), data.token, callback);
             break;
+        case "getWallet":
+            if (request.getRequester().privilege === "user") {
+                this.users.get(request.getRequester().id).onceLoaded(function (user) {
+                    callback(user.getWallet().valueOf());
+                });
+            } else {
+                callback(this.responses.notLogged);
+            }
+            break;
+        case "withdraw":
+            var user = this.users.get(request.getRequester().id);
+            if (user.getWallet().withdraw(callback)) {
+                user.setTradeRequestPage(request);
+            }
+            break;
         case "adminSocket":
             this.adminSocket.request(request, callback);
             break;
@@ -319,10 +334,17 @@ Sfuminator.prototype.fetchShopInventory = function (request, callback) {
                 callback(this.responses.notLogged);
             }
             break;
+        case "marketer":
+            if (!isNaN(data.additional) && this.shop.market.marketerExists(data.additional)) {
+                callback(this.shop.makeMarketerInventory(data.additional, data.additional === request.getRequesterSteamid()));
+            } else {
+                callback(this.responses.marketerNotFound);
+            }
+            break;
         default:
             if (this.shop.sectionExist(data.type)) {
                 if (this.shop.sectionHasItems(data.type)) {
-                    callback(this.shop.getClientBackpack(data.type));
+                    callback(this.shop.getClientBackpack(data.type, request.getRequesterSteamid()));
                 } else {
                     callback(this.responses.sectionHasNoItems);
                 }
@@ -339,10 +361,10 @@ Sfuminator.prototype.fetchShopInventory = function (request, callback) {
  * @returns {Response}
  */
 Sfuminator.prototype.getUpdates = function (request) {
-    var data = request.getData();
+    var data = request.getData(), itemChanges;
     var response = this.responses.make({update: true, methods: {}});
     var user = this.users.get(request.getRequesterSteamid());
-    if (user.hasActiveShopTrade()) {
+    if (user.hasActiveShopTrade() && user.canGetTradeUpdates(request)) {
         var trade = user.getShopTrade();
         if (data.hasOwnProperty("trade") && data.trade === "aquired") {
             response.methods.updateTrade = trade.getClientChanges(data.last_update_date);
@@ -354,16 +376,25 @@ Sfuminator.prototype.getUpdates = function (request) {
         }
     }
     if (data.hasOwnProperty("section") && data.section && this.shop.sectionHasItems(data.section.type)) { //Items
-        var itemChanges = this.shop.sections[data.section.type].getClientChanges(data.section.last_update_date);
+        itemChanges = this.shop.sections[data.section.type].getClientChanges(data.section.last_update_date);
         if (itemChanges !== false) {
             response.methods.updateItemsVersioning = itemChanges;
         } else {
             response.methods.freshBackpack = this.shop.getClientBackpack(data.section.type);
         }
     }
-    if (data.hasOwnProperty("section") && data.section.type === "mine" && !isNaN(data.section.last_update_date)) {
+    if (data.hasOwnProperty("section") && data.section.type === "marketer") {
+        itemChanges = user.getMarketerSection().getClientChanges(data.section.last_update_date);
+        if (itemChanges !== false) {
+            response.methods.updateItemsVersioning = itemChanges;
+        } else {
+            response.methods.freshBackpack = this.shop.makeMarketerInventory(data.section.additional, data.section.additional === request.getRequesterSteamid());
+        }
+    }
+    if ((data.hasOwnProperty("section") && data.section.type === "mine" && !isNaN(data.section.last_update_date))
+        || (data.hasOwnProperty("section") && data.section.type === "market" && !isNaN(data.section.last_update_date))) {
         if (user.getTF2Backpack().getLastUpdateDate() > new Date(data.section.last_update_date)) {
-            response.methods.freshBackpack = this.shop.makeUserInventory(user.getTF2Backpack());
+            response.methods.freshBackpack = this.shop.makeUserInventory(user.getTF2Backpack(), data.section.type);
         }
     }
     if (data.hasOwnProperty("last_reservation_date")) { //Reservations
@@ -385,67 +416,107 @@ Sfuminator.prototype.getUpdates = function (request) {
  * @param {Function} callback Response object will be passed
  */
 Sfuminator.prototype.requestTrade = function (request, mode, callback) {
-    var self = this;
     var data = request.getData();
-    if (!this.status.canTrade() && !this.isAdmin(request.getRequesterSteamid())) {
-        callback(this.responses.cannotTrade(this.status.get()));
-        return;
-    }
     if (!data.hasOwnProperty("items") || (typeof data.items !== "object") || this.responses.make().isObjectEmpty(data.items) || !data.items) {
         callback(this.responses.noItems);
         return;
     }
     var user = this.users.get(request.getRequesterSteamid());
-    if (!user.hasActiveShopTrade()) {
+    if (user.canTrade()) {
         var trade = this.getTradeObjectFromRequest(request, mode);
-        trade.on("tradeRequestResponse", function (response) {
-            self.log.debug("Request for trade rejected, response: " + trade.response.code);
-            callback(response);
-        });
-        trade.verifyItems(function (success) {
-            if (success) {
-                if (self.botsController.assignBot(trade)) {
-                    trade.consolidate(function () {
-                        self.log.debug("Trade request approved (id: " + trade.getID() + " ~ " + user.getSteamid() + ")");
-                        callback(self.responses.tradeRequestSuccess(trade));
-                        self.botsController.startOffNewShopTrade(trade);
-                    });
-                } else {
-                    self.log.error("Wasn't able to assign bot");
-                    callback(self.responses.unableToAssignBot);
-                }
-            }
-        });
+        this.startTrade(trade, callback);
+        user.setTradeRequestPage(request);
+    } else {
+        callback(this.getCannotTradeResponse(user));
+    }
+};
+
+Sfuminator.prototype.getCannotTradeResponse = function (user) {
+    if (!this.status.canTrade() && !this.isAdmin(user.getSteamid())) {
+        return this.responses.cannotTrade(this.status.get());
+    }
+    if (!user.hasActiveShopTrade()) {
+        return false;
     } else {
         if (user.getShopTrade().isClosed()) {
-            callback(this.responses.shopTradeCooldown(user.getShopTrade().getLastUpdateDate()));
+            return this.responses.shopTradeCooldown(user.getShopTrade().getLastUpdateDate());
         } else {
-            callback(this.responses.alreadyInTrade);
+            return this.responses.alreadyInTrade;
         }
     }
 };
 
 Sfuminator.prototype.getTradeObjectFromRequest = function (request, mode) {
     var data = request.getData();
-    var itemList = data.items;
+    var parsed = {itemList: data.items};
     if (data.items.hasOwnProperty("market")) {
-        itemList = {market: []};
-        var marketList = {};
-        for (var i = 0; i < data.items.market.length; i += 1) {
-            var item = data.items.market[i];
-            if (item.hasOwnProperty("id") && !isNaN(item.id)
-                && item.hasOwnProperty("price") && !isNaN(item.price)) {
-                itemList.market.push(item.id);
-                marketList[item.id] = item.price;
+        parsed = this._parseTradeObjectMarketItems(data.items);
+    } else if (data.items.hasOwnProperty("marketer")) {
+        parsed = this._parseTradeObjectMarketerItems(data.items);
+    }
+    this.log.test("Parsed req: " + JSON.stringify(parsed));
+    var trade = this.users.get(request.getRequesterSteamid()).makeShopTrade(parsed.itemList);
+    trade.setMode(mode);
+    if (parsed.marketList) {
+        trade.setAsMarketTrade(parsed.marketList);
+    }
+    return trade;
+};
+
+Sfuminator.prototype._parseTradeObjectMarketItems = function (items) {
+    var marketList = {}, itemList = {market: []};
+    for (var i = 0; i < items.market.length; i += 1) {
+        var item = items.market[i];
+        if (item.hasOwnProperty("id") && !isNaN(item.id)
+            && item.hasOwnProperty("price") && !isNaN(item.price)) {
+            itemList.market.push(item.id);
+            marketList[item.id] = item.price;
+        }
+    }
+    return {itemList: itemList, marketList: marketList};
+};
+
+Sfuminator.prototype._parseTradeObjectMarketerItems = function (itemList) {
+    var idList = itemList.marketer;
+    for (var i = 0; i < idList.length; i += 1) {
+        //Get type of item and push type === section (marketer items can't be mine or market)
+        var item = this.shop.getItem(idList[i]);
+        if (item && item.isMarketed()) {
+            if (itemList[item.getType()] instanceof Array) {
+                itemList[item.getType()].push(item.getID());
+            } else {
+                itemList[item.getType()] = [item.getID()];
             }
         }
     }
-    var trade = this.users.get(request.getRequesterSteamid()).makeShopTrade(itemList);
-    trade.setMode(mode);
-    if (marketList) {
-        trade.setAsMarketTrade(marketList);
-    }
-    return trade;
+    delete itemList.marketer;
+    return {itemList: itemList};
+};
+
+/**
+ * @param trade {ShopTrade}
+ * @param callback
+ */
+Sfuminator.prototype.startTrade = function (trade, callback) {
+    var self = this;
+    trade.on("tradeRequestResponse", function (response) {
+        self.log.debug("Request for trade rejected, response: " + trade.response.code);
+        callback(response);
+    });
+    trade.verifyItems(function (success) {
+        if (success) {
+            if (self.botsController.assignBot(trade)) {
+                trade.consolidate(function () {
+                    self.log.debug("Trade request approved (id: " + trade.getID() + " ~ " + trade.getPartner().getSteamid() + ")");
+                    callback(self.responses.tradeRequestSuccess(trade));
+                    self.botsController.startOffNewShopTrade(trade);
+                });
+            } else {
+                self.log.error("Wasn't able to assign bot");
+                callback(self.responses.unableToAssignBot);
+            }
+        }
+    });
 };
 
 /**
