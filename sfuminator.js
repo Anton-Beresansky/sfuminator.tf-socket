@@ -452,13 +452,16 @@ Sfuminator.prototype.getTradeObjectFromRequest = function (request, mode) {
     if (data.items.hasOwnProperty("market")) {
         parsed = this._parseTradeObjectMarketItems(data.items);
     } else if (data.items.hasOwnProperty("marketer")) {
-        parsed = this._parseTradeObjectMarketerItems(data.items);
+        parsed = this._parseTradeObjectMarketerItems(data.items, request);
     }
     this.log.test("Parsed req: " + JSON.stringify(parsed));
     var trade = this.users.get(request.getRequesterSteamid()).makeShopTrade(parsed.itemList);
     trade.setMode(mode);
     if (parsed.marketList) {
         trade.setAsMarketTrade(parsed.marketList);
+    }
+    if (parsed.isWithdraw) {
+        trade.setAsWithdrawTrade();
     }
     return trade;
 };
@@ -476,12 +479,15 @@ Sfuminator.prototype._parseTradeObjectMarketItems = function (items) {
     return {itemList: itemList, marketList: marketList};
 };
 
-Sfuminator.prototype._parseTradeObjectMarketerItems = function (itemList) {
-    var idList = itemList.marketer;
+Sfuminator.prototype._parseTradeObjectMarketerItems = function (itemList, request) {
+    var idList = itemList.marketer, isWithdraw = true;
     for (var i = 0; i < idList.length; i += 1) {
         //Get type of item and push type === section (marketer items can't be mine or market)
         var item = this.shop.getItem(idList[i]);
         if (item && item.isMarketed()) {
+            if (item.getMarketer() !== request.getRequesterSteamid()) {
+                isWithdraw = false;
+            }
             if (itemList[item.getType()] instanceof Array) {
                 itemList[item.getType()].push(item.getID());
             } else {
@@ -490,7 +496,7 @@ Sfuminator.prototype._parseTradeObjectMarketerItems = function (itemList) {
         }
     }
     delete itemList.marketer;
-    return {itemList: itemList};
+    return {itemList: itemList, isWithdraw: isWithdraw};
 };
 
 /**

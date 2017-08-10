@@ -119,7 +119,12 @@ function AjaxResponses(sfuminator) {
     this.marketPriceTooLow = {result: "error", message: "Specified price is too low", code: "market_price_too_low"};
     this.walletEmpty = {result: "error", message: "Cannot withdraw, your wallet is empty.", code: "wallet_empty"};
     this.marketerNotFound = {result: "error", message: "Seller not found", code: "marketer_not_found"};
-    this.marketerHasNoItems = {result: "error", message: "User has no items on market", code: "marketer_no_items"}
+    this.marketerHasNoItems = {result: "error", message: "User has no items on market", code: "marketer_no_items"};
+    this.cannotTradeOwnMarketItem = {
+        result: "error",
+        message: "You can't trade your own Market Item here, but you can from your Profile Page.",
+        code: "cannot_trade_own_market_item"
+    }
 }
 
 /**
