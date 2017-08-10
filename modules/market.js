@@ -6,13 +6,6 @@ var events = require("events");
 
 /*
 
- TODO Add market guidelines to help section
- > Keys and metal are subject to TF2 economy. When the item will be sold you will get the stated amount of metal (not keys).
- > Price priority and price bands
- > Withdraw "we don't have enough currency"
-
- TODO Add price priority handler
-
  TODO Check items quantity limits -> might be messed up since many types have been added
 
  TODO LIMITS
@@ -22,9 +15,13 @@ var events = require("events");
 
  TODO Maybe we can change trade offer message for market trades?
 
+ TODO Add live trade monitor
+
+ TODO Edit market price! LOLOL
+
  */
 
-// REMEMBER! item_id is the item id at the time it has been marketed.
+// Note: database table marketed_items has item_id column which is the item id at the time it has been marketed.
 // This will link the only owner at the time of trade
 
 

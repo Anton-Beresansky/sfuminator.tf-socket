@@ -254,12 +254,29 @@ ShopTrade.prototype.setAsAccepted = function () {
             this.market.setItemAsAvailable(assets[i]);
         }
     } else if (this.isWithdrawTrade()) {
-        this.getPartner().getWallet().updateBalance(this.getCurrencyHandler().forcedBalance);
+        for (i = 0; i < assets.length; i += 1) {
+            if (assets[i].isMarketed()) {
+                if (this.getPartner().getSteamid() === assets[i].getMarketer()) {
+                    this.market.setItemAsWithdrawn(assets[i]);
+                } else {
+                    this.log.error("This shouldn't verify! Setting item as 'sold' on a WITHDRAW trade");
+                    this.market.setItemAsSold(assets[i]);
+                }
+            }
+        }
+        if ((this.getCurrencyHandler().forcedBalance + this.withdrawableAssetsScrapValue) !== 0) {
+            this.log.error("NOPE, after withdrawing items we are updating wallet as well!?");
+            this.log.test("Forced balance: " + this.getCurrencyHandler().forcedBalance + " Assets: " + this.withdrawableAssetsScrapValue);
+            this.getPartner().getWallet().updateBalance(this.getCurrencyHandler().forcedBalance + this.withdrawableAssetsScrapValue);
+        } else {
+            this.log.test("All good balance is 0ed");
+        }
     } else { //Add up to wallet balance only if trade is NOT Market trade or Withdraw trade
         for (i = 0; i < assets.length; i += 1) {
             if (assets[i].isMarketed()) {
                 if (this.getPartner().getSteamid() === assets[i].getMarketer()) {
                     this.market.setItemAsWithdrawn(assets[i]);
+                    this.log.error("This shouldn't verify! Setting item as 'withdrawn' on a SHOP trade");
                 } else {
                     this.market.setItemAsSold(assets[i]);
                 }
@@ -759,7 +776,17 @@ ShopTrade.prototype.verifyItems = function (callback) {
     this.log.debug("Verifying items");
 
     if (this.isWithdrawTrade()) {
-        callback(true);
+        if (this._verifyShopItems(callback)) {
+            this._filterWithdrawableAssets();
+            if (!this._assetsAreAllWithdrawable()) { // Just double check
+                callback(false);
+            } else if (this.getCurrencyHandler().getForcedBalance() === 0) {
+                this.log.error("No forced balance on withdraw!?");
+                callback(false);
+            } else {
+                callback(true);
+            }
+        }
     } else if (this.isMarketTrade()) {
         this._verifyPartnerItems(function (success) {
             callback(success ? true : false);
@@ -781,6 +808,12 @@ ShopTrade.prototype.verifyItems = function (callback) {
         });
     } else {
         if (!this._verifyShopItems(callback)) {
+            return;
+        }
+        //Check if withdrawable items are present
+        if (this._filterWithdrawableAssets()) {
+            this.emit("tradeRequestResponse", this.ajaxResponses.cannotTradeOwnMarketItem);
+            callback(false);
             return;
         }
         if (this.getShopItemCount() > this.assets_limit.shop) {
@@ -807,7 +840,6 @@ ShopTrade.prototype.verifyItems = function (callback) {
 ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
     if (this.assets.length) {
         this.currency.importAssets(); //If I don't put this it will think balance is still 0 :(
-        this._filterWithdrawableAssets(); //Force balance if withdrawable items are present
         this._injectWalletFunds(); //Order is important here, be sure to purge withdrawable first then use wallet
         var self = this;
         this.getPartner().getTF2Backpack().getCached(function () {
@@ -828,12 +860,27 @@ ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
 };
 
 ShopTrade.prototype._filterWithdrawableAssets = function () {
+    this.withdrawableAssetsScrapValue = 0;
+    var foundWithdrawableAsset = false;
     for (var i = 0; i < this.assets.length; i += 1) {
         var item = this.assets[i];
         if (item.isMarketed() && item.getMarketer() === this.getPartner().getSteamid()) {
-            this.getCurrencyHandler().addToStartingBalance(-item.getPrice().toScrap());
+            var scrapPrice = item.getPrice().toScrap();
+            this.withdrawableAssetsScrapValue += scrapPrice;
+            this.getCurrencyHandler().addToStartingBalance(-scrapPrice);
+            foundWithdrawableAsset = item;
         }
     }
+    return foundWithdrawableAsset;
+};
+
+ShopTrade.prototype._assetsAreAllWithdrawable = function () {
+    for (var i = 0; i < this.assets.length; i += 1) {
+        if (!this.assets[i].isMarketed() || (this.assets[i].getMarketer() !== this.getPartner().getSteamid())) {
+            return false;
+        }
+    }
+    return true;
 };
 
 ShopTrade.prototype._injectWalletFunds = function () {
