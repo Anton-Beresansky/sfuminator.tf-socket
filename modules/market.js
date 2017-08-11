@@ -10,9 +10,9 @@ var events = require("events");
 
  TODO Add live trade monitor
 
- TODO Add price edit cooldown
-
  TODO FIX On new item (ownmarket) can't click on old items
+
+ TODO Check shopTrade reload on crash for Withdraw, Market item withdraw, Market trade and Shop trade
 
  */
 
@@ -74,7 +74,7 @@ Market.prototype.loadItems = function (connection, callback) {
     var self = this;
     connection.query(this.queries.loadItems(), function (result) {
         for (var i = 0; i < result.length; i += 1) {
-            self.items.push(new MarketItem(self.shop, result[i]));
+            self.items.push(new MarketItem(self, result[i]));
         }
         callback();
     });
@@ -112,27 +112,13 @@ Market.prototype.taxPrice = function (price) {
 
 Market.prototype.editItemPrice = function (shopId, scrapPrice) {
     if (this.canEditPrice(shopId, scrapPrice)) {
-        var marketPrice = new Price(scrapPrice, "scrap");
-        var taxedPrice = this.taxPrice(marketPrice);
         for (var i = 0; i < this.items.length; i += 1) {
             if (this.items[i].shop_id === shopId) {
-                console.log(this.items[i].market_price.toScrap(), this.items[i].getShopItem().getPrice().toScrap());
-                this.items[i].taxed_price = taxedPrice;
-                this.items[i].market_price = marketPrice;
-                console.log(this.items[i].market_price.toScrap(), this.items[i].getShopItem().getPrice().toScrap());
-                var shopItem = this.items[i].getShopItem();
-                this.shop.sections[shopItem.getType()].remove(shopItem).add(shopItem).commit();
-                this.sfuminator.users.get(shopItem.getMarketer()).getMarketerSection().remove(shopItem).add(shopItem).commit();
-                break;
+                this.items[i].editPrice(new Price(scrapPrice, "scrap"));
+                return true;
             }
         }
-        var self = this;
-        this.db.connect(function (connection) {
-            connection.query(self.queries.updateItemPrice(shopId, marketPrice.toScrap(), taxedPrice.toScrap()), function () {
-                connection.release();
-            });
-        });
-        return true;
+
     }
     return false;
 };
@@ -143,13 +129,17 @@ Market.prototype.canEditPrice = function (shopId, scrapPrice) {
 
 Market.prototype.getCannotEditPriceResponse = function (shopId, scrapPrice) {
     if (!isNaN(scrapPrice) && !isNaN(shopId)) {
-        var shopItem = this.shop.getItem(shopId);
+        var marketItem = this.getItem(shopId);
         var marketPrice = new Price(scrapPrice, "scrap");
-        if (shopItem) {
-            if (this.checkPrice(shopItem, marketPrice)) {
-                return false;
+        if (marketItem) {
+            if (this.checkPrice(marketItem.getShopItem(), marketPrice)) {
+                if (marketItem.isCooldownDecayed()) {
+                    return false;
+                } else {
+                    return this.ajaxResponses.editPriceCooldown((MarketItem.EDIT_COOLDOWN_TIME - marketItem.getCooldownTime()) / 1000);
+                }
             } else {
-                return this.getCannotSetPriceResponse(shopItem, marketPrice);
+                return this.getCannotSetPriceResponse(marketItem.getShopItem(), marketPrice);
             }
         } else {
             return this.ajaxResponses.itemNotFound;
@@ -300,7 +290,7 @@ Market.prototype.getShopTradePrices = function (idList) {
 Market.prototype._localImport = function (shopItems, itemsStatus) {
     for (var i = 0; i < shopItems.length; i += 1) {
         var item = shopItems[i];
-        this.items.push(new MarketItem(this.shop, {
+        this.items.push(new MarketItem(this, {
             shop_id: item.getID(),
             item_id: item.getItem().getID(),
             owner: item.getOwner(),
@@ -372,12 +362,14 @@ Market.QUERIES = {
 };
 
 /**
- * @param shop {Shop}
+ * @param market {Market}
  * @param data {object}
  * @constructor
  */
-function MarketItem(shop, data) {
-    this.shop = shop;
+function MarketItem(market, data) {
+    this.market = market;
+    this.sfuminator = this.market.sfuminator;
+    this.shop = this.market.shop;
     this.shop_id = data.shop_id;
     this.item_id = data.item_id;
     this.owner = data.owner;
@@ -385,7 +377,11 @@ function MarketItem(shop, data) {
     this.taxed_price = new Price(data.taxed_price, "scrap");
     this.status = data.status;
     this.last_update_date = new Date(data.last_update_date);
+    this.editCooldownTimeout = null;
+    this.lastPriceEditDate = new Date(0);
 }
+
+MarketItem.EDIT_COOLDOWN_TIME = 1000 * 60 * 5;
 
 /**
  * @returns {String}
@@ -408,4 +404,32 @@ MarketItem.prototype.getShopItem = function () {
 
 MarketItem.prototype.isAvailable = function () {
     return this.status === Market.ITEM_STATUS.AVAILABLE && this.getShopItem();
+};
+
+MarketItem.prototype.editPrice = function (marketPrice) {
+    var taxedPrice = this.market.taxPrice(marketPrice);
+    this.taxed_price = taxedPrice;
+    this.market_price = marketPrice;
+    var shopItem = this.getShopItem();
+    this.shop.sections[shopItem.getType()].remove(shopItem).add(shopItem).commit();
+    this.sfuminator.users.get(shopItem.getMarketer()).getMarketerSection().remove(shopItem).add(shopItem).commit();
+    var self = this;
+    this.market.db.connect(function (connection) {
+        connection.query(self.market.queries.updateItemPrice(shopItem.getID(), marketPrice.toScrap(), taxedPrice.toScrap()), function () {
+            connection.release();
+        });
+    });
+    this._refreshEditCooldown();
+};
+
+MarketItem.prototype.isCooldownDecayed = function () {
+    return this.getCooldownTime() > MarketItem.EDIT_COOLDOWN_TIME;
+};
+
+MarketItem.prototype.getCooldownTime = function () {
+    return new Date().getTime() - this.lastPriceEditDate.getTime();
+};
+
+MarketItem.prototype._refreshEditCooldown = function () {
+    this.lastPriceEditDate = new Date();
 };

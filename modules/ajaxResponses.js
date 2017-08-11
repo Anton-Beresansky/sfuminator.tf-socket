@@ -90,19 +90,19 @@ function AjaxResponses(sfuminator) {
         if (steam_status === "steam_down") {
             return {
                 result: "error",
-                message: "Sorry, steam is not working properly at the moment, come back in a few minutes.",
+                message: "Sorry, steam is not working properly at the moment, come back in a few minutes",
                 code: "steam_down"
             };
         } else if (steam_status === "maintenance") {
             return {
                 result: "error",
-                message: "Sorry, bots are down for maintenance at the moment, come back in a few minutes.",
+                message: "Sorry, bots are down for maintenance at the moment, come back in a few minutes",
                 code: "bot_maintenance"
             };
         } else {
             return {
                 result: "error",
-                message: "Sorry, trading is disabled, come back in a few minutes.",
+                message: "Sorry, trading is disabled, come back in a few minutes",
                 code: "trading_disabled"
             };
         }
@@ -118,22 +118,29 @@ function AjaxResponses(sfuminator) {
     this.noMarketPrice = {result: "error", message: "No item price specified", code: "no_market_price"};
     this.marketPriceTooLow = {result: "error", message: "Sorry, price set is too low", code: "market_price_too_low"};
     this.marketPriceTooHigh = {result: "error", message: "Sorry, price set is too high", code: "market_price_too_high"}
-    this.walletEmpty = {result: "error", message: "Cannot withdraw, your wallet is empty.", code: "wallet_empty"};
+    this.walletEmpty = {result: "error", message: "Cannot withdraw, your wallet is empty", code: "wallet_empty"};
     this.marketerNotFound = {result: "error", message: "Seller not found", code: "marketer_not_found"};
     this.marketerHasNoItems = {result: "error", message: "User has no items on market", code: "marketer_no_items"};
     this.cannotTradeOwnMarketItem = {
         result: "error",
-        message: "You can't trade your own Market Item here, but you can from your Profile Page.",
+        message: "You can't trade your own Market Item here, but you can from your Profile Page",
         code: "cannot_trade_own_market_item"
     };
     this.editMarketItemSuccess = {result: "success", message: "Price updated", code: "edit_market_item_success"};
     this.marketItemsLimit = function (limit) {
         return {
             result: "error",
-            message: "Sorry, you can't have more than " + limit + " items on Market",
+            message: "Sorry, can't have more than " + limit + " items on Market",
             code: "market_items_limit"
         }
     };
+    this.editPriceCooldown = function (time) {
+        return {
+            result: "error",
+            message: "Sorry, price can be modified in " + ((time > 60) ? ((parseInt(time / 60) + 1) + " minutes") : ((parseInt(time) + 1) + " seconds")),
+            code: "edit_price_cooldown"
+        }
+    }
 }
 
 /**
