@@ -44,11 +44,12 @@ function Shop(sfuminator) {
      */
     this.market = new Market(this);
     this.instanceID = new Date().getTime();
-    this.countLimit = {
-        hats: {Strange: 2, Vintage: 3, Genuine: 3, Haunted: 3, _any: 5, _price: {over: 7, limit: 3}},
-        strange: {_any: 5, _price: {over: 7, limit: 3}},
-        taunt: {_any: 4},
-        paint: {_any: 4}
+    this.mine_max_key_price = 5;
+    this.count_limit = {
+        hats: {Strange: 2, Vintage: 3, Genuine: 3, Haunted: 2, _any: 5, _price: {over: 9, limit: 3}},
+        strange: {_any: 5, _price: {over: 9, limit: 3}},
+        taunt: {_any: 4, _price: {over: 9, limit: 3}},
+        other: {_any: 4, _price: {over: 9, limit: 3}}
     };
     /**
      * @type {ShopItemCount}
@@ -195,7 +196,7 @@ Shop.prototype.getClientBackpack = function (type, userSteamid) {
  * @returns {Number}
  */
 Shop.prototype.getLimit = function (item) {
-    var countLimit = this.countLimit[item.getType()];
+    var countLimit = this.count_limit[item.getType()];
     if (!countLimit) {
         return 10000000; //well.. i mean that's a lot of items.
     }
@@ -306,19 +307,23 @@ Shop.prototype.filterMarketItems = function (backpack) {
 };
 
 Shop.prototype.canBeMarketed = function (item) {
-    return item.canBeMarketed();
+    if (item.getItem() instanceof TF2Item) {
+        return (item.canBeMarketed() && this.count.get(item.getItem()) < this.getLimit(item));
+    }
+    return false;
 };
 
 /**
  * Check if given item can be sold
  * @param {ShopItem} item
+ * @param {[Boolean]} countless
  * @returns {Boolean}
  */
-Shop.prototype.canBeSold = function (item) {
+Shop.prototype.canBeSold = function (item, countless) {
     if (item.getItem() instanceof TF2Item) {
         return (
             item.getType() && this.verifyMineItemPriceRange(item)
-            && this.count.get(item.getItem()) < this.getLimit(item)
+            && (countless ? true : this.count.get(item.getItem()) < this.getLimit(item))
             && !item.isHiddenType()
         );
     }
@@ -332,22 +337,11 @@ Shop.prototype.canBeSold = function (item) {
  */
 Shop.prototype.verifyMineItemPriceRange = function (item) {
     var originalPrice = item.getItem().getPrice(); //Be sure to check on actual item price not shop price
-    /*if (item.getType() === ShopItem.TYPE.HATS) {
-     //return originalPrice.toMetal() <= (this.ratio.hats.weSell.maximum) && originalPrice.toMetal() >= this.ratio.hats.weSell.minimum;
-     return originalPrice.toMetal() >= this.ratio.hats.weSell.minimum;
-     } else if (item.getType() === ShopItem.TYPE.STRANGE) {
-     //return originalPrice.toMetal() <= (this.ratio.strange.weSell.maximum) && originalPrice.toMetal() >= this.ratio.strange.weSell.minimum;
-     return originalPrice.toMetal() >= this.ratio.strange.weSell.minimum;
-     }*/
-    return originalPrice.toScrap() > 0 && originalPrice.toKeys() < 5;
+    return originalPrice.toScrap() > 0 && originalPrice.toKeys() < this.mine_max_key_price;
 };
 
 Shop.prototype.getMarketRatio = function () {
     return (1 - this.ratio.hats.weBuy.normal) / 2;
-};
-
-Shop.prototype.marketToTaxedPrice = function (marketPrice) {
-    return new Price(parseInt(marketPrice.toScrap() * (1 - this.getMarketRatio()) + 0.5), "scrap");
 };
 
 /**

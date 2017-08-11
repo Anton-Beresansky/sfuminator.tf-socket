@@ -35,10 +35,6 @@ ShopItemIDs.prototype.make = function (shopItem) {
     if (this.exist(unique_id, game_code)) {
         return this.lookup(unique_id, game_code);
     } else {
-        console.log(this.lookupTable[game_code][unique_id]);
-        console.log("Item " + shopItem.getItem().getFullName() + " is not linked..");
-        console.log("Linking " + shopItem.getItem().getID());
-        console.log("Unique: ", unique_id, typeof unique_id);
         this.increase();
         this.link(shopItem);
         return this.currentID;

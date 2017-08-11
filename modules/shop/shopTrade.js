@@ -52,7 +52,7 @@ function ShopTrade(sfuminator, partner) {
     this.log = new Logs({applicationName: "Shop Trade " + this.partner.getSteamid(), color: "green"});
     this._available_modes = ["offer", "manual"];
     this.last_update_date = new Date();
-    this.assets_limit = {partner: 40, shop: 40, max_key_price: 6};
+    this.assets_limit = {partner: 40, shop: 40, max_key_price: 100};
     this.itemsReserved = false;
     this.itemsReady = false;
     this.tradeType = ShopTrade.TYPE.NORMAL;
@@ -100,6 +100,10 @@ ShopTrade.prototype._bindHandlers = function () {
         self.response = requestResponse;
         this.cancel();
     });
+};
+
+ShopTrade.prototype.setTradeType = function (type) {
+    this.tradeType = type;
 };
 
 ShopTrade.prototype.setAsWithdrawTrade = function () {
@@ -415,6 +419,7 @@ ShopTrade.prototype.load = function (callback) {
             self.setStatus(trade.status);
             self.setStatusInfo(trade.status_info);
             self.setMode(trade.mode);
+            self.setTradeType(trade.trade_type);
             self.setBot(self.sfuminator.users.get(trade.bot_steamid));
             var items = {};
             for (var i = 0; i < rows.length; i += 1) {
@@ -789,16 +794,25 @@ ShopTrade.prototype.verifyItems = function (callback) {
         }
     } else if (this.isMarketTrade()) {
         this._verifyPartnerItems(function (success) {
-            callback(success ? true : false);
+            if (success) {
+                if ((self.getPartner().getMarketedShopItems().length + self.getAssets().length) > Market.ITEMS_LIMIT) {
+                    self.emit("tradeRequestResponse", self.ajaxResponses.marketItemsLimit(Market.ITEMS_LIMIT));
+                    callback(false);
+                } else {
+                    callback(true);
+                }
+            } else {
+                callback(false);
+            }
         }, function (shopItem) {
             var itemID = shopItem.getItem().getID();
             if (self.marketPrices.hasOwnProperty(itemID)) {
                 var marketPrice = new Price(self.marketPrices[itemID], "scrap");
-                if (self.shop.marketToTaxedPrice(marketPrice) > shopItem.getPrice()) {
+                if (self.market.checkPrice(shopItem, marketPrice)) {
                     shopItem.setMarketPrice(marketPrice);
                     self.assets.push(shopItem);
                 } else {
-                    self.emit("tradeRequestResponse", self.ajaxResponses.marketPriceTooLow);
+                    self.emit("tradeRequestResponse", self.market.getCannotSetPriceResponse(shopItem, marketPrice));
                     return false;
                 }
             } else {
@@ -846,7 +860,7 @@ ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
             if (self.getPartner().getTF2Backpack().getCurrencyAmount() < self.currency.getSignedTradeBalance()) {
                 self.emit("tradeRequestResponse", self.ajaxResponses.notEnoughCurrency);
                 callback(false);
-            } else if (self.getAssetsPrice().toKeys() > self.assets_limit.max_key_price) {
+            } else if (new Price(Math.abs(self.getCurrencyHandler().getTradeBalance()), "scrap").toKeys() > self.assets_limit.max_key_price) {
                 self.emit("tradeRequestResponse", self.ajaxResponses.assetsPriceLimit(self.assets_limit.max_key_price));
                 callback(false);
             } else {
