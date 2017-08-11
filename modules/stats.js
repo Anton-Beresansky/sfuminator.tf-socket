@@ -82,7 +82,7 @@ Stats.prototype.getBotsStock = function () {
         var owner = shopItems[i].getItem().getOwner();
         var type = shopItems[i].getType();
         if (type === "") {
-            type = "other"
+            type = "notOnShop"
         }
         if (!bots_stock.hasOwnProperty(owner)) {
             bots_stock[owner] = {stock: {}};
@@ -91,6 +91,11 @@ Stats.prototype.getBotsStock = function () {
             bots_stock[owner].stock[type] = 0;
         }
         bots_stock[owner].stock[type] += 1;
+
+        var bot = this.sfuminator.getBotsController().getBot(owner);
+        if (!bot) {
+            console.log(shopItems[i]);
+        }
     }
     for (owner in bots_stock) {
         var bot = this.sfuminator.getBotsController().getBot(owner);
@@ -143,7 +148,8 @@ Stats.prototype.fetchNewItems = function () {
             result: "success",
             items: finalList,
             currency: this.shop.tf2Currency.valueOf(),
-            last_update_date: new Date().getTime()};
+            last_update_date: new Date().getTime()
+        };
     }
 };
 

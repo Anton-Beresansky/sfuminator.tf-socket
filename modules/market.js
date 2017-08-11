@@ -6,18 +6,13 @@ var events = require("events");
 
 /*
 
- TODO Check items quantity limits -> might be messed up since many types have been added
-
- TODO LIMITS
- > prevent from having more than 10 marketed items per user
- > set a maximum market price
- > check that market prices don't interfere with the maximum 6 keys thing when shopping
-
  TODO Maybe we can change trade offer message for market trades?
 
  TODO Add live trade monitor
 
- TODO Edit market price! LOLOL
+ TODO Add price edit cooldown
+
+ TODO FIX On new item (ownmarket) can't click on old items
 
  */
 
@@ -40,6 +35,9 @@ function Market(shop) {
     this.sfuminator = this.shop.sfuminator;
     this.db = this.shop.db;
     this.queries = Market.QUERIES;
+    this.items_limit = Market.ITEMS_LIMIT;
+    this.item_max_key_price = Market.ITEM_MAX_KEY_PRICE;
+    this.ajaxResponses = this.sfuminator.responses;
     /**
      * @type {MarketItem[]}
      */
@@ -49,6 +47,16 @@ function Market(shop) {
 }
 
 require("util").inherits(Market, events.EventEmitter);
+
+Market.ITEMS_LIMIT = 12;
+Market.ITEM_MAX_KEY_PRICE = 100;
+Market.ITEM_STATUS = {
+    SOLD: 0, //Item successfully sold through shop
+    AVAILABLE: 1, //Item is available in shop
+    IN_TRANSIT: 2, //Item is being transferred from user to shop
+    CANCELLED: 3, //When marketing item user cancelled transaction
+    WITHDRAWN: 4 //Item has been withdrawn from shop
+};
 
 Market.prototype.load = function (callback) {
     var self = this;
@@ -96,6 +104,84 @@ Market.prototype.getItem = function (shopId) {
         }
     }
     return false;
+};
+
+Market.prototype.taxPrice = function (price) {
+    return new Price(parseInt(price.toScrap() * (1 - this.shop.getMarketRatio()) + 0.5), "scrap");
+};
+
+Market.prototype.editItemPrice = function (shopId, scrapPrice) {
+    if (this.canEditPrice(shopId, scrapPrice)) {
+        var marketPrice = new Price(scrapPrice, "scrap");
+        var taxedPrice = this.taxPrice(marketPrice);
+        for (var i = 0; i < this.items.length; i += 1) {
+            if (this.items[i].shop_id === shopId) {
+                console.log(this.items[i].market_price.toScrap(), this.items[i].getShopItem().getPrice().toScrap());
+                this.items[i].taxed_price = taxedPrice;
+                this.items[i].market_price = marketPrice;
+                console.log(this.items[i].market_price.toScrap(), this.items[i].getShopItem().getPrice().toScrap());
+                var shopItem = this.items[i].getShopItem();
+                this.shop.sections[shopItem.getType()].remove(shopItem).add(shopItem).commit();
+                this.sfuminator.users.get(shopItem.getMarketer()).getMarketerSection().remove(shopItem).add(shopItem).commit();
+                break;
+            }
+        }
+        var self = this;
+        this.db.connect(function (connection) {
+            connection.query(self.queries.updateItemPrice(shopId, marketPrice.toScrap(), taxedPrice.toScrap()), function () {
+                connection.release();
+            });
+        });
+        return true;
+    }
+    return false;
+};
+
+Market.prototype.canEditPrice = function (shopId, scrapPrice) {
+    return !this.getCannotEditPriceResponse(shopId, scrapPrice);
+};
+
+Market.prototype.getCannotEditPriceResponse = function (shopId, scrapPrice) {
+    if (!isNaN(scrapPrice) && !isNaN(shopId)) {
+        var shopItem = this.shop.getItem(shopId);
+        var marketPrice = new Price(scrapPrice, "scrap");
+        if (shopItem) {
+            if (this.checkPrice(shopItem, marketPrice)) {
+                return false;
+            } else {
+                return this.getCannotSetPriceResponse(shopItem, marketPrice);
+            }
+        } else {
+            return this.ajaxResponses.itemNotFound;
+        }
+    } else {
+        return this.ajaxResponses.error;
+    }
+};
+
+/**
+ * @param shopItem {ShopItem}
+ * @param marketPrice {Price}
+ * @returns {boolean}
+ */
+Market.prototype.checkPrice = function (shopItem, marketPrice) {
+    return !this.getCannotSetPriceResponse(shopItem, marketPrice);
+};
+
+/**
+ * @param shopItem {ShopItem}
+ * @param marketPrice {Price}
+ */
+Market.prototype.getCannotSetPriceResponse = function (shopItem, marketPrice) {
+    if (this.taxPrice(marketPrice) > shopItem.getMinimumMarketPrice()) {
+        if (marketPrice.toKeys() < this.item_max_key_price) {
+            return false;
+        } else {
+            return this.ajaxResponses.marketPriceTooHigh;
+        }
+    } else {
+        return this.ajaxResponses.marketPriceTooLow;
+    }
 };
 
 /**
@@ -158,7 +244,8 @@ Market.prototype.importItems = function (tradeAssets, itemsStatus) {
         }
         shopItems.push(this.shop.inventory.makeShopItem(tradeAssets[i].getItem())
             || this.shop.inventory.getItem(this.shop.inventory.ids.make(tradeAssets[i])));
-        shopItems[i].getItem().injectPrice(tradeAssets[i].getPrice()); //Inject market price
+
+        shopItems[i].setMarketPrice(tradeAssets[i].getPrice()); //Inject market price
     }
     if (shopItems.length) {
         this.log.debug("Importing " + shopItems.length + " assets to Market for " + shopItems[0].getOwner());
@@ -217,8 +304,8 @@ Market.prototype._localImport = function (shopItems, itemsStatus) {
             shop_id: item.getID(),
             item_id: item.getItem().getID(),
             owner: item.getOwner(),
-            market_price: item.getPrice().toScrap(),
-            taxed_price: item.shop.marketToTaxedPrice(item.getPrice()).toScrap(),
+            market_price: item.marketPrice.toScrap(),
+            taxed_price: this.taxPrice(item.marketPrice).toScrap(),
             status: (!isNaN(itemsStatus) ? itemsStatus : Market.ITEM_STATUS.AVAILABLE),
             last_update_date: new Date()
         }));
@@ -240,7 +327,7 @@ Market.QUERIES = {
         for (var i = 0; i < shopItems.length; i += 1) {
             var item = shopItems[i];
             query += "(" + item.getID() + "," + item.getItem().getID() + ",'" + item.getOwner() + "',"
-                + item.getPrice().toScrap() + "," + item.shop.marketToTaxedPrice(item.getPrice()).toScrap()
+                + item.marketPrice.toScrap() + "," + item.shop.market.taxPrice(item.marketPrice).toScrap()
                 + "," + (!isNaN(itemsStatus) ? itemsStatus : Market.ITEM_STATUS.AVAILABLE) + ", NOW()), ";
         }
         return query.slice(0, query.length - 2) + " ON DUPLICATE KEY UPDATE " +
@@ -249,6 +336,9 @@ Market.QUERIES = {
     },
     updateItemStatus: function (shopItemID, status) {
         return "UPDATE `marketed_items` SET `status`=" + status + ", `last_update_date`=NOW() WHERE `shop_id`=" + shopItemID;
+    },
+    updateItemPrice: function (shopItemID, marketPrice, taxedPrice) {
+        return "UPDATE `marketed_items` SET `market_price`=" + marketPrice + ", `taxed_price`=" + taxedPrice + ", `last_update_date`=NOW() WHERE `shop_id`=" + shopItemID;
     },
     cancelInTransitItems: function (shopItems) {
         var query = "UPDATE `marketed_items` SET `status`=" + Market.ITEM_STATUS.CANCELLED + " WHERE `item_id` IN(";
@@ -279,14 +369,6 @@ Market.QUERIES = {
             + "DEFAULT CHARACTER SET = utf8 "
             + "COLLATE = utf8_bin";
     }
-};
-
-Market.ITEM_STATUS = {
-    SOLD: 0, //Item successfully sold through shop
-    AVAILABLE: 1, //Item is available in shop
-    IN_TRANSIT: 2, //Item is being transferred from user to shop
-    CANCELLED: 3, //When marketing item user cancelled transaction
-    WITHDRAWN: 4 //Item has been withdrawn from shop
 };
 
 /**

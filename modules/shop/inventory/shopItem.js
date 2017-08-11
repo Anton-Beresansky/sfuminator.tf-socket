@@ -288,6 +288,10 @@ ShopItem.prototype.getMinePrice = function () {
     return finalPrice;
 };
 
+ShopItem.prototype.getMinimumMarketPrice = function () {
+    return (this.shop.canBeSold(this, true) ? this.getMinePrice().toScrap() : new Price(0).toScrap());
+};
+
 /**
  * @returns {SteamTradeOfferItemStructure}
  */
@@ -349,7 +353,7 @@ function ShopItemDataStructure(shopItem) {
         this.decorated_grade = shopItem.getItem().getDecoratedGrade();
     }
     if (shopItem.isMarketed() || shopItem.isMarketItem()) {
-        this.mine_price = (shopItem.shop.canBeSold(shopItem) ? shopItem.getMinePrice().toScrap() : new Price(0).toScrap());
+        this.mine_price = shopItem.getMinimumMarketPrice();
     }
 }
 

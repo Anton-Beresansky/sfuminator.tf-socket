@@ -75,7 +75,7 @@ function AjaxResponses(sfuminator) {
     this.assetsPriceLimit = function (limit) {
         return {
             result: "error",
-            message: "Sorry, this trade exceed the maximum total items value of " + limit + " keys, please retry removing one or more items"
+            message: "Sorry, this trade exceed the maximum currency value of " + limit + " keys, please retry removing one or more items"
         };
     };
     this.itemExceedCount = function (item, excess) {
@@ -116,7 +116,8 @@ function AjaxResponses(sfuminator) {
         code: "cannot_verify_trade_token"
     };
     this.noMarketPrice = {result: "error", message: "No item price specified", code: "no_market_price"};
-    this.marketPriceTooLow = {result: "error", message: "Specified price is too low", code: "market_price_too_low"};
+    this.marketPriceTooLow = {result: "error", message: "Sorry, price set is too low", code: "market_price_too_low"};
+    this.marketPriceTooHigh = {result: "error", message: "Sorry, price set is too high", code: "market_price_too_high"}
     this.walletEmpty = {result: "error", message: "Cannot withdraw, your wallet is empty.", code: "wallet_empty"};
     this.marketerNotFound = {result: "error", message: "Seller not found", code: "marketer_not_found"};
     this.marketerHasNoItems = {result: "error", message: "User has no items on market", code: "marketer_no_items"};
@@ -124,7 +125,15 @@ function AjaxResponses(sfuminator) {
         result: "error",
         message: "You can't trade your own Market Item here, but you can from your Profile Page.",
         code: "cannot_trade_own_market_item"
-    }
+    };
+    this.editMarketItemSuccess = {result: "success", message: "Price updated", code: "edit_market_item_success"};
+    this.marketItemsLimit = function (limit) {
+        return {
+            result: "error",
+            message: "Sorry, you can't have more than " + limit + " items on Market",
+            code: "market_items_limit"
+        }
+    };
 }
 
 /**
