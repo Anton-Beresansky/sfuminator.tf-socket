@@ -1,6 +1,7 @@
 module.exports = Stats;
 
 var Logs = require("../lib/logs.js");
+var LastTrades = require('./stats/lastTrades.js');
 
 /**
  * General purpose Stats class
@@ -24,6 +25,7 @@ function Stats(sfuminator) {
     };
     this.stats = {};
     this.max_new_items = 10;
+    this.lastTrades = new LastTrades(this);
     this.log = new Logs({applicationName: "Stats"});
 }
 
@@ -153,6 +155,10 @@ Stats.prototype.fetchNewItems = function () {
     }
 };
 
+Stats.prototype.getLastTrades = function (callback) {
+    return this.lastTrades.read(callback);
+};
+
 Stats.prototype.fetchActiveTradeCount = function () {
     this.stats.active_trade_count = this.sfuminator.activeTrades.length;
 };
@@ -192,7 +198,7 @@ Stats.prototype.fetchTradeCount = function () {
 };
 
 Stats.prototype._getTradeCountQuery = function () {
-    return "SELECT COUNT(*) as trade_count FROM `shop_trade_items` JOIN (SELECT `id` FROM `shop_trades` WHERE `trade_type`=0 AND `status_info`='accepted') as `ids` ON `shop_trade_items`.trade_id=`ids`.id";
+    return "SELECT COUNT(*) as trade_count FROM (SELECT `id` FROM `shop_trades` WHERE `trade_type`=0 AND `status_info`='accepted') as `ids` JOIN `shop_trade_items` ON `shop_trade_items`.trade_id=`ids`.id";
 };
 
 Stats.prototype._getOldTradeCountQuery = function () {
@@ -242,6 +248,7 @@ Stats.prototype._getStoreStockQuery = function () {
     }
     return query.slice(0, query.length - 2) + " ON DUPLICATE KEY UPDATE `count`=VALUES(`count`)"; //Query will fire error if no bot have no items
 };
+
 /*
  * {
  *      bot_steamid:

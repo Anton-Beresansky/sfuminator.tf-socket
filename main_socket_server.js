@@ -38,7 +38,7 @@ webApi.onceReady(function () {
         var http = require('http');
         http.createServer(function (req, res) {
             var body = "";
-            res.writeHead(200, {'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*'});
+            res.writeHead(200, {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'});
             req.on('data', function (chunk) {
                 body += chunk;
             });

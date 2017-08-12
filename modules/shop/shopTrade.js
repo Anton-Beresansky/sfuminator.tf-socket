@@ -391,6 +391,7 @@ ShopTrade.prototype.valueOf = function () {
         botUsername: this.getAssignedBotUser().getName(),
         partnerID: this.getPartner().getSteamid(),
         mode: this.getMode(),
+        trade_type: this.trade_type,
         status: this.getStatus(),
         statusInfo: this.getStatusInfo(),
         last_update_date: this.getLastUpdateDate().getTime(),
