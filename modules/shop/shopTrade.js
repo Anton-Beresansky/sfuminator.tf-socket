@@ -503,15 +503,15 @@ ShopTrade.prototype.load = function (callback) {
             self.verifyItems(function (success) {
                 self.log.debug("Loaded trade " + self.getID() + ", verification success: " + ((success) ? success : JSON.stringify(self.response)));
                 self.logAssets();
+                if (self.isNormalTrade()) {
+                    self.walletFunds = Math.abs(trade.forced_balance);
+                    self.log.debug("Set wallet funds to: " + self.walletFunds + " -> bypassing wallet injector since we already forced the balance");
+                }
                 if (typeof callback === "function") {
                     callback(self);
                 }
                 if (self.assets.length === 0) {
                     self.log.warning("Assets list is empty, considering trade as accepted");
-                    if (self.isNormalTrade()) {
-                        self.walletFunds = Math.abs(trade.forced_balance);
-                        self.log.debug("Set wallet funds to: " + self.walletFunds);
-                    }
                     self.setAsAccepted();
                     self.log.warning("Cancelling reservations...");
                     for (var section in items) {
