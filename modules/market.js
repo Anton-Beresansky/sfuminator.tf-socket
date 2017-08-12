@@ -6,13 +6,9 @@ var events = require("events");
 
 /*
 
- TODO Maybe we can change trade offer message for market trades?
-
- TODO Add live trade monitor
-
- TODO FIX On new item (ownmarket) can't click on old items
-
  TODO Check shopTrade reload on crash for Withdraw, Market item withdraw, Market trade and Shop trade
+ TODO FIX On new item (ownmarket) can't click on old items (Maybe not on fresh backpack, coz own market doesn't fresh, but check injection)
+ TODO Maybe we can change trade offer message for market trades?
 
  */
 

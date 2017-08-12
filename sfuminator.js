@@ -308,6 +308,11 @@ Sfuminator.prototype.onAction = function (request, callback) {
                 callback(this.shop.market.getCannotEditPriceResponse(parseInt(data.id), parseInt(data.price)));
             }
             break;
+        case "last_trades":
+            if (this.isAdmin(request.getRequesterSteamid())) {
+                this.stats.getLastTrades(callback);
+            }
+            break;
         case "adminSocket":
             this.adminSocket.request(request, callback);
             break;
