@@ -348,7 +348,7 @@ Sfuminator.prototype.fetchShopInventory = function (request, callback) {
             break;
         case "marketer":
             if (!isNaN(data.additional) && this.shop.market.marketerExists(data.additional)) {
-                callback(this.shop.makeMarketerInventory(data.additional, data.additional === request.getRequesterSteamid()));
+                callback(this.shop.makeMarketerInventory(data.additional, request.getRequesterSteamid()));
             } else {
                 callback(this.responses.marketerNotFound);
             }
@@ -400,7 +400,7 @@ Sfuminator.prototype.getUpdates = function (request) {
         if (itemChanges !== false) {
             response.methods.updateItemsVersioning = itemChanges;
         } else {
-            response.methods.freshBackpack = this.shop.makeMarketerInventory(data.section.additional, data.section.additional === request.getRequesterSteamid());
+            response.methods.freshBackpack = this.shop.makeMarketerInventory(data.section.additional, request.getRequesterSteamid());
         }
     }
     if ((data.hasOwnProperty("section") && data.section.type === "mine" && !isNaN(data.section.last_update_date))

@@ -90,12 +90,18 @@ Market.prototype.itemExists = function (shopId) {
 };
 
 /**
- * @param shopId
+ * @param id
  * @returns {MarketItem}
  */
-Market.prototype.getItem = function (shopId) {
-    for (var i = 0; i < this.items.length; i += 1) {
-        if (this.items[i].shop_id === shopId) {
+Market.prototype.getItem = function (id) {
+    var i;
+    for (i = 0; i < this.items.length; i += 1) {
+        if (this.items[i].item_id === id) { //This is the very unique id
+            return this.items[i];
+        }
+    }
+    for (i = 0; i < this.items.length; i += 1) {
+        if (this.items[i].shop_id === id) { //Backup on shop id
             return this.items[i];
         }
     }
@@ -171,51 +177,41 @@ Market.prototype.getCannotSetPriceResponse = function (shopItem, marketPrice) {
 };
 
 /**
- * @param shopItem {ShopItem}
+ * @param marketItem {MarketItem}
  */
-Market.prototype.setItemAsSold = function (shopItem) {
-    if (shopItem.isMarketed()) { //Just as precaution :3
-        this.updateItemStatus(shopItem, Market.ITEM_STATUS.SOLD);
-        var marketItem = this.getItem(shopItem.getID());
-        var user = this.sfuminator.users.get(shopItem.getMarketer());
-        user.getWallet().updateBalance(marketItem.getTaxedPrice().toScrap());
-        user.getMarketerSection().remove(shopItem).commit();
-    }
+Market.prototype.setItemAsSold = function (marketItem) {
+    this.updateItemStatus(marketItem, Market.ITEM_STATUS.SOLD);
+    var user = this.sfuminator.users.get(marketItem.getMarketer());
+    user.getWallet().updateBalance(marketItem.getTaxedPrice().toScrap());
 };
 
-Market.prototype.setItemAsWithdrawn = function (shopItem) {
-    if (shopItem.isMarketed()) {
-        this.updateItemStatus(shopItem, Market.ITEM_STATUS.WITHDRAWN);
-        var user = this.sfuminator.users.get(shopItem.getMarketer());
-        user.getMarketerSection().remove(shopItem).commit();
-    }
+Market.prototype.setItemAsWithdrawn = function (marketItem) {
+    this.updateItemStatus(marketItem, Market.ITEM_STATUS.WITHDRAWN);
 };
 
-Market.prototype.setItemAsAvailable = function (shopItem) {
-    //When setting item as available we have to make sure that item has a shop id
-    //If it's still a partner item we can get the loaded market item, if not we can link a new shop id
-    shopItem = this.shop.inventory.makeShopItem(shopItem.getItem())
-        || this.shop.inventory.getItem(this.shop.inventory.ids.make(shopItem));
-    if (shopItem.isMarketed()) {
-        this.updateItemStatus(shopItem, Market.ITEM_STATUS.AVAILABLE);
-        var user = this.sfuminator.users.get(shopItem.getMarketer());
-        user.getMarketerSection().add(shopItem).commit();
-    }
+Market.prototype.setItemAsAvailable = function (marketItem) {
+    this.updateItemStatus(marketItem, Market.ITEM_STATUS.AVAILABLE);
 };
 
-Market.prototype.updateItemStatus = function (shopItem, status) {
+Market.prototype.updateItemStatus = function (marketItem, status) {
+    var found = true;
     for (var i = 0; i < this.items.length; i += 1) {
-        if (this.items[i].shop_id === shopItem.getID()) {
+        if (this.items[i].shop_id === marketItem.getID()
+            && this.items[i].item_id === marketItem.getItemID()) {
             this.items[i].status = status;
+            found = true;
             break;
         }
     }
     var self = this;
     this.db.connect(function (connection) {
-        connection.query(self.queries.updateItemStatus(shopItem.getID(), status), function () {
+        connection.query(self.queries.updateItemStatus(marketItem, status), function () {
             connection.release();
         });
-    })
+    });
+    if (!found) {
+        this.log.error("Didn't find any item to update under id: " + marketItem.getID() + ", item: " + marketItem.getItemID());
+    }
 };
 
 /**
@@ -320,8 +316,8 @@ Market.QUERIES = {
             "`market_price`=VALUES(`market_price`), `taxed_price`=VALUES(`taxed_price`), `status`=VALUES(`status`), `last_update_date`=NOW()";
 
     },
-    updateItemStatus: function (shopItemID, status) {
-        return "UPDATE `marketed_items` SET `status`=" + status + ", `last_update_date`=NOW() WHERE `shop_id`=" + shopItemID;
+    updateItemStatus: function (marketItem, status) {
+        return "UPDATE `marketed_items` SET `status`=" + status + ", `last_update_date`=NOW() WHERE `shop_id`=" + marketItem.getID() + " AND `item_id`=" + marketItem.getItemID();
     },
     updateItemPrice: function (shopItemID, marketPrice, taxedPrice) {
         return "UPDATE `marketed_items` SET `market_price`=" + marketPrice + ", `taxed_price`=" + taxedPrice + ", `last_update_date`=NOW() WHERE `shop_id`=" + shopItemID;
@@ -379,6 +375,14 @@ function MarketItem(market, data) {
 
 MarketItem.EDIT_COOLDOWN_TIME = 1000 * 60 * 5;
 
+MarketItem.prototype.getID = function () {
+    return this.shop_id;
+};
+
+MarketItem.prototype.getItemID = function () {
+    return this.item_id;
+};
+
 /**
  * @returns {String}
  */
@@ -399,7 +403,23 @@ MarketItem.prototype.getShopItem = function () {
 };
 
 MarketItem.prototype.isAvailable = function () {
+    if (this.status === Market.ITEM_STATUS.IN_TRANSIT && this.getShopItem()) {
+        this.market.log.warning("Found transit item that is actually present in inventory, will update to available. Probably was in escrow?");
+        this.setAsAvailable();
+    }
     return this.status === Market.ITEM_STATUS.AVAILABLE && this.getShopItem();
+};
+
+MarketItem.prototype.setAsWithdrawn = function () {
+    this.market.setItemAsWithdrawn(this);
+};
+
+MarketItem.prototype.setAsSold = function () {
+    this.market.setItemAsSold(this);
+};
+
+MarketItem.prototype.setAsAvailable = function () {
+    this.market.setItemAsAvailable(this);
 };
 
 MarketItem.prototype.editPrice = function (marketPrice) {
