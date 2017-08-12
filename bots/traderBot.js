@@ -212,7 +212,15 @@ TraderBot.prototype.createSteamTrade = function (shopTrade) {
     var steamTrade = new SteamTradeOffer(this.steamClient, partnerSteamid);
 
     steamTrade.setAutomaticAFKCheck();
-    steamTrade.setMessage("Here you go ;)");
+    var message = "Here you go";
+    if (shopTrade.isMarketTrade()) {
+        message += " "
+            + ", I'll take care of your item" + ((shopTrade.getAssets().length > 1) ? "s" : "")
+            + " and sell " + ((shopTrade.getAssets().length > 1) ? "them" : "it") + " on sfuminator.tf for you! ;)"
+    } else {
+        message += " ;)"
+    }
+    steamTrade.setMessage(message);
     if (shopTrade.getPartner().hasTradeToken()) {
         steamTrade.setToken(shopTrade.getPartner().getTradeToken());
     }
