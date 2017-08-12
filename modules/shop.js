@@ -116,6 +116,9 @@ Shop.prototype.update = function (_changes) {
 
     for (var action in changes) {
         for (i = 0; i < changes[action].length; i += 1) {
+            /**
+             * @type {ShopItem}
+             */
             var shopItem = changes[action][i];
             var shopType = shopItem.getType();
             if (shopType) {
@@ -123,6 +126,9 @@ Shop.prototype.update = function (_changes) {
                     this.sections[shopType] = new Section(this, shopType);
                 }
                 this.sections[shopType][action](shopItem);
+                if (shopItem.isMarketed()) {
+                    this.users.get(shopItem.getMarketer()).getMarketerSection()[action](shopItem).commit();
+                }
             }
         }
     }
@@ -210,21 +216,21 @@ Shop.prototype.getLimit = function (item) {
     return qualityLimit;
 };
 
-Shop.prototype.makeMarketerInventory = function (steamid, isSameAsRequester) {
-    this.log.debug("Getting marketer items: " + steamid);
+Shop.prototype.makeMarketerInventory = function (steamid, requesterSteamid) {
+    this.log.debug("Getting marketer items: " + steamid, 1);
     var response = {
         result: "success",
         currency: this.tf2Currency.valueOf()
     };
     var user = this.users.get(steamid);
-    if (!user.isMarketer()) {
+    if (!user.getMarketerSection().items.length) {
         response = this.sfuminator.responses.marketerHasNoItems;
     } else {
         var section = user.getMarketerSection();
         response.items = section.getCompressedItems();
         response.market_ratio = this.getMarketRatio();
-        response.wallet = user.getWallet().getBalance().toScrap();
-        if (isSameAsRequester) {
+        response.wallet = this.users.get(requesterSteamid).getWallet().getBalance().toScrap();
+        if (requesterSteamid === steamid) {
             response.taxed = {};
             var items = section.getItems();
             for (var i = 0; i < items.length; i += 1) {

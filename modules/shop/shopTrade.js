@@ -123,6 +123,10 @@ ShopTrade.prototype.isMarketTrade = function () {
     return this.tradeType === ShopTrade.TYPE.MARKET;
 };
 
+ShopTrade.prototype.isNormalTrade = function () {
+    return this.tradeType === ShopTrade.TYPE.NORMAL;
+};
+
 ShopTrade.prototype.consolidate = function (callback) {
     this.database.save(function () {
         callback();
@@ -254,39 +258,76 @@ ShopTrade.prototype.setAsAccepted = function () {
     //If market -> store market item somehow
     var assets = this.getAssets(), i;
     if (this.isMarketTrade()) {
-        for (i = 0; i < assets.length; i += 1) {
-            this.market.setItemAsAvailable(assets[i]);
-        }
+        this.setMarketItemsAsAvailable();
     } else if (this.isWithdrawTrade()) {
-        for (i = 0; i < assets.length; i += 1) {
-            if (assets[i].isMarketed()) {
-                if (this.getPartner().getSteamid() === assets[i].getMarketer()) {
-                    this.market.setItemAsWithdrawn(assets[i]);
-                } else {
-                    this.log.error("This shouldn't verify! Setting item as 'sold' on a WITHDRAW trade");
-                    this.market.setItemAsSold(assets[i]);
-                }
-            }
-        }
+        this.setMarketItemsAsWithdrawn();
         if ((this.getCurrencyHandler().forcedBalance + this.withdrawableAssetsScrapValue) !== 0) {
-            this.log.error("NOPE, after withdrawing items we are updating wallet as well!?");
-            this.log.test("Forced balance: " + this.getCurrencyHandler().forcedBalance + " Assets: " + this.withdrawableAssetsScrapValue);
+            if (JSON.stringify(this.items) !== "{}") {
+                this.log.error("NOPE, after withdrawing items we are updating wallet as well!?");
+                this.log.error("Items: " + JSON.stringify(this.items));
+                this.log.test("Forced balance: " + this.getCurrencyHandler().forcedBalance + " Assets: " + this.withdrawableAssetsScrapValue);
+            }
             this.getPartner().getWallet().updateBalance(this.getCurrencyHandler().forcedBalance + this.withdrawableAssetsScrapValue);
         } else {
             this.log.test("All good balance is 0ed");
         }
     } else { //Add up to wallet balance only if trade is NOT Market trade or Withdraw trade
-        for (i = 0; i < assets.length; i += 1) {
-            if (assets[i].isMarketed()) {
-                if (this.getPartner().getSteamid() === assets[i].getMarketer()) {
-                    this.market.setItemAsWithdrawn(assets[i]);
+        this.setMarketItemsAsSold();
+        this.log.debug("Shop trade used wallet: " + this.walletFunds);
+        this.getPartner().getWallet().updateBalance(-this.walletFunds);
+    }
+};
+
+ShopTrade.prototype.setMarketItemsAsSold = function () {
+    for (var shop in this.items) {
+        for (var i = 0; i < this.items[shop].length; i += 1) {
+            var itemID = this.items[shop][i];
+            var marketItem = this.market.getItem(itemID);
+            if (marketItem) {
+                if (this.getPartner().getSteamid() === marketItem.getMarketer()) {
+                    marketItem.setAsWithdrawn();
                     this.log.error("This shouldn't verify! Setting item as 'withdrawn' on a SHOP trade");
+
                 } else {
-                    this.market.setItemAsSold(assets[i]);
+                    this.log.debug("Set item " + marketItem.getID() + " as sold");
+                    marketItem.setAsSold();
                 }
             }
         }
-        this.getPartner().getWallet().updateBalance(-this.walletFunds);
+    }
+};
+
+ShopTrade.prototype.setMarketItemsAsWithdrawn = function () {
+    for (var shop in this.items) {
+        for (var i = 0; i < this.items[shop].length; i += 1) {
+            var itemID = this.items[shop][i];
+            var marketItem = this.market.getItem(itemID);
+            if (marketItem) {
+                if (this.getPartner().getSteamid() === marketItem.getMarketer()) {
+                    marketItem.setAsWithdrawn();
+                    this.log.debug("Set item " + marketItem.getID() + " as withdrawn");
+                } else {
+                    this.log.error("This shouldn't verify! Setting item as 'sold' on a WITHDRAW trade");
+                    marketItem.setAsSold();
+                }
+            } else {
+                this.log.error("No marketed item in withdraw... wut?");
+            }
+        }
+    }
+};
+
+ShopTrade.prototype.setMarketItemsAsAvailable = function () {
+    for (var shop in this.items) {
+        for (var i = 0; i < this.items[shop].length; i += 1) {
+            var itemID = this.items[shop][i];
+            var marketItem = this.market.getItem(itemID);
+            if (marketItem) {
+                marketItem.setAsAvailable();
+            } else {
+                this.log.error("No market item in market trade... wut?");
+            }
+        }
     }
 };
 
@@ -420,22 +461,44 @@ ShopTrade.prototype.load = function (callback) {
             self.setStatus(trade.status);
             self.setStatusInfo(trade.status_info);
             self.setMode(trade.mode);
-            self.setTradeType(trade.trade_type);
             self.setBot(self.sfuminator.users.get(trade.bot_steamid));
+            self.setTradeType(trade.trade_type);
+            self.getCurrencyHandler().forceStartingBalance(new Price(trade.forced_balance, "scrap"));
+            if (trade.forced_balance !== 0) {
+                self.log.debug("Set forced balance: " + trade.forced_balance);
+            }
             var items = {};
             for (var i = 0; i < rows.length; i += 1) {
                 var iRow = rows[i];
-                if (items.hasOwnProperty(iRow.shop_type)) {
-                    items[iRow.shop_type].push(iRow.shop_id);
-                } else {
-                    items[iRow.shop_type] = [iRow.shop_id];
+                if (iRow.shop_id) {
+                    if (items.hasOwnProperty(iRow.shop_type)) {
+                        items[iRow.shop_type].push(iRow.shop_id);
+                    } else {
+                        items[iRow.shop_type] = [iRow.shop_id];
+                    }
                 }
             }
             self.setItems(items);
             self.log.debug("Loaded items: " + JSON.stringify(items), 0);
-            if (items.hasOwnProperty("market")) {
+            if (self.isMarketTrade()) {
                 self.setAsMarketTrade(self.market.getShopTradePrices(items.market));
                 self.log.debug("Setting market trade: " + JSON.stringify(self.marketPrices));
+            }
+            if (self.isWithdrawTrade()) { //Rebuild withdrawableAssetsScrapValue
+                self.log.debug("Is withdraw trade, rebuilding withdrawable assets scrap value");
+                self.withdrawableAssetsScrapValue = 0;
+                for (var shop in items) {
+                    for (i = 0; i < items[shop].length; i += 1) {
+                        var itemID = items[shop][i];
+                        var marketItem = self.market.getItem(itemID);
+                        if (marketItem) {
+                            self.withdrawableAssetsScrapValue += marketItem.getPrice().toScrap();
+                        } else {
+                            this.log.error("No marketed item in withdraw... wut? (when building withdrawable assets value)");
+                        }
+                    }
+                }
+                self.log.debug("Rebuilt: " + self.withdrawableAssetsScrapValue);
             }
             self.verifyItems(function (success) {
                 self.log.debug("Loaded trade " + self.getID() + ", verification success: " + ((success) ? success : JSON.stringify(self.response)));
@@ -443,8 +506,12 @@ ShopTrade.prototype.load = function (callback) {
                 if (typeof callback === "function") {
                     callback(self);
                 }
-                if (!success) {
+                if (self.assets.length === 0) {
                     self.log.warning("Assets list is empty, considering trade as accepted");
+                    if (self.isNormalTrade()) {
+                        self.walletFunds = Math.abs(trade.forced_balance);
+                        self.log.debug("Set wallet funds to: " + self.walletFunds);
+                    }
                     self.setAsAccepted();
                     self.log.warning("Cancelling reservations...");
                     for (var section in items) {
@@ -452,6 +519,8 @@ ShopTrade.prototype.load = function (callback) {
                             self.shop.reservations.cancel(items[section][i]);
                         }
                     }
+                } else {
+                    self.sfuminator.getBotsController().getBot(self.getAssignedBotUser().getSteamid()).injectLoadedShopTrade(self);
                 }
             });
         });

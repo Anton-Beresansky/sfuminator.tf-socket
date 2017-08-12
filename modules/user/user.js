@@ -65,7 +65,7 @@ User.prototype.getAvatar = function () {
 };
 
 User.prototype.getFirstLogin = function () {
-    if (this._canGetDatabaseParameter()) {
+    if (this._canGetDatabaseParameter("first_login")) {
         return this.first_login;
     } else {
         return new Date();
@@ -73,7 +73,7 @@ User.prototype.getFirstLogin = function () {
 };
 
 User.prototype.getLastLogin = function () {
-    if (this._canGetDatabaseParameter()) {
+    if (this._canGetDatabaseParameter("last_login")) {
         return this.last_login;
     } else {
         return new Date();
@@ -81,7 +81,7 @@ User.prototype.getLastLogin = function () {
 };
 
 User.prototype.getLastVisit = function () {
-    if (this._canGetDatabaseParameter()) {
+    if (this._canGetDatabaseParameter("last_visit")) {
         return this.last_visit;
     } else {
         return new Date();
@@ -89,7 +89,7 @@ User.prototype.getLastVisit = function () {
 };
 
 User.prototype.getNumberOfTrades = function () {
-    if (this._canGetDatabaseParameter()) {
+    if (this._canGetDatabaseParameter("numberOfTrades")) {
         return this.numberOfTrades;
     } else {
         return 0;
@@ -100,7 +100,7 @@ User.prototype.getNumberOfTrades = function () {
  * @returns {Wallet}
  */
 User.prototype.getWallet = function () {
-    if (this._canGetDatabaseParameter()) {
+    if (this._canGetDatabaseParameter("wallet")) {
         return this.wallet;
     } else {
         return new Wallet(this);
@@ -319,11 +319,11 @@ User.prototype.updateDatabase = function () {
     });
 };
 
-User.prototype._canGetDatabaseParameter = function () {
+User.prototype._canGetDatabaseParameter = function (parameter) {
     if (this.databaseHasBeenLoaded) {
         return true;
     } else {
-        this.log.error("Requesting parameter that hasn't been loaded from database yet")
+        this.log.error("Requesting parameter '" + parameter + "' that hasn't been loaded from database yet")
     }
 };
 

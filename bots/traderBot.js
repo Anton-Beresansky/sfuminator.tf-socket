@@ -221,6 +221,18 @@ TraderBot.prototype.createSteamTrade = function (shopTrade) {
     return steamTrade;
 };
 
+TraderBot.prototype.injectLoadedShopTrade = function (shopTrade) {
+    this.log.debug("Injecting loaded shopTrade");
+    if (shopTrade.getStatus() === TradeConstants.status.SENT) {
+        var steamTrade = this.createSteamTrade(shopTrade);
+        steamTrade.tradeOfferID = shopTrade.getStatusInfo();
+        this._bindShopTrade(shopTrade);
+        steamTrade._startListening();
+    } else {
+        this.log.warning("We can reload this trade :( ..well we never sent it.. soon or later he will cancel. Sorry!!");
+    }
+};
+
 TraderBot.prototype.sendTradingMessage = function (shopTrade, message) {
     var partnerSteamid = shopTrade.getPartner().getSteamid();
     if (this.steamClient.isFriend(partnerSteamid) && !shopTrade.isUsingTradeOfferToken()) {

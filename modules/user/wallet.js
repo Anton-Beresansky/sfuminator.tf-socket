@@ -37,6 +37,7 @@ Wallet.prototype.getBalance = function () {
 };
 
 Wallet.prototype.updateBalance = function (delta) {
+    this.log.debug("Updating wallet: " + delta);
     this.balance += delta;
     var self = this;
     this.db.connect(function (connection) {
@@ -53,7 +54,7 @@ Wallet.prototype.withdraw = function (callback) {
             return false;
         }
         if (this.user.canTrade()) {
-            var trade = this.user.makeShopTrade([]);
+            var trade = this.user.makeShopTrade({});
             trade.setMode("offer");
             trade.setAsWithdrawTrade();
             trade.getCurrencyHandler().forceStartingBalance(new Price(-this.getBalance().toScrap(), "scrap"));
