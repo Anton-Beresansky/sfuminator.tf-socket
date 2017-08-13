@@ -7,6 +7,18 @@ var events = require("events");
 /*
 
  TODO FIX On new item (ownmarket) can't click on old items (Maybe not on fresh backpack, coz own market doesn't fresh, but check injection)
+ > Seems that when editing price on a certain item that one is not the actual target therefore when selling there's no market price set
+ > and you get error
+
+ 13:27 - xosmin: and  on a side note, i know you dont put  value on ks and paints, but maybe you could give it a try for skins
+ 13:28 - xosmin: ks, strange, festivized etc
+ 13:29 - Ax_6: Do you mean value as in showing the pain in the shop? Because skins are not priced if not by users
+ 13:29 - Ax_6: paint*
+ 13:30 - xosmin: for example, i have a ks rustic shotgun in the bp
+ 13:30 - xosmin: the bot sees it as a regular one
+ 13:30 - xosmin: even if i price is higher than a non-ks, the buyer wont know it's ks
+ 13:33 - xosmin: and you might wanna put a limit on garbage items to save bot's bp like giftapult eternaween etc
+ 13:33 - Ax_6: Yeah there's already a limit no worries
 
  */
 
