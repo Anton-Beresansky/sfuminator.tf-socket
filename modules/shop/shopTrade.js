@@ -356,7 +356,7 @@ ShopTrade.prototype.injectSteamTrade = function (steamTrade) {
             this.steamTrade.addMyItem(this.assets[i].getTradeOfferAsset());
         }
     }
-    if (this.isWithdrawTrade()) {
+    if (this.isWithdrawTrade() || this.isMarketTrade()) {
         this.steamTrade.setMaxMakeRetries(1);
     }
 };
