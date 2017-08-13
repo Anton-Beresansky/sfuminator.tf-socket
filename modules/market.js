@@ -437,6 +437,7 @@ MarketItem.prototype.setAsAvailable = function () {
 };
 
 MarketItem.prototype.editPrice = function (marketPrice) {
+    this.market.log.debug("Editing item price: " + this.getID() + " -> " + marketPrice.toScrap());
     var taxedPrice = this.market.taxPrice(marketPrice);
     this.taxed_price = taxedPrice;
     this.market_price = marketPrice;
