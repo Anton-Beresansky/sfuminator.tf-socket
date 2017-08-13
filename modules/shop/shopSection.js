@@ -225,8 +225,7 @@ Section.prototype.getCompressedSchemaItemIndex = function (shopItem) {
     if (shopItem.isTF2Item()) {
         for (var i = 0; i < this.compressedItems.length; i += 1) {
             if (
-                this.compressedItems[i][CompressionLookup.schema.defindex] === shopItem.getItem().getDefindex() &&
-                this.compressedItems[i][CompressionLookup.schema.quality] === shopItem.getItem().getQuality()
+                this.compressedItems[i][CompressionLookup.schema.name] === shopItem.getItem().getFullName()
             ) {
                 return i;
             }
