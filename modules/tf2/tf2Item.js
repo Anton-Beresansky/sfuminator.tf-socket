@@ -159,7 +159,9 @@ TF2Item.prototype.injectPrice = function (price) {
  * @returns {Price}
  */
 TF2Item.prototype.getPrice = function () {
-    if (this.isPriced()) {
+    if (this.isDecorated() || this.isAustralium()) {
+        return new Price(0);
+    } else if (this.isPriced()) {
         return new Price(this.absolute_price);
     } else {
         return new Price(0);
