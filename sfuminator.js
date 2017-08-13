@@ -306,7 +306,7 @@ Sfuminator.prototype.onAction = function (request, callback) {
                 if (this.shop.market.editItemPrice(parseInt(data.id), parseInt(data.price), request.getRequesterSteamid())) {
                     callback(this.responses.editMarketItemSuccess);
                 } else {
-                    callback(this.shop.market.getCannotEditPriceResponse(parseInt(data.id), parseInt(data.price)));
+                    callback(this.shop.market.getCannotEditPriceResponse(parseInt(data.id), parseInt(data.price), request.getRequesterSteamid()));
                 }
             }
             break;
