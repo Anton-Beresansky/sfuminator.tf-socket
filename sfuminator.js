@@ -302,10 +302,12 @@ Sfuminator.prototype.onAction = function (request, callback) {
             }
             break;
         case "editMarketItem":
-            if (this.shop.market.editItemPrice(parseInt(data.id), parseInt(data.price))) {
-                callback(this.responses.editMarketItemSuccess);
-            } else {
-                callback(this.shop.market.getCannotEditPriceResponse(parseInt(data.id), parseInt(data.price)));
+            if (requester.privilege === "user") {
+                if (this.shop.market.editItemPrice(parseInt(data.id), parseInt(data.price), requester.getRequesterSteamid())) {
+                    callback(this.responses.editMarketItemSuccess);
+                } else {
+                    callback(this.shop.market.getCannotEditPriceResponse(parseInt(data.id), parseInt(data.price)));
+                }
             }
             break;
         case "last_trades":
