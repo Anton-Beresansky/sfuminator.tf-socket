@@ -122,8 +122,8 @@ Market.prototype.taxPrice = function (price) {
     return new Price(parseInt(price.toScrap() * (1 - this.shop.getMarketRatio()) + 0.5), "scrap");
 };
 
-Market.prototype.editItemPrice = function (shopId, scrapPrice) {
-    if (this.canEditPrice(shopId, scrapPrice)) {
+Market.prototype.editItemPrice = function (shopId, scrapPrice, requesterSteamid) {
+    if (this.canEditPrice(shopId, scrapPrice, requesterSteamid)) {
         for (var i = 0; i < this.items.length; i += 1) {
             if (this.items[i].shop_id === shopId) {
                 this.items[i].editPrice(new Price(scrapPrice, "scrap"));
@@ -135,23 +135,27 @@ Market.prototype.editItemPrice = function (shopId, scrapPrice) {
     return false;
 };
 
-Market.prototype.canEditPrice = function (shopId, scrapPrice) {
-    return !this.getCannotEditPriceResponse(shopId, scrapPrice);
+Market.prototype.canEditPrice = function (shopId, scrapPrice, requesterSteamid) {
+    return !this.getCannotEditPriceResponse(shopId, scrapPrice, requesterSteamid);
 };
 
-Market.prototype.getCannotEditPriceResponse = function (shopId, scrapPrice) {
+Market.prototype.getCannotEditPriceResponse = function (shopId, scrapPrice, requesterSteamid) {
     if (!isNaN(scrapPrice) && !isNaN(shopId)) {
         var marketItem = this.getItem(shopId);
         var marketPrice = new Price(scrapPrice, "scrap");
         if (marketItem) {
-            if (this.checkPrice(marketItem.getShopItem(), marketPrice)) {
-                if (marketItem.isCooldownDecayed()) {
-                    return false;
+            if (marketItem.getMarketer() === requesterSteamid) {
+                if (this.checkPrice(marketItem.getShopItem(), marketPrice)) {
+                    if (marketItem.isCooldownDecayed()) {
+                        return false;
+                    } else {
+                        return this.ajaxResponses.editPriceCooldown((MarketItem.EDIT_COOLDOWN_TIME - marketItem.getCooldownTime()) / 1000);
+                    }
                 } else {
-                    return this.ajaxResponses.editPriceCooldown((MarketItem.EDIT_COOLDOWN_TIME - marketItem.getCooldownTime()) / 1000);
+                    return this.getCannotSetPriceResponse(marketItem.getShopItem(), marketPrice);
                 }
             } else {
-                return this.getCannotSetPriceResponse(marketItem.getShopItem(), marketPrice);
+                return this.ajaxResponses.error;
             }
         } else {
             return this.ajaxResponses.itemNotFound;
