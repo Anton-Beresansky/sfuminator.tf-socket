@@ -202,6 +202,8 @@ Section.prototype.commitAdds = function () {
             } else {
                 this.compressedItems.push(compressedItem);
             }
+        } else {
+            this.log.error("HOLY FUCKING SHIT THIS ERROR OCCURRED");
         }
     }
 };
