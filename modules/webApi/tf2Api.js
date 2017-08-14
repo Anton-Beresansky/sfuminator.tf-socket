@@ -87,6 +87,7 @@ TF2Api.prototype.loadCurrencies = function (callback) {
 TF2Api.prototype.loadItemSchema = function (callback) {
     this.emit("debug", "Loading schema...");
     var self = this;
+    this.fullSchema = JSON.parse(FS.readFileSync("./../tf2Schema.json"));
     this.db.connect(function (connection) {
         connection.query(self._getSelectFullSchemaQuery(), function (schema) {
             connection.release();
@@ -415,10 +416,11 @@ TF2Api.prototype._parseDecoratedRarities = function () {
 TF2Api.prototype.saveSchema = function (newVersion, schema, callback) {
     this.emit("debug", "Saving schema (" + newVersion + ") ...");
     var self = this;
-    var items = schema.result.items;
+    this.fullSchema = schema.result;
+    FS.writeFileSync("./../tf2Schema.json", JSON.stringify(this.fullSchema));
     this.db.connect(function (connection) {
         connection.beginTransaction(function () {
-            connection.query(self._getInsertItemsQuery(connection, items), function () {
+            connection.query(self._getInsertItemsQuery(connection, schema.result.items), function () {
                 connection.query(self._getInsertSchemaVersionQuery(newVersion), function () {
                     connection.commitRelease();
                     callback();

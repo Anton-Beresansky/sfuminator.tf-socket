@@ -73,7 +73,8 @@ TF2Item.prototype.getFullName = function () {
     if (!this.full_name) {
         var qualityName = this.getQualityName();
         this.full_name = ((qualityName === "Unique" || this.isDecorated()) ? "" : (qualityName + " "))
-            + this.getName() + (this.isDecorated() ? (" (" + this.getDecoratedWearingName() + ")") : "");
+            + this.getName() + (this.isDecorated() ? (" (" + this.getDecoratedWearingName() + ")") : "")
+            + (this.isUnusual() ? (" (" + this.getParticleName() + ")") : "");
     }
     return this.full_name;
 };
@@ -197,6 +198,10 @@ TF2Item.prototype.isPaint = function () {
 
 TF2Item.prototype.isDecorated = function () {
     return this.getQuality() === TF2Constants.quality.DecoratedWeapon;
+};
+
+TF2Item.prototype.getParticleName = function () {
+    return this.particle_name;
 };
 
 TF2Item.prototype.getDecoratedWearingName = function () {

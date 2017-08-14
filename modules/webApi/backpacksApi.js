@@ -267,6 +267,13 @@ BackpacksApi.prototype.mergeItemWithSchemaItem = function (item, schemaItem) {
     if (item.quality === 5 && this._itemHasAttribute(134, item)) {
         var attribute = this._getItemAttribute(134, item);
         additional = attribute.float_value;
+        var particles = this.tf2.fullSchema.attribute_controlled_attached_particles;
+        for (var i = 0; i < particles.length; i += 1) {
+            if (particles[i].id === additional) {
+                item.particle_name = particles[i].name;
+                break;
+            }
+        }
     } else if (item.quality === 11 && this._itemHasAttribute(2027, item)) {
         additional = "australium";
     } else if (this._itemHasAttribute(187, item)) {
