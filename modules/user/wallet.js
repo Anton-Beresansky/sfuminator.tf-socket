@@ -72,13 +72,12 @@ Wallet.prototype.withdraw = function (callback) {
 Wallet.prototype.load = function () {
     var self = this;
     this.db.connect(function (connection) {
-        connection.query(self.queries.load(self.getOwner()), function (result) {
+        connection.query(self.queries.load(self.getOwner()), function (result, isEmpty) {
             connection.release();
-            var wallet = result[0].wallet;
-            if (!isNaN(wallet)) {
-                self.balance = wallet
+            if (!isEmpty && !isNaN(result[0].wallet)) {
+                self.balance = result[0].wallet
             } else {
-                self.log.error("No int value found for wallet!? Defaulting to 0");
+                self.log.error("No value found for wallet!? Defaulting to 0");
                 self.balance = 0;
             }
         });

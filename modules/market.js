@@ -6,10 +6,13 @@ var events = require("events");
 
 /*
 
+ TODO Add price history to prevent crazy market prices
+
  TODO FIX On new item (ownmarket) can't click on old items (Maybe not on fresh backpack, coz own market doesn't fresh, but check injection)
  > Seems that when editing price on a certain item that one is not the actual target therefore when selling there's no market price set
  > and you get error
 
+ TODO Read and think about this
  13:27 - xosmin: and  on a side note, i know you dont put  value on ks and paints, but maybe you could give it a try for skins
  13:28 - xosmin: ks, strange, festivized etc
  13:29 - Ax_6: Do you mean value as in showing the pain in the shop? Because skins are not priced if not by users
