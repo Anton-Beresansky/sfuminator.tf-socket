@@ -192,12 +192,16 @@ Section.prototype.commitAdds = function () {
     this.items = this.items.concat(this.toAdd);
 
     for (var i = 0; i < this.toAdd.length; i += 1) {
-        var compressedItem = this.toAdd[i].getCompressed();
-        var index = this.getCompressedSchemaItemIndex(this.toAdd[i]);
-        if (index >= 0) {
-            this.compressedItems[index][CompressionLookup.items_group].push(compressedItem[CompressionLookup.items_group][0]);
-        } else {
-            this.compressedItems.push(compressedItem);
+        var shopItem = this.toAdd[i];
+        var compressedItem = shopItem.getCompressed();
+        var shittyBugEscaped = !(shopItem.getPrice() === 0 && this.shop !== "market");
+        if (shittyBugEscaped) {
+            var index = this.getCompressedSchemaItemIndex(this.toAdd[i]);
+            if (index >= 0) {
+                this.compressedItems[index][CompressionLookup.items_group].push(compressedItem[CompressionLookup.items_group][0]);
+            } else {
+                this.compressedItems.push(compressedItem);
+            }
         }
     }
 };
