@@ -2,6 +2,7 @@ module.exports = Stats;
 
 var Logs = require("../lib/logs.js");
 var LastTrades = require('./stats/lastTrades.js');
+var PricesHistory = require('./stats/pricesHistory.js');
 
 /**
  * General purpose Stats class
@@ -26,6 +27,7 @@ function Stats(sfuminator) {
     this.stats = {};
     this.max_new_items = 10;
     this.lastTrades = new LastTrades(this);
+    this.pricesHistory = new PricesHistory(this);
     this.log = new Logs({applicationName: "Stats"});
 }
 
