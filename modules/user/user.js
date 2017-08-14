@@ -180,6 +180,18 @@ User.prototype.hasActiveShopTrade = function () {
     return this.hasShopTrade() && this.shopTrade.isActive();
 };
 
+User.prototype.flagTradeActionRequested = function () {
+    this.tradeOfferActionRequestFlag = true;
+};
+
+User.prototype.unflagTradeActionRequested = function () {
+    this.tradeOfferActionRequestFlag = false;
+};
+
+User.prototype.isTradeActionRequestedFlagged = function () {
+    return this.tradeOfferActionRequestFlag === true;
+};
+
 /**
  * Get user Shop Trade
  * @returns {ShopTrade}

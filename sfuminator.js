@@ -260,6 +260,7 @@ Sfuminator.prototype.onAction = function (request, callback) {
             break;
         case "requestTradeOffer":
         case "requestManualTrade":
+        case "withdraw":
             if (requester.privilege === "user") {
                 this.requestTrade(request, ((request.getAction() === "requestTradeOffer") ? "offer" : "manual"), callback);
             } else {
@@ -293,12 +294,6 @@ Sfuminator.prototype.onAction = function (request, callback) {
                 });
             } else {
                 callback(this.responses.notLogged);
-            }
-            break;
-        case "withdraw":
-            var user = this.users.get(request.getRequester().id);
-            if (user.getWallet().withdraw(callback)) {
-                user.setTradeRequestPage(request);
             }
             break;
         case "editMarketItem":
@@ -431,17 +426,31 @@ Sfuminator.prototype.getUpdates = function (request) {
  */
 Sfuminator.prototype.requestTrade = function (request, mode, callback) {
     var data = request.getData();
-    if (!data.hasOwnProperty("items") || (typeof data.items !== "object") || this.responses.make().isObjectEmpty(data.items) || !data.items) {
+    var user = this.users.get(request.getRequesterSteamid());
+    if (user.isTradeActionRequestedFlagged()) {
+        callback(this.responses.alreadyInTrade);
+        return;
+    }
+    user.flagTradeActionRequested();
+    var finalize = function (response) {
+        user.unflagTradeActionRequested();
+        callback(response);
+    };
+    if ((!data.hasOwnProperty("items") || (typeof data.items !== "object") || this.responses.make().isObjectEmpty(data.items) || !data.items)
+        && request.getAction() !== "withdraw") {
         callback(this.responses.noItems);
         return;
     }
-    var user = this.users.get(request.getRequesterSteamid());
-    if (user.canTrade()) {
+    if (request.getAction() === "withdraw") {
+        if (user.getWallet().withdraw(finalize)) {
+            user.setTradeRequestPage(request);
+        }
+    } else if (user.canTrade()) {
         var trade = this.getTradeObjectFromRequest(request, mode);
-        this.startTrade(trade, callback);
+        this.startTrade(trade, finalize);
         user.setTradeRequestPage(request);
     } else {
-        callback(this.getCannotTradeResponse(user));
+        finalize(this.getCannotTradeResponse(user));
     }
 };
 
