@@ -215,10 +215,10 @@ ShopItem.prototype.isCurrency = function () {
 ShopItem.prototype.getPrice = function () {
     if (this.isMineItem() && !this.isCurrency()) {
         return this.getMinePrice();
-    } else if (this.isMarketItem()) {
-        return this.marketPrice || this.getMinePrice() || new Price(0);
     } else if (this.isMarketed()) {
         return this.market.getItem(this.getID()).getPrice();
+    } else if (this.isMarketItem()) {
+        return this.marketPrice || this.getMinePrice() || new Price(0);
     } else {
         return this.item.getPrice();
     }
