@@ -75,7 +75,7 @@ LastTrades.prototype.parse = function (result) {
         if (((i + 1) === result.length) || result[i + 1].trade_id !== tradeID) {
             trades.push({
                 trade_id: r.trade_id,
-                last_update_date: r.last_update_date,
+                last_update_date: r.trade_last_update_date,
                 partner: {
                     steamid: r.partner_steamid,
                     name: r.partner_name,
