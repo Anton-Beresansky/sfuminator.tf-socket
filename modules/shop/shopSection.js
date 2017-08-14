@@ -194,7 +194,7 @@ Section.prototype.commitAdds = function () {
     for (var i = 0; i < this.toAdd.length; i += 1) {
         var shopItem = this.toAdd[i];
         var compressedItem = shopItem.getCompressed();
-        var shittyBugEscaped = !(shopItem.getPrice() === 0 && this.shop !== "market");
+        var shittyBugEscaped = !(shopItem.getPrice().toScrap() === 0 && this.shop !== "market");
         if (shittyBugEscaped) {
             var index = this.getCompressedSchemaItemIndex(this.toAdd[i]);
             if (index >= 0) {
