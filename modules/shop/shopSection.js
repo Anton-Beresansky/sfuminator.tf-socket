@@ -203,7 +203,7 @@ Section.prototype.commitAdds = function () {
                 this.compressedItems.push(compressedItem);
             }
         } else {
-            this.log.error("HOLY FUCKING SHIT THIS ERROR OCCURRED");
+            this.log.error("HOLY FUCKING SHIT THIS ERROR OCCURRED " + shopItem.getID());
         }
     }
 };
