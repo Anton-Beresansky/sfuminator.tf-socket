@@ -394,7 +394,7 @@ Market.QUERIES = {
 
     },
     loadItems: function () {
-        return "SELECT `shop_id`,`item_id`,`owner`,`market_price`,`taxed_price`,`status`,`last_update_date` FROM `marketed_items` " +
+        return "SELECT `shop_id`,`item_id`,`original_id`,`owner`,`market_price`,`taxed_price`,`status`,`last_update_date` FROM `marketed_items` " +
             "WHERE `status`=" + Market.ITEM_STATUS.AVAILABLE + " OR `status`=" + Market.ITEM_STATUS.IN_TRANSIT;
     },
     createTable: function () {
