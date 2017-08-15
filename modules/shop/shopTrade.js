@@ -282,7 +282,8 @@ ShopTrade.prototype.setMarketItemsAsSold = function () {
     for (var shop in this.items) {
         for (var i = 0; i < this.items[shop].length; i += 1) {
             var itemID = this.items[shop][i];
-            var marketItem = this.market.getItem(itemID);
+            var shopItem = this.shop.getItem(itemID);
+            var marketItem = this.market.getItem(shopItem ? shopItem : itemID);
             if (marketItem) {
                 if (this.getPartner().getSteamid() === marketItem.getMarketer()) {
                     marketItem.setAsWithdrawn();
