@@ -3,6 +3,7 @@ module.exports = Market;
 var Price = require('./price.js');
 var LogLog = require('log-log');
 var events = require("events");
+var ShopItem = require('./shop/inventory/shopItem.js');
 
 /*
 
@@ -98,24 +99,66 @@ Market.prototype.marketerExists = function (steamid) {
     return false;
 };
 
-Market.prototype.itemExists = function (shopId) {
-    return this.getItem(shopId) !== false;
+Market.prototype.itemExists = function (shopItem) {
+    return this.getItem(shopItem) !== false;
 };
 
 /**
- * @param id
+ * @param shopItem {ShopItem|Number}
  * @returns {MarketItem}
  */
-Market.prototype.getItem = function (id) {
+Market.prototype.getItem = function (shopItem) {
     var i;
-    for (i = 0; i < this.items.length; i += 1) {
-        if (this.items[i].item_id === id) { //This is the very unique id
-            return this.items[i];
+    //So. Let's check first if this thin is an id
+    if (!(shopItem instanceof ShopItem)) {
+        var id = shopItem;
+        for (i = 0; i < this.items.length; i += 1) {
+            if (this.items[i].item_id === id) { //This is the very unique id
+                return this.items[i];
+            }
         }
-    }
-    for (i = 0; i < this.items.length; i += 1) {
-        if (this.items[i].shop_id === id) { //Backup on shop id
-            return this.items[i];
+        for (i = 0; i < this.items.length; i += 1) {
+            if (this.items[i].shop_id === id) { //Backup on shop id
+                return this.items[i];
+            }
+        }
+    } else {
+        //Else it's a shop item.
+
+        //First thing first let's match the original id
+        var originalID = shopItem.getItem().getOriginalID();
+        var foundMarketItems = [];
+        for (i = 0; i < this.items.length; i += 1) {
+            var marketItem = this.items[i];
+            if (marketItem.original_id === originalID) {
+                //Now that we have matched the original id, let's double check on the shop id
+                if (marketItem.shop_id === shopItem.getID()) {
+                    //Good this for sure didn't have any problem
+                    return marketItem;
+                } else {
+                    //I don't like this and i think is where the bug happens, but with the original id i guess
+                    foundMarketItems.push(marketItem); //just to be sure because original_id is not unique
+                    this.log.warning("YEP I THINK WE SAVED IT, SHOP ID WASN'T MATCHING BUT ORIGINAL ID WAS");
+                }
+            }
+        }
+        if (foundMarketItems.length) {
+            foundMarketItems.sort(function (a, b) {
+                if (a.last_update_date > b.last_update_date) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            });
+            return foundMarketItems[0];
+        } else {
+            //if no original id match, we backup on shop id
+            for (i = 0; i < this.items.length; i += 1) {
+                if (this.items[i].shop_id === shopItem.getID()) { //Backup on shop id
+                    return this.items[i];
+                }
+            }
+            //Cross your fingers :D
         }
     }
     return false;
@@ -144,7 +187,7 @@ Market.prototype.canEditPrice = function (shopId, scrapPrice, requesterSteamid) 
 
 Market.prototype.getCannotEditPriceResponse = function (shopId, scrapPrice, requesterSteamid) {
     if (!isNaN(scrapPrice) && !isNaN(shopId)) {
-        var marketItem = this.getItem(shopId);
+        var marketItem = this.getItem(this.shop.getItem(shopId));
         var marketPrice = new Price(scrapPrice, "scrap");
         if (marketItem) {
             if (marketItem.getMarketer() === requesterSteamid) {
@@ -302,6 +345,7 @@ Market.prototype._localImport = function (shopItems, itemsStatus) {
         this.items.push(new MarketItem(this, {
             shop_id: item.getID(),
             item_id: item.getItem().getID(),
+            original_id: item.getItem().getOriginalID(),
             owner: item.getOwner(),
             market_price: item.marketPrice.toScrap(),
             taxed_price: this.taxPrice(item.marketPrice).toScrap(),
@@ -322,10 +366,11 @@ Market.prototype._databaseImport = function (shopItems, itemsStatus) {
 
 Market.QUERIES = {
     insertItems: function (shopItems, itemsStatus) {
-        var query = "INSERT INTO `marketed_items` (`shop_id`, `item_id`, `owner`, `market_price`, `taxed_price`, `status`, `last_update_date`) VALUES ";
+        var query = "INSERT INTO `marketed_items` (`shop_id`, `item_id`, `original_id`, `owner`, `market_price`, `taxed_price`, `status`, `last_update_date`) VALUES ";
         for (var i = 0; i < shopItems.length; i += 1) {
             var item = shopItems[i];
-            query += "(" + item.getID() + "," + item.getItem().getID() + ",'" + item.getOwner() + "',"
+            console.log("Inserting item to market.. " + item.getID() + " ~ " + item.getItem().getOriginalID());
+            query += "(" + item.getID() + "," + item.getItem().getID() + "," + item.getItem().getOriginalID() + ",'" + item.getOwner() + "',"
                 + item.marketPrice.toScrap() + "," + item.shop.market.taxPrice(item.marketPrice).toScrap()
                 + "," + (!isNaN(itemsStatus) ? itemsStatus : Market.ITEM_STATUS.AVAILABLE) + ", NOW()), ";
         }
@@ -356,13 +401,15 @@ Market.QUERIES = {
         return "CREATE TABLE IF NOT EXISTS `marketed_items` ("
             + "`shop_id` bigint(20),"
             + "`item_id` bigint(20),"
+            + "`original_id` bigint(20),"
             + "`owner` VARCHAR(17), "
             + "`market_price` INT, "
             + "`taxed_price` INT, "
             + "`status` TINYINT, "
             + "`last_update_date` DATETIME,"
             + "PRIMARY KEY (`shop_id`,`item_id`),"
-            + "KEY (`owner`)"
+            + "KEY (`owner`),"
+            + "KEY(`original_id`)"
             + ")"
             + "ENGINE = InnoDB "
             + "DEFAULT CHARACTER SET = utf8 "
@@ -381,6 +428,7 @@ function MarketItem(market, data) {
     this.shop = this.market.shop;
     this.shop_id = data.shop_id;
     this.item_id = data.item_id;
+    this.original_id = data.original_id;
     this.owner = data.owner;
     this.market_price = new Price(data.market_price, "scrap");
     this.taxed_price = new Price(data.taxed_price, "scrap");

@@ -188,11 +188,15 @@ ShopItem.prototype.isMarketItem = function () {
 };
 
 ShopItem.prototype.isMarketed = function () {
-    return this.market.itemExists(this.getID());
+    return this.market.itemExists(this);
 };
 
 ShopItem.prototype.getMarketer = function () {
-    return this.isMarketed() ? this.market.getItem(this.getID()).getMarketer() : false;
+    return this.isMarketed() ? this.getMarketItem().getMarketer() : false;
+};
+
+ShopItem.prototype.getMarketItem = function () {
+    return this.market.getItem(this);
 };
 
 ShopItem.prototype.isPartnerItem = function () {
@@ -216,7 +220,7 @@ ShopItem.prototype.getPrice = function () {
     if (this.isMineItem() && !this.isCurrency()) {
         return this.getMinePrice();
     } else if (this.isMarketed()) {
-        return this.market.getItem(this.getID()).getPrice();
+        return this.getMarketItem().getPrice();
     } else if (this.isMarketItem()) {
         return this.marketPrice || this.getMinePrice() || new Price(0);
     } else {
