@@ -7,6 +7,8 @@ var ShopItem = require('./shop/inventory/shopItem.js');
 
 /*
 
+ TODO Maybe add sold market items history?
+
  TODO Add price history to prevent crazy market prices
 
  TODO FIX On new item (ownmarket) can't click on old items (Maybe not on fresh backpack, coz own market doesn't fresh, but check injection)
