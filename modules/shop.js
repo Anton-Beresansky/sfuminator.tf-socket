@@ -234,7 +234,7 @@ Shop.prototype.makeMarketerInventory = function (steamid, requesterSteamid) {
             response.taxed = {};
             var items = section.getItems();
             for (var i = 0; i < items.length; i += 1) {
-                response.taxed[items[i].getID()] = this.market.getItem(items[i].getID()).getTaxedPrice().toScrap();
+                response.taxed[items[i].getID()] = this.market.getItem(items[i]).getTaxedPrice().toScrap();
             }
         }
     }
