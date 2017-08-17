@@ -442,9 +442,10 @@ Sfuminator.prototype.requestTrade = function (request, mode, callback) {
         return;
     }
     if (request.getAction() === "withdraw") {
-        if (user.getWallet().withdraw(finalize)) {
-            user.setTradeRequestPage(request);
-        }
+        finalize(this.responses.withdrawDisabled);
+        //if (user.getWallet().withdraw(finalize)) {
+        //    user.setTradeRequestPage(request);
+        //}
     } else if (user.canTrade()) {
         var trade = this.getTradeObjectFromRequest(request, mode);
         this.startTrade(trade, finalize);
