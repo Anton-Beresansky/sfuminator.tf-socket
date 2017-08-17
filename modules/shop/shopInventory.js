@@ -165,22 +165,21 @@ ShopInventory.prototype._parseTF2ItemsToAdd = function (newItems) {
 
     for (var i = 0; i < newItems.length; i += 1) {
 
-        var item_exist = false;
+        var found_new_id = true;
         for (var z = 0; z < this.items.length; z += 1) {
             if (this.items[z].isTF2Item()) {
                 if (newItems[i].getID() === this.items[z].getItem().getID()) {
-                    item_exist = true;
-                    //If item already exist, tf2item gets updated
-                    //This will handle new ids due to bot ownership change
-                    this.items[z].item = newItems[i];
+                    found_new_id = false;
+                    this.items[z].item = newItems[i]; //Just to be sure
                     break;
                 }
             }
         }
 
-        if (!item_exist) {
+        if (found_new_id) {
             var itemToAdd = this.makeShopItem(newItems[i]);
             if (itemToAdd) {
+                this.log.debug("Adding item to shop: " + itemToAdd.getID() + " ~ " + itemToAdd.getItem().getFullName());
                 itemsToAdd.push(itemToAdd);
             }
         }
@@ -198,22 +197,26 @@ ShopInventory.prototype._parseTF2ItemsToRemove = function (newItems) {
     var itemsToRemove = [];
 
     for (var i = 0; i < this.items.length; i += 1) {
-        if (this.items[i].isTF2Item()) {
+        var oldShopItem = this.items[i];
 
+        if (oldShopItem.isTF2Item()) {
             var item_exist = false;
             for (var j = 0; j < newItems.length; j += 1) {
-                if (this.items[i].getItem().getID() === newItems[j].getID()) {
+
+                var newShopItem = new ShopItem(this.shop, newItems[j]);
+                if (this.ids.isLinked(newShopItem) && (oldShopItem.getID() === this.ids.lookup(newShopItem))) {
                     item_exist = true;
                     break;
                 }
             }
 
             if (!item_exist
-                && !this.shop.getBotUser(this.items[i].getItem().getOwner()).getTF2Backpack().hasErrored()
-                && !this.items[i].isBeingTransferred()
+                && !this.shop.getBotUser(oldShopItem.getItem().getOwner()).getTF2Backpack().hasErrored()
+                && !oldShopItem.isBeingTransferred()
             ) {
-                itemsToRemove.push(this.items[i]);
-                this.ids.unlink(this.items[i]);
+                this.log.debug("Removing item from shop: " + oldShopItem.getID() + " ~ " + oldShopItem.getItem().getFullName());
+                itemsToRemove.push(oldShopItem);
+                this.ids.unlink(oldShopItem);
             }
         }
     }
@@ -228,8 +231,8 @@ ShopInventory.prototype._parseTF2ItemsToRemove = function (newItems) {
  */
 ShopInventory.prototype.makeShopItem = function (item) {
     var shopItem = new ShopItem(this.shop, item);
-    if (this.ids.hasLookup(shopItem) && this.getItem(this.ids.make(shopItem))) {
-        var itemID = this.ids.make(shopItem);
+    if (this.ids.isLinked(shopItem) && this.getItem(this.ids.lookup(shopItem))) {
+        var itemID = this.ids.lookup(shopItem);
         for (var i = 0; i < this.items.length; i += 1) {
             if (this.items[i].getID() === itemID) {
                 this.items[i].item = item;
