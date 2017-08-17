@@ -140,7 +140,8 @@ function AjaxResponses(sfuminator) {
             message: "Sorry, price can be modified in " + ((time > 60) ? ((parseInt(time / 60) + 1) + " minutes") : ((parseInt(time) + 1) + " seconds")),
             code: "edit_price_cooldown"
         }
-    }
+    };
+    this.withdrawDisabled = {result: "error", message: "Withdraw is temporarily disabled.", code: "withdraw_disabled"};
 }
 
 /**
