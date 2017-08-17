@@ -28,12 +28,9 @@ function ShopItemIDs(db) {
  * @returns {Number} shop id associated
  */
 ShopItemIDs.prototype.make = function (shopItem) {
-    var unique_id = shopItem.getUniqueItemID();
-    var game_code = shopItem.getGameCode();
-    this.log.debug("Making id for unique_id: " + unique_id + ", game: " + game_code, 1);
-
-    if (this.exist(unique_id, game_code)) {
-        return this.lookup(unique_id, game_code);
+    this.log.debug("Making id for unique_id: " + shopItem.getUniqueItemID() + ", game: " + shopItem.getGameCode(), 1);
+    if (this.isLinked(shopItem)) {
+        return this.lookup(shopItem);
     } else {
         this.increase();
         this.link(shopItem);
@@ -41,7 +38,7 @@ ShopItemIDs.prototype.make = function (shopItem) {
     }
 };
 
-ShopItemIDs.prototype.hasLookup = function (shopItem) {
+ShopItemIDs.prototype.isLinked = function (shopItem) {
     return this.exist(shopItem.getUniqueItemID(), shopItem.getGameCode());
 };
 
@@ -71,12 +68,11 @@ ShopItemIDs.prototype.unlink = function (shopItem) {
 
 /**
  * Get shop id from item id, MUST check before with method ShopItemIDs.exist
- * @param {Number} unique_id
- * @param {Number} game_code
+ * @param {ShopItem} shopItem
  * @returns {Number} Shop id
  */
-ShopItemIDs.prototype.lookup = function (unique_id, game_code) {
-    return this.lookupTable[game_code][unique_id];
+ShopItemIDs.prototype.lookup = function (shopItem) {
+    return this.lookupTable[shopItem.getGameCode()][shopItem.getUniqueItemID()];
 };
 
 /**
