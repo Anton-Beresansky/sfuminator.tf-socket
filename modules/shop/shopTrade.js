@@ -214,8 +214,10 @@ ShopTrade.prototype.cancel = function (statusInfo) {
         this.log.debug("Found open steamTrade associated, cancelling first");
         this.steamTrade.cancel(function () {
             self.unsetSteamTrade();
-            self.log.debug("Trade has been cancelled, recalling cancel, statusInfo: " + statusInfo);
-            self.cancel(statusInfo);
+            if (self.isWithdrawTrade()) {
+                self.log.debug("Trade has been cancelled, recalling cancel, statusInfo: " + statusInfo);
+                self.cancel(statusInfo);
+            }
         });
         if (this.isWithdrawTrade()) {
             return;
