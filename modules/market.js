@@ -126,8 +126,12 @@ Market.prototype.getItem = function (shopItem) {
         }
     } else {
         //Else it's a shop item.
-
-        //First thing first let's match the original id
+        for (i = 0; i < this.items.length; i += 1) {
+            if (this.items[i].shop_id === shopItem.getID()) { //First option is checking shop id
+                return this.items[i];
+            }
+        }
+        //If there's no match on shop id we backup on original id
         var originalID = shopItem.getItem().getOriginalID();
         var foundMarketItems = [];
         for (i = 0; i < this.items.length; i += 1) {
@@ -153,14 +157,6 @@ Market.prototype.getItem = function (shopItem) {
                 }
             });
             return foundMarketItems[0];
-        } else {
-            //if no original id match, we backup on shop id
-            for (i = 0; i < this.items.length; i += 1) {
-                if (this.items[i].shop_id === shopItem.getID()) { //Backup on shop id
-                    return this.items[i];
-                }
-            }
-            //Cross your fingers :D
         }
     }
     return false;
