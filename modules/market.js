@@ -223,14 +223,18 @@ Market.prototype.checkPrice = function (shopItem, marketPrice) {
  * @param marketPrice {Price}
  */
 Market.prototype.getCannotSetPriceResponse = function (shopItem, marketPrice) {
-    if (this.taxPrice(marketPrice) > shopItem.getMinimumMarketPrice()) {
-        if (marketPrice.toKeys() < this.item_max_key_price) {
-            return false;
+    if (shopItem) {
+        if (this.taxPrice(marketPrice) > shopItem.getMinimumMarketPrice()) {
+            if (marketPrice.toKeys() < this.item_max_key_price) {
+                return false;
+            } else {
+                return this.ajaxResponses.marketPriceTooHigh;
+            }
         } else {
-            return this.ajaxResponses.marketPriceTooHigh;
+            return this.ajaxResponses.marketPriceTooLow;
         }
     } else {
-        return this.ajaxResponses.marketPriceTooLow;
+        return this.ajaxResponses.error;
     }
 };
 
