@@ -210,6 +210,16 @@ ShopTrade.prototype.setAsSent = function (tradeOfferID) {
  */
 ShopTrade.prototype.cancel = function (statusInfo) {
     var self = this;
+    if (this.getSteamTrade() && (this.getSteamTrade().getTradeOfferID() || this.getSteamTrade().isMaking())) {
+        this.log.debug("Found open steamTrade associated, cancelling first");
+        this.steamTrade.cancel(function () {
+            self.unsetSteamTrade();
+            self.log.debug("Trade has been cancelled, recalling cancel, statusInfo: " + statusInfo);
+            self.cancel(statusInfo);
+        });
+        return;
+    }
+
     this.dereserveShopItems();
     this.setStatus(TradeConstants.status.CLOSED);
     if (statusInfo) {
@@ -219,12 +229,6 @@ ShopTrade.prototype.cancel = function (statusInfo) {
     }
     this.clientChangeError = this._parseClientChangeError();
     this.commit();
-    if (this.hasSteamTrade()) {
-        this.log.debug("Found steamTrade associated, cancelling");
-        this.steamTrade.cancel(function () {
-            self.unsetSteamTrade();
-        });
-    }
     if (this.transferNeeded) {
         if (!this.transferCluster.isCompleted()) {
             this.log.debug("Cancelling transfer node");
