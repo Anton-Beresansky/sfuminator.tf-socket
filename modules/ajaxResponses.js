@@ -65,7 +65,7 @@ function AjaxResponses(sfuminator) {
     this.tradeRequestSuccess = function (trade) {
         return {result: "success", trade: trade.valueOf(), code: "success"};
     };
-    this.tradeCancelled = {result: "success", message: "Trade has been cancelled", code: "trade_cancelled"};
+    this.tradeCancelled = {result: "success", message: "Cancelling trade...", code: "trade_cancelled"};
     this.shopAssetsLimit = function (limit) {
         return {result: "error", message: "Sorry, you can buy only " + limit + " items per trade", code: "hat_limit"};
     };
