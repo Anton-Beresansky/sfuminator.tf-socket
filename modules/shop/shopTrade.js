@@ -217,7 +217,9 @@ ShopTrade.prototype.cancel = function (statusInfo) {
             self.log.debug("Trade has been cancelled, recalling cancel, statusInfo: " + statusInfo);
             self.cancel(statusInfo);
         });
-        return;
+        if (this.isWithdrawTrade()) {
+            return;
+        }
     }
 
     this.dereserveShopItems();
