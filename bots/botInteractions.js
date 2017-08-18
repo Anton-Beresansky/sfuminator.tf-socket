@@ -1235,7 +1235,7 @@ UserInteraction.prototype.isFirstGreeting = function () {
 
 UserInteraction.prototype.canBeRepped = function () {
     var o = this.user.getNumberOfTrades();
-    return o === 0 || o === 1 || o === 10;
+    return o === 1 || o === 10;
 };
 
 UserInteraction.prototype.isANewUser = function () {

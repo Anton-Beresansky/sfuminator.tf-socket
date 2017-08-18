@@ -320,7 +320,7 @@ TraderBot.prototype._bindShopTrade = function (shopTrade) {
         }
         if (shopTrade.isUsingTradeOfferToken()) {
             if (self.interactions.getInteraction(shopTrade.getPartner()).canBeRepped()) {
-                self.interactions.postReputationComment(partnerSteamid);
+                //self.interactions.postReputationComment(partnerSteamid);
             }
         }
     });
