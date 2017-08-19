@@ -179,7 +179,7 @@ ShopInventory.prototype._parseTF2ItemsToAdd = function (newItems) {
         if (found_new_id) {
             var itemToAdd = this.makeShopItem(newItems[i]);
             if (itemToAdd) {
-                this.log.debug("Adding item to shop: " + itemToAdd.getID() + " ~ " + itemToAdd.getItem().getFullName());
+                this.log.debug("Adding item to shop: " + itemToAdd.getID() + " ~ " + itemToAdd.getItem().getFullName(), 4);
                 itemsToAdd.push(itemToAdd);
             }
         }
@@ -214,7 +214,7 @@ ShopInventory.prototype._parseTF2ItemsToRemove = function (newItems) {
                 && !this.shop.getBotUser(oldShopItem.getItem().getOwner()).getTF2Backpack().hasErrored()
                 && !oldShopItem.isBeingTransferred()
             ) {
-                this.log.debug("Removing item from shop: " + oldShopItem.getID() + " ~ " + oldShopItem.getItem().getFullName());
+                this.log.debug("Removing item from shop: " + oldShopItem.getID() + " ~ " + oldShopItem.getItem().getFullName(), 4);
                 itemsToRemove.push(oldShopItem);
                 this.ids.unlink(oldShopItem);
             }

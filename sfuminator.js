@@ -42,7 +42,8 @@ function Sfuminator(webApi, db) {
         {name: "updateTradeStatus", delay: 1000, tag: "global"}, //1 Second
         {name: "preSmeltMetal", delay: 8 * 1000, tag: "internal"}, //8 Seconds
         {name: "manageBotItemsDistribution", delay: 15 * 60 * 1000, tag: "internal"}, //15 Minutes
-        {name: "cleanBuggedReservations_WhyDoIEvenHaveToPutSomethingLikeThis", delay: 15 * 60 * 1000, tag: "global"} //15 Minutes
+        {name: "cleanBuggedReservations_WhyDoIEvenHaveToPutSomethingLikeThis", delay: 15 * 60 * 1000, tag: "global"}, //15 Minutes
+        {name: "updateHistoryPrices", delay: 15 * 60 * 1000, tag: "internal"} //15 Minutes
     ]);
     /**
      * @type {AjaxResponses}
@@ -144,6 +145,9 @@ Sfuminator.prototype.bindInterrupts = function () {
     });
     this.interrupts.on("updateShopCurrentID", function () {
         self.shop.inventory.ids.updateCurrentID();
+    });
+    this.interrupts.on("updateHistoryPrices", function (){
+        self.stats.pricesHistory.update();
     });
 };
 

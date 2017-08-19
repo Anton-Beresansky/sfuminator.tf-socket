@@ -93,11 +93,14 @@ Shop.prototype.init = function () {
             self.reservations.load(function () {
                 self.log.debug("Loading shop ids");
                 self.inventory.ids.load(function () {
-                    self.log.debug("Loading market");
-                    self.market.load(function () {
-                        self.log.debug("Loading up inventory...");
-                        self.inventory.update(function () {
-                            self.emit("ready");
+                    self.log.debug("Loading prices history");
+                    self.sfuminator.stats.pricesHistory.onLoad(function () {
+                        self.log.debug("Loading market");
+                        self.market.load(function () {
+                            self.log.debug("Loading up inventory...");
+                            self.inventory.update(function () {
+                                self.emit("ready");
+                            });
                         });
                     });
                 });
