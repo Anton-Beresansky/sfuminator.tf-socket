@@ -102,7 +102,7 @@ PriceHistory.prototype.loadItemsPrices = function (callback) {
         for (var i = 0; i < result.length; i += 1) {
             var row = result[i];
             for (var name in self.itemsHistory) {
-                if (self.itemsHistory[name].uid === row.uid) {
+                if (self.itemsHistory[name].uid === row.item_uid) {
                     self.itemsHistory[name].scrapPrice = row.scrapPrice;
                     self.itemsHistory[name].last_update_date = new Date(row.sell_date);
                     break;
@@ -377,7 +377,7 @@ PriceHistory.QUERIES = {
         return query.slice(0, -1);
     },
     readItemsPrices: function () {
-        return "SELECT item_uid,scrapPrice,max(sell_date) FROM prices_history GROUP BY item_uid";
+        return "SELECT item_uid,scrapPrice,max(sell_date) as sell_date FROM prices_history GROUP BY item_uid";
     },
     read: function (latestID) {
         return "SELECT "

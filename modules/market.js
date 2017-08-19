@@ -49,6 +49,7 @@ function Market(shop) {
     this.queries = Market.QUERIES;
     this.items_limit = Market.ITEMS_LIMIT;
     this.item_max_key_price = Market.ITEM_MAX_KEY_PRICE;
+    this.item_max_price_ratio = Market.ITEM_MAX_PRICE_RATIO;
     this.ajaxResponses = this.sfuminator.responses;
     /**
      * @type {MarketItem[]}
@@ -61,7 +62,8 @@ function Market(shop) {
 require("util").inherits(Market, events.EventEmitter);
 
 Market.ITEMS_LIMIT = 12;
-Market.ITEM_MAX_KEY_PRICE = 100;
+Market.ITEM_MAX_KEY_PRICE = 30;
+Market.ITEM_MAX_PRICE_RATIO = 1.1;
 Market.ITEM_STATUS = {
     SOLD: 0, //Item successfully sold through shop
     AVAILABLE: 1, //Item is available in shop
@@ -224,7 +226,7 @@ Market.prototype.checkPrice = function (shopItem, marketPrice) {
  */
 Market.prototype.getCannotSetPriceResponse = function (shopItem, marketPrice) {
     if (shopItem) {
-        if (this.taxPrice(marketPrice) > shopItem.getMinimumMarketPrice()) {
+        if (this.taxPrice(marketPrice) > shopItem.getMinimumMarketPrice().toScrap()) {
             if (marketPrice.toKeys() < this.item_max_key_price) {
                 return false;
             } else {

@@ -25,6 +25,7 @@ function CompressionLookup() {
         reserved_to: "w",
         price: "m",
         mine_price: "mm",
+        max_price: "MM",
         real_id: "n"
     };
     this.values = {
