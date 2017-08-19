@@ -63,7 +63,7 @@ require("util").inherits(Market, events.EventEmitter);
 
 Market.ITEMS_LIMIT = 12;
 Market.ITEM_MAX_KEY_PRICE = 30;
-Market.ITEM_MAX_PRICE_RATIO = 1.1;
+Market.ITEM_MAX_PRICE_RATIO = 1.25;
 Market.ITEM_STATUS = {
     SOLD: 0, //Item successfully sold through shop
     AVAILABLE: 1, //Item is available in shop
