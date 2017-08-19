@@ -292,8 +292,22 @@ ShopItem.prototype.getMinePrice = function () {
     return finalPrice;
 };
 
+ShopItem.prototype.getMaximumMarketPrice = function () {
+    var maximum = new Price(this.market.item_max_key_price, "keys");
+    var historyPrice = this.getLatestHistoryPrice();
+    if (historyPrice) {
+        maximum = new Price(parseInt(historyPrice.toScrap() * this.market.item_max_price_ratio) + 1, "scrap");
+    }
+    return maximum;
+};
+
 ShopItem.prototype.getMinimumMarketPrice = function () {
-    return (this.shop.canBeSold(this, true) ? this.getMinePrice().toScrap() : new Price(0).toScrap());
+    return (this.shop.canBeSold(this, true) ? this.getMinePrice() : new Price(0));
+};
+
+ShopItem.prototype.getLatestHistoryPrice = function () {
+    var scrapPrice = this.shop.sfuminator.stats.pricesHistory.getLatestHistoryScrapPriceFor(this.getItem().getFullName());
+    return scrapPrice ? new Price(scrapPrice, "scrap") : false;
 };
 
 /**
@@ -357,7 +371,8 @@ function ShopItemDataStructure(shopItem) {
         this.decorated_grade = shopItem.getItem().getDecoratedGrade();
     }
     if (shopItem.isMarketed() || shopItem.isMarketItem()) {
-        this.mine_price = shopItem.getMinimumMarketPrice();
+        this.mine_price = shopItem.getMinimumMarketPrice().toScrap();
+        this.max_price = shopItem.getMaximumMarketPrice().toScrap();
     }
 }
 
