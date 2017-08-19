@@ -235,7 +235,9 @@ TraderBot.prototype.injectLoadedShopTrade = function (shopTrade) {
         var steamTrade = this.createSteamTrade(shopTrade);
         steamTrade.tradeOfferID = shopTrade.getStatusInfo();
         this._bindShopTrade(shopTrade);
-        steamTrade._startListening();
+        steamTrade.loadOffer(function () {
+            steamTrade._startListening();
+        });
     } else {
         this.log.warning("We can reload this trade :( ..well we never sent it.. soon or later he will cancel. Sorry!!");
     }

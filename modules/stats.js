@@ -26,7 +26,13 @@ function Stats(sfuminator) {
     };
     this.stats = {};
     this.max_new_items = 10;
+    /**
+     * @type {LastTrades}
+     */
     this.lastTrades = new LastTrades(this);
+    /**
+     * @type {PriceHistory}
+     */
     this.pricesHistory = new PricesHistory(this);
     this.log = new Logs({applicationName: "Stats"});
 }
