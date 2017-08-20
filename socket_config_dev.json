@@ -1,0 +1,80 @@
+{
+  "name": "aaronrusso",
+  "application": "dev",
+  "http_listen_port": 3191,
+  "cloud_ports": {
+    "connect": 3000,
+    "listen": 3001
+  },
+  "sfuminator": {
+    "admin": [
+      "76561197992634049"
+    ],
+    "bots": {
+      "trading": {
+        "76561198195909649": {
+          "steamid": "76561198195909649",
+          "username": "sfuminator3",
+          "password": "theStadiumIsShort",
+          "tradeToken": "KybLQCHf",
+          "steamApiKey": "536A73BCFCD4717552DBC59509E14E0B",
+          "steamGuardCode": "",
+          "mobileAuth": {
+            "shared_secret": "eL94/mNKUbMIK4Pj3F1gZ6uV/8g=",
+            "serial_number": "9182097611172839872",
+            "revocation_code": "R58288",
+            "uri": "otpauth://totp/Steam:sfuminator3?secret=PC7XR7TDJJI3GCBLQPR5YXLAM6VZL76I&issuer=Steam",
+            "server_time": 1472730926,
+            "account_name": "sfuminator3",
+            "token_gid": "9d55efb7f46a8f8",
+            "identity_secret": "vXrqM0UVtBPyoa1b5glIPG9PB3w=",
+            "secret_1": "mW5qjZVloqHi9RXVysnfYqbVk90=",
+            "status": 1,
+            "device_id": "android:8d1733f3-f1d1-33f3-33f3-33f3f1d15ddd",
+            "fully_enrolled": true,
+            "Session": {
+              "SessionID": "523737175a775e8f912e4556",
+              "SteamLogin": "76561198195909649%7C%7CEF8F4F958FB02AA3E2610D1F8FB7EF0C79490A84",
+              "SteamLoginSecure": "76561198195909649%7C%7CD7C5F6A297257834BFBFEA78EBA3794F95D53F68",
+              "WebCookie": "2F5E3F313649F766B36DEC585061075AF797CB27",
+              "OAuthToken": "bff0ee9d08df6575863ffdcbfeea3f6f",
+              "SteamID": 76561198195909649
+            }
+          }
+        }
+      },
+      "other": {
+        "76561198195946391": {
+          "steamid": "76561198195946391",
+          "username": "sfuminator4",
+          "password": "fuckYourTightThumb",
+          "tradeToken": "",
+          "steamApiKey": "",
+          "steamGuardCode": "",
+          "mobileAuth": {
+            "shared_secret": "qGQ1jwKkz65ZqJqEJYEhYyvqAHg=",
+            "serial_number": "283345624961383761",
+            "revocation_code": "R79871",
+            "uri": "otpauth://totp/Steam:sfuminator4?secret=VBSDLDYCUTH24WNITKCCLAJBMMV6UADY&issuer=Steam",
+            "server_time": 1472735717,
+            "account_name": "sfuminator4",
+            "token_gid": "25d5efb800abd4e",
+            "identity_secret": "unMyToeWeDBsFXKBV4xy/xw/Cpw=",
+            "secret_1": "F+NGTGIH4Mz2jAenHkdE/hT1P58=",
+            "status": 1,
+            "device_id": "android:9ad31add-c63d-1add-1add-1addc63d0e18",
+            "fully_enrolled": true,
+            "Session": {
+              "SessionID": "b298e8910224015ede48ead1",
+              "SteamLogin": "76561198195946391%7C%7CC2D1C7CCA373D01C45C7FD9D6149DA439954E332",
+              "SteamLoginSecure": "76561198195946391%7C%7CBAF6DA2346CA0BDFAAD05DBFCFF6EEBF5275852A",
+              "WebCookie": "8A9CC56C48B50D3B4DB2ED68AEBE066ABF264F07",
+              "OAuthToken": "a18b01a0a264bb18a8aaa85f8fb5fcde",
+              "SteamID": 76561198195946391
+            }
+          }
+        }
+      }
+    }
+  }
+}
