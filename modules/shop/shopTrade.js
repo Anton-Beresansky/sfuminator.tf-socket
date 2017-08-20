@@ -862,9 +862,11 @@ ShopTrade.prototype.verifyItems = function (callback) {
         if (this._verifyShopItems(callback)) {
             this._filterWithdrawableAssets();
             if (!this._assetsAreAllWithdrawable()) { // Just double check
+                self.emit("tradeRequestResponse", self.ajaxResponses.error);
                 callback(false);
             } else if (this.getCurrencyHandler().getForcedBalance() === 0) {
                 this.log.error("No forced balance on withdraw!?");
+                self.emit("tradeRequestResponse", self.ajaxResponses.error);
                 callback(false);
             } else {
                 callback(true);
