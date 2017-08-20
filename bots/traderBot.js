@@ -69,16 +69,16 @@ TraderBot.prototype.onFirstLogin = function () {
     });
     this.interactions.on('postProfileComment', function (steamid, message) {
         self.log.debug("Leaving a comment on " + steamid + " profile");
-        if (self.steamClient.isFriend(steamid)) {
-            self.steamClient.getFriend(steamid).postProfileComment(message, function (success) {
-                if (!success) {
-                    self.steamClient.sendMessage(steamid, "There was a problem when leaving the comment, I guess we will try this later, sorry :(");
-                }
-            });
-        } else {
-            //If not friend, will try posting and hoping he has public comments
-            self.steamClient.postProfileComment(steamid, message);
-        }
+        /*if (self.steamClient.isFriend(steamid)) {
+         self.steamClient.getFriend(steamid).postProfileComment(message, function (success) {
+         if (!success) {
+         self.steamClient.sendMessage(steamid, "There was a problem when leaving the comment, I guess we will try this later, sorry :(");
+         }
+         });
+         } else {
+         //If not friend, will try posting and hoping he has public comments
+         self.steamClient.postProfileComment(steamid, message);
+         }*/
     });
 
     this.steamClient.setAutomaticMobileTradingConfirmation();
