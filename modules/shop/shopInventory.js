@@ -194,23 +194,34 @@ ShopInventory.prototype._parseTF2ItemsToAdd = function (newItems) {
  * @returns {ShopItem[]} itemsToRemove
  */
 ShopInventory.prototype._parseTF2ItemsToRemove = function (newItems) {
-    var itemsToRemove = [];
+    var itemsToRemove = [], i, j;
 
-    for (var i = 0; i < this.items.length; i += 1) {
+    for (i = 0; i < this.items.length; i += 1) {
         var oldShopItem = this.items[i];
 
         if (oldShopItem.isTF2Item()) {
-            var item_exist = false;
-            for (var j = 0; j < newItems.length; j += 1) {
-
-                var newShopItem = new ShopItem(this.shop, newItems[j]);
-                if (this.ids.isLinked(newShopItem) && (oldShopItem.getID() === this.ids.lookup(newShopItem))) {
-                    item_exist = true;
+            var item_exists = false;
+            for (j = 0; j < newItems.length; j += 1) {
+                if (oldShopItem.getItem().getID() === newItems[j].id) {
+                    item_exists = true;
                     break;
                 }
             }
 
-            if (!item_exist
+
+            if (!item_exists) {
+                //Heavy load procedure, just check if there's no match on item id
+                this.log.debug("Detected different id, proceeding with lookup control");
+                for (j = 0; j < newItems.length; j += 1) {
+                    var newShopItem = new ShopItem(this.shop, newItems[j]);
+                    if (this.ids.isLinked(newShopItem) && (oldShopItem.getID() === this.ids.lookup(newShopItem))) {
+                        item_exists = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!item_exists
                 && !this.shop.getBotUser(oldShopItem.getItem().getOwner()).getTF2Backpack().hasErrored()
                 && !oldShopItem.isBeingTransferred()
             ) {
