@@ -28,6 +28,10 @@ var TestingEnabled = false;
 function Sfuminator(webApi, db) {
     this.webApi = webApi;
     this.db = db;
+    this.config = {
+        dev: CFG.create('socket_config_dev.json'),
+        main: CFG.create('socket_config_main.json')
+    };
     this.log = new Logs({applicationName: "Sfuminator", color: "blue"});
     this.log.setLevel(0);
     this.admins = CFG.getAdmins();
@@ -43,7 +47,8 @@ function Sfuminator(webApi, db) {
         {name: "preSmeltMetal", delay: 8 * 1000, tag: "internal"}, //8 Seconds
         {name: "manageBotItemsDistribution", delay: 15 * 60 * 1000, tag: "internal"}, //15 Minutes
         {name: "cleanBuggedReservations_WhyDoIEvenHaveToPutSomethingLikeThis", delay: 15 * 60 * 1000, tag: "global"}, //15 Minutes
-        {name: "updateHistoryPrices", delay: 15 * 60 * 1000, tag: "internal"} //15 Minutes
+        {name: "updateHistoryPrices", delay: 15 * 60 * 1000, tag: "internal"}, //15 Minutes
+        {name: "marketShopIDFixer", delay: 20 * 1000, tag: "internal"}
     ]);
     /**
      * @type {AjaxResponses}
@@ -146,8 +151,11 @@ Sfuminator.prototype.bindInterrupts = function () {
     this.interrupts.on("updateShopCurrentID", function () {
         self.shop.inventory.ids.updateCurrentID();
     });
-    this.interrupts.on("updateHistoryPrices", function (){
+    this.interrupts.on("updateHistoryPrices", function () {
         self.stats.pricesHistory.update();
+    });
+    this.interrupts.on("marketShopIDFixer", function () {
+        self.shop.market.runShopIDsFixer();
     });
 };
 

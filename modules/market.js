@@ -56,6 +56,7 @@ function Market(shop) {
      */
     this.items = [];
     this.log = LogLog.create({applicationName: "market", color: "cyan", dim: true});
+    this.fixerLog = LogLog.create({applicationName: "Market shop ID Fixer", color: "cyan"});
     events.EventEmitter.call(this);
 }
 
@@ -244,9 +245,13 @@ Market.prototype.getCannotSetPriceResponse = function (shopItem, marketPrice) {
  * @param marketItem {MarketItem}
  */
 Market.prototype.setItemAsSold = function (marketItem) {
-    this.updateItemStatus(marketItem, Market.ITEM_STATUS.SOLD);
-    var user = this.sfuminator.users.get(marketItem.getMarketer());
-    user.getWallet().updateBalance(marketItem.getTaxedPrice().toScrap());
+    if (marketItem.getStatus() === Market.ITEM_STATUS.AVAILABLE) {
+        this.updateItemStatus(marketItem, Market.ITEM_STATUS.SOLD);
+        var user = this.sfuminator.users.get(marketItem.getMarketer());
+        user.getWallet().updateBalance(marketItem.getTaxedPrice().toScrap());
+    } else {
+        this.log.error("Trying to set item as Sold but is not marked as Available: cs(" + marketItem.getStatus() + "), sid(" + marketItem.getID() + ")");
+    }
 };
 
 Market.prototype.setItemAsWithdrawn = function (marketItem) {
@@ -418,7 +423,119 @@ Market.QUERIES = {
             + "ENGINE = InnoDB "
             + "DEFAULT CHARACTER SET = utf8 "
             + "COLLATE = utf8_bin";
+    },
+    getItemsToFix: function () {
+        return "SELECT sin.shop_id as actual_shop_id ,fuzz.*,sin.item_id as sin_orig_id " +
+            "FROM (SELECT marketed_items.item_id as marketed_item_id,marketed_items.shop_id as marketed_shop_id,owner,status,market_price,taxed_price,last_update_date,original_id,shop_inventory_ids.* " +
+            "FROM (SELECT * FROM marketed_items WHERE last_update_date>'2017-08-19' AND status=1 order by last_update_date) as marketed_items " +
+            "LEFT JOIN (select shop_id as s_shop_id, item_id as s_original_id from shop_inventory_ids) as shop_inventory_ids " +
+            "ON marketed_items.shop_id=shop_inventory_ids.s_shop_id WHERE `s_original_id` IS NULL) as fuzz " +
+            "LEFT JOIN shop_inventory_ids as sin ON sin.item_id=fuzz.original_id"
+    },
+    updateShopID: function (dbItem) {
+        return "UPDATE marketed_items SET shop_id=" + dbItem.actual_shop_id + " WHERE shop_id=" + dbItem.marketed_shop_id;
+    },
+    getItemHistory: function (dbItem) {
+        return "SELECT `owner`,`id`,`last_update_date` FROM my_sfuminator_items.items WHERE original_id=" + dbItem.original_id + " ORDER BY last_update_date";
     }
+};
+
+Market.prototype.runShopIDsFixer = function () {
+    var self = this;
+    this.db.connect(function (connection) {
+        connection.query(self.queries.getItemsToFix(), function (result, isEmpty) {
+            connection.release();
+            if (isEmpty) {
+                self.fixerLog.debug("All good!");
+            } else {
+                self.fixerLog.warning("Hmmm there's something wrong...");
+                for (var i = 0; i < result.length; i += 1) {
+                    var dbItem = result[i];
+                    if (dbItem.actual_shop_id) {
+                        //So item should be available but we lost shop id link
+                        self.fixerLog.warning("Outdated Shop ID: " + dbItem.marketed_shop_id + " -> " + dbItem.actual_shop_id);
+                        self._updateShopID(dbItem);
+                    } else {
+                        //This should mean that item has been sold gotta update status
+                        self.fixerLog.warning("Item seems gone. No inventory link: " + dbItem.marketed_shop_id + " -> " + dbItem.actual_shop_id);
+                        self._resolveItemStatus(dbItem);
+                    }
+                }
+            }
+        });
+    });
+};
+
+Market.prototype._updateShopID = function (dbItem) {
+    var self = this;
+    for (var i = 0; i < this.items.length; i += 1) {
+        if (this.items[i].shop_id === dbItem.marketed_shop_id) {
+            this.items[i].shop_id = dbItem.actual_shop_id;
+            this.fixerLog.debug("Updated " + dbItem.marketed_shop_id + " -> " + this.items[i].shop_id);
+            break;
+        }
+    }
+    this.db.connect(function (connection) {
+        connection.query(self.queries.updateShopID(dbItem), function () {
+            connection.release();
+        });
+    })
+};
+
+Market.prototype._resolveItemStatus = function (dbItem) {
+    var self = this;
+    var config = self.sfuminator.config;
+    this._fetchItemHistory(dbItem, function (history) {
+        self.fixerLog.debug("Found history for item: " + dbItem.original_id);
+        var startingPointFound = 0;
+        for (var i = 0; i < history.length; i += 1) {
+            var historyItem = history[i];
+            if (startingPointFound > 0) { //Once starting point is found check owner
+                if (config.dev.isBot(historyItem.owner) || config.main.isBot(historyItem.owner)) {
+                    startingPointFound += 1;
+                } else if (startingPointFound === 1) {
+                    self.fixerLog.error("Starting point just found and next owner is not bot?? " + historyItem.id);
+                } else {
+                    var marketItem = self.getItem(dbItem.marketed_shop_id);
+                    if (marketItem) {
+                        if (historyItem.owner === dbItem.owner) {
+                            self.fixerLog.debug("Item returned to original owner, considering as withdrawn. " + historyItem.id + " steps(" + startingPointFound + ")");
+                            marketItem.setAsWithdrawn();
+                        } else {
+                            self.fixerLog.debug("Item passed to new owner, considering as sold. " + historyItem.id + " steps(" + startingPointFound + ")");
+                            marketItem.setAsSold();
+                        }
+                    } else {
+                        self.fixerLog.error("Can't get market item?? " + dbItem.marketed_shop_id);
+                    }
+                }
+            }
+
+            if (historyItem.id === dbItem.marketed_item_id) { //Check if starting point
+                if (historyItem.owner === dbItem.owner) {
+                    self.fixerLog.debug("Found starting point for item " + dbItem.original_id);
+                    startingPointFound += 1;
+                } else {
+                    self.fixerLog.error("WTF item id matches but owner is different?! original_id:" + dbItem.original_id + "/id:" + historyItem.id);
+                    return;
+                }
+            }
+        }
+    });
+};
+
+Market.prototype._fetchItemHistory = function (dbItem, callback) {
+    var self = this;
+    this.db.connect(function (connection) {
+        connection.query(self.queries.getItemHistory(dbItem), function (result, isEmpty) {
+            connection.release();
+            if (!isEmpty) {
+                callback(result);
+            } else {
+                self.fixerLog.error("No records of this item?! WHAT?! " + dbItem.original_id);
+            }
+        });
+    });
 };
 
 /**
@@ -450,6 +567,10 @@ MarketItem.prototype.getID = function () {
 
 MarketItem.prototype.getItemID = function () {
     return this.item_id;
+};
+
+MarketItem.prototype.getStatus = function () {
+    return this.status;
 };
 
 /**
