@@ -5,27 +5,33 @@ var crypto = require("crypto");
 var SteamTotp = require('steam-totp');
 var Logs = require("./lib/logs.js");
 
-module.exports = new CFG();
-
 /**
  * Class for socket configuration and loading cfg
  * @class CFG
  * @constructor
  */
-function CFG() {
+function CFG(name) {
     this.log = new Logs({applicationName: "CFG", color: "red", dim: true});
+    this.setConfigFile(name);
+}
+
+CFG.prototype.create = function (name) {
+    return new CFG(name);
+};
+
+CFG.prototype.setConfigFile = function (name) {
     try {
-        var config = JSON.parse(require("fs").readFileSync('./socket_config.json'));
+        var config = JSON.parse(require("fs").readFileSync('./' + name));
     } catch (e) {
         this.log.error("Couldn't read socket config: " + e);
-        config = JSON.parse(require("fs").readFileSync('../socket_config.json'));
+        config = JSON.parse(require("fs").readFileSync('../' + name));
     }
     for (var prop in config) {
         if (config.hasOwnProperty(prop)) {
             this[prop] = config[prop];
         }
     }
-}
+};
 
 CFG.prototype.getHTTPListenPort = function () {
     return this.http_listen_port;
@@ -89,6 +95,17 @@ CFG.prototype.getBotTypes = function () {
         types.push(type);
     }
     return types;
+};
+
+CFG.prototype.isBot = function (steamid) {
+    for (var type in this.sfuminator.bots) {
+        for (var bot_steamid in this.sfuminator.bots[type]) {
+            if (bot_steamid === steamid) {
+                return true;
+            }
+        }
+    }
+    return false;
 };
 
 var events = require('events');
@@ -214,3 +231,5 @@ BotCredentials.prototype._makeSha = function (bytes) {
     hash.update(bytes);
     return hash.digest();
 };
+
+module.exports = new CFG('socket_config.json');
