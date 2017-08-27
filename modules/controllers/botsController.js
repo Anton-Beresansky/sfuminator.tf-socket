@@ -140,7 +140,6 @@ BotsController.prototype.getAvailableBots = function () {
  * @returns {TraderBot|Boolean}
  */
 BotsController.prototype.getBestAvailableBot = function (canMarketFilter) {
-    console.log(canMarketFilter);
     var bestBot = false;
     var availableBots = this.getAvailableBots();
     for (var i = 0; i < availableBots.length; i += 1) {
@@ -151,7 +150,6 @@ BotsController.prototype.getBestAvailableBot = function (canMarketFilter) {
             botChoice = availableBots[i];
         }
         if (!canMarketFilter || botChoice.canMarket()) {
-            console.log(botChoice.canMarket());
             bestBot = botChoice;
         }
     }
