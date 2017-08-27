@@ -77,9 +77,13 @@ BotsController.prototype.getBot = function (steamid) {
     }
 };
 
+/**
+ * @param shopTrade {ShopTrade}
+ * @returns {boolean}
+ */
 BotsController.prototype.assignBot = function (shopTrade) {
     var i;
-    var assignedBot = this.getBestAvailableBot();
+    var assignedBot = this.getBestAvailableBot(shopTrade.isMarketTrade());
     var ownerList = this._getOwnerList(shopTrade.getAssets());
     this.log.test("Owner list: " + JSON.stringify(ownerList));
     //Verify that all bots are available for the requested items
@@ -135,14 +139,18 @@ BotsController.prototype.getAvailableBots = function () {
 /**
  * @returns {TraderBot|Boolean}
  */
-BotsController.prototype.getBestAvailableBot = function () {
+BotsController.prototype.getBestAvailableBot = function (canMarketFilter) {
     var bestBot = false;
     var availableBots = this.getAvailableBots();
     for (var i = 0; i < availableBots.length; i += 1) {
+        var botChoice = bestBot;
         if (!(bestBot instanceof TraderBot)) {
-            bestBot = availableBots[i];
+            botChoice = availableBots[i];
         } else if (availableBots[i].getUser().getTF2Backpack().getCount() < bestBot.getUser().getTF2Backpack().getCount()) {
-            bestBot = availableBots[i];
+            botChoice = availableBots[i];
+        }
+        if (!canMarketFilter || botChoice.canMarket()) {
+            bestBot = botChoice;
         }
     }
     return bestBot;

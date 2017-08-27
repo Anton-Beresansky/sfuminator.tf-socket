@@ -108,6 +108,18 @@ CFG.prototype.isBot = function (steamid) {
     return false;
 };
 
+CFG.prototype.isMarketDisabled = function (steamid) {
+    if (!this.hasOwnProperty("market_disabled")) {
+        return false;
+    }
+    for (var i = 0; i < this.market_disabled.length; i += 1) {
+        if (steamid === this.market_disabled[i]) {
+            return true;
+        }
+    }
+    return false;
+};
+
 var events = require('events');
 
 /**
