@@ -191,8 +191,8 @@ ShopItem.prototype.isMarketed = function () {
     return this.market.itemExists(this);
 };
 
-ShopItem.prototype.getMarketer = function () {
-    return this.isMarketed() ? this.getMarketItem().getMarketer() : false;
+ShopItem.prototype.getMarketerSteamid = function () {
+    return this.isMarketed() ? this.getMarketItem().getMarketerSteamid() : false;
 };
 
 ShopItem.prototype.getMarketItem = function () {

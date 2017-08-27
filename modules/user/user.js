@@ -6,7 +6,7 @@ var Backpack = require('../backpack.js');
 var ShopTrade = require('../shop/shopTrade.js');
 var SteamGames = require('../../lib/steamGames.js');
 var Wallet = require('./wallet.js');
-var Section = require("../shop/shopSection.js");
+var Marketer = require("./marketer.js");
 
 /**
  * General purpose User class
@@ -27,6 +27,7 @@ function User(steamid, sfuminator) {
     this.db = this.sfuminator.db;
     this.webApi = this.sfuminator.webApi;
     this.tf2Backpack = new Backpack(steamid, SteamGames.TF2, this.webApi);
+    this.marketer = new Marketer(this);
     this.log = new Logs({applicationName: "User " + JSON.stringify(steamid), color: "cyan"});
     this.decayTime = 1000 * 60 * 60 * 8; // 8hrs
     this.last_use_date = new Date();
@@ -34,7 +35,6 @@ function User(steamid, sfuminator) {
     this._onceLoadedCallbacks = [];
     this.updateIdentity();
     this.loadDatabaseInfo();
-    this.createMarketerSection();
     this.tf2Backpack.getCached();
     events.EventEmitter.call(this);
 }
@@ -119,31 +119,11 @@ User.prototype.isMarketer = function () {
     return this.market.marketerExists(this.getSteamid());
 };
 
-User.prototype.getMarketedShopItems = function () {
-    var marketedItems = [];
-    var marketItems = this.market.items;
-    for (var i = 0; i < marketItems.length; i += 1) {
-        if (marketItems[i].getMarketer() === this.steamid && marketItems[i].isAvailable()) {
-            marketedItems.push(marketItems[i].getShopItem());
-        }
-    }
-    return marketedItems;
-};
-
-User.prototype.createMarketerSection = function () {
-    this.marketerSection = new Section(this.shop, "marketer");
-    var items = this.getMarketedShopItems();
-    for (var i = 0; i < items.length; i += 1) {
-        this.marketerSection.add(items[i]);
-    }
-    this.marketerSection.commit();
-};
-
 /**
- * @returns {Section}
+ * @returns {Marketer}
  */
-User.prototype.getMarketerSection = function () {
-    return this.marketerSection;
+User.prototype.getMarketer = function () {
+    return this.marketer;
 };
 
 /**
