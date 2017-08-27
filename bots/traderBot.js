@@ -6,6 +6,7 @@ var TradeConstants = require("../modules/trade/tradeConstants.js");
 var SteamTradeOffer = require("../lib/steamTradeOffer.js");
 var SteamTradeError = require('../lib/steamTradeError.js');
 var BotInteractions = require("./botInteractions.js");
+var CFG = require('../cfg.js');
 var Logs = require("../lib/logs.js");
 
 /**
@@ -114,6 +115,10 @@ TraderBot.prototype.setAsAvailable = function () {
 
 TraderBot.prototype.unsetAsAvailable = function () {
     this.available = false;
+};
+
+TraderBot.prototype.canMarket = function () {
+    return !CFG.isMarketDisabled(this.steamid);
 };
 
 TraderBot.prototype.getAssignedShopTradesCount = function () {
