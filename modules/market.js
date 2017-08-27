@@ -97,7 +97,7 @@ Market.prototype.loadItems = function (connection, callback) {
 
 Market.prototype.marketerExists = function (steamid) {
     for (var i = 0; i < this.items.length; i += 1) {
-        if (this.items[i].getMarketer() === steamid) {
+        if (this.items[i].getMarketerSteamid() === steamid) {
             return true;
         }
     }
@@ -191,7 +191,7 @@ Market.prototype.getCannotEditPriceResponse = function (shopId, scrapPrice, requ
         var marketItem = this.getItem(this.shop.getItem(shopId));
         var marketPrice = new Price(scrapPrice, "scrap");
         if (marketItem) {
-            if (marketItem.getMarketer() === requesterSteamid) {
+            if (marketItem.getMarketerSteamid() === requesterSteamid) {
                 if (this.checkPrice(marketItem.getShopItem(), marketPrice)) {
                     if (marketItem.isCooldownDecayed()) {
                         return false;
@@ -247,7 +247,7 @@ Market.prototype.getCannotSetPriceResponse = function (shopItem, marketPrice) {
 Market.prototype.setItemAsSold = function (marketItem) {
     if (marketItem.getStatus() === Market.ITEM_STATUS.AVAILABLE) {
         this.updateItemStatus(marketItem, Market.ITEM_STATUS.SOLD);
-        var user = this.sfuminator.users.get(marketItem.getMarketer());
+        var user = this.sfuminator.users.get(marketItem.getMarketerSteamid());
         user.getWallet().updateBalance(marketItem.getTaxedPrice().toScrap());
     } else {
         this.log.error("Trying to set item as Sold but is not marked as Available: cs(" + marketItem.getStatus() + "), sid(" + marketItem.getID() + ")");
@@ -576,7 +576,7 @@ MarketItem.prototype.getStatus = function () {
 /**
  * @returns {String}
  */
-MarketItem.prototype.getMarketer = function () {
+MarketItem.prototype.getMarketerSteamid = function () {
     return this.owner;
 };
 
@@ -619,7 +619,7 @@ MarketItem.prototype.editPrice = function (marketPrice) {
     this.market_price = marketPrice;
     var shopItem = this.getShopItem();
     this.shop.sections[shopItem.getType()].remove(shopItem).add(shopItem).commit();
-    this.sfuminator.users.get(shopItem.getMarketer()).getMarketerSection().remove(shopItem).add(shopItem).commit();
+    this.sfuminator.users.get(shopItem.getMarketerSteamid()).getMarketer().getSection().remove(shopItem).add(shopItem).commit();
     var self = this;
     this.market.db.connect(function (connection) {
         connection.query(self.market.queries.updateItemPrice(shopItem.getID(), marketPrice.toScrap(), taxedPrice.toScrap()), function () {

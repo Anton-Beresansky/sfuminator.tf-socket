@@ -8,16 +8,27 @@ var LogLog = require('log-log');
 //latest_attributes
 
 /**
- *
- * @param db {Database}
+ * @param bpApi {BackpacksApi}
  * @constructor
  */
-function ItemsDatabase(db) {
+function ItemsDatabase(bpApi) {
     this.log = LogLog.create({applicationName: "ItemsDatabase", color: "magenta", dim: true});
-    this.db = db;
+    this.bpApi = bpApi;
+    this.db = this.bpApi.db;
     this.queries = ItemsDatabase.QUERIES;
     this.log.setDepthLevel(0);
 }
+
+ItemsDatabase.prototype.readItemsFromInstructions = function (instructions, callback) {
+    var self = this;
+    this.db.connect(function (connection) {
+        connection.query((instructions instanceof Array) ? self.queries.arrayFetch(instructions) : self.queries.queryFetch(instructions),
+            function (result, isEmpty) {
+                connection.release();
+                callback(isEmpty ? [] : result);
+            });
+    });
+};
 
 ItemsDatabase.prototype.readInventory = function (owner, callback, options) {
     var self = this;
@@ -29,19 +40,19 @@ ItemsDatabase.prototype.readInventory = function (owner, callback, options) {
                     var backpack = backpack_array[0];
                     callback(null, backpack, connection);
                     /*
-                    self.readItems(owner, function (items) {
-                        if (items.hasOwnProperty("result") && items.result === "error") {
-                            connection.rollbackRelease();
-                            callback(new Error(self.getError("cannotReadItems", owner).message));
-                        } else if (items.length === 0) {
-                            connection.commitRelease();
-                            callback(new Error(self.getError("noItems", owner)).message);
-                        } else {
-                            connection.commitRelease();
-                            callback(null, self.mergeWithItems(backpack, items));
-                        }
-                    }, connection, options);
-                    */
+                     self.readItems(owner, function (items) {
+                     if (items.hasOwnProperty("result") && items.result === "error") {
+                     connection.rollbackRelease();
+                     callback(new Error(self.getError("cannotReadItems", owner).message));
+                     } else if (items.length === 0) {
+                     connection.commitRelease();
+                     callback(new Error(self.getError("noItems", owner)).message);
+                     } else {
+                     connection.commitRelease();
+                     callback(null, self.mergeWithItems(backpack, items));
+                     }
+                     }, connection, options);
+                     */
                 } else {
                     connection.rollbackRelease();
                     callback(new Error(self.getError("backpackNotFound", owner)).message);
@@ -357,6 +368,66 @@ ItemsDatabase.QUERIES = {
         } else {
             return null;
         }
+    },
+    arrayFetch: function (idList) {
+        var inQuery = "(";
+        for (var i = 0; i < idList.length; i += 1) {
+            inQuery += idList[i] + ",";
+        }
+        inQuery = inQuery.slice(0, -1) + ")";
+        return "SELECT "
+            + "items.id as item_id,"
+            + "items.last_update_date,"
+            + "items.owner,"
+            + "items.original_id,"
+            + "items.defindex,"
+            + "items.level,"
+            + "items.quantity,"
+            + "items.origin,"
+            + "items.flag_cannot_craft,"
+            + "items.flag_cannot_trade,"
+            + "items.quality,"
+            + "my_sfuminator_items.attributes.defindex as attr_defindex,"
+            + "my_sfuminator_items.attributes.value,"
+            + "my_sfuminator_items.attributes.float_value,"
+            + "my_sfuminator_items.attributes.steamid as attr_steamid "
+            + "FROM "
+            + "("
+            + "SELECT * FROM "
+            + "my_sfuminator_items.items WHERE id IN " + inQuery + " "
+            + ") as items "
+            + "JOIN "
+            + "my_sfuminator_items.attributes "
+            + "ON items.id = my_sfuminator_items.attributes.id";
+    },
+    queryFetch: function (query) {
+        return "SELECT "
+            + "refer_table.*,"
+            + "my_sfuminator_items.items.last_update_date,"
+            + "my_sfuminator_items.items.owner,"
+            + "my_sfuminator_items.items.original_id,"
+            + "my_sfuminator_items.items.defindex,"
+            + "my_sfuminator_items.items.level,"
+            + "my_sfuminator_items.items.quantity,"
+            + "my_sfuminator_items.items.origin,"
+            + "my_sfuminator_items.items.flag_cannot_craft,"
+            + "my_sfuminator_items.items.flag_cannot_trade,"
+            + "my_sfuminator_items.items.quality,"
+            + "my_sfuminator_items.attributes.defindex as attr_defindex,"
+            + "my_sfuminator_items.attributes.value,"
+            + "my_sfuminator_items.attributes.float_value,"
+            + "my_sfuminator_items.attributes.steamid as attr_steamid "
+            + "FROM "
+            + "("
+            + query
+            + ") "
+            + "as refer_table "
+            + "JOIN "
+            + "my_sfuminator_items.items "
+            + "ON refer_table.item_id = my_sfuminator_items.items.id "
+            + "JOIN "
+            + "my_sfuminator_items.attributes "
+            + "ON refer_table.item_id = my_sfuminator_items.attributes.id";
     }
 };
 
