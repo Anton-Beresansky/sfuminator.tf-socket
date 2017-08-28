@@ -46,7 +46,10 @@ function BackpacksApi(db, steam, tf2, options) {
     this.db = db;
     this.steam = steam;
     this.tf2 = tf2;
-    this.itemsDatabase = new ItemsDatabase(db);
+    /**
+     * @type {ItemsDatabase}
+     */
+    this.itemsDatabase = new ItemsDatabase(this);
     this.log = Loglog.create({applicationName: "BackpacksApi", color: 'magenta'});
     //this.log.disableDebug();
     this.log.setDepthLevel(0);
@@ -56,6 +59,64 @@ function BackpacksApi(db, steam, tf2, options) {
 require("util").inherits(BackpacksApi, events.EventEmitter);
 
 BackpacksApi.FETCH_ANTI_SPAM_INTERVAL = 3000;
+
+/**
+ * @param instructions {query|Array}
+ * @param callback {Function}
+ */
+BackpacksApi.prototype.fetchItems = function (instructions, callback) {
+    if (instructions instanceof Array) {
+        if (instructions.length === 0) {
+            callback([]);
+            this.log.warning("Can't fetch, idList is empty");
+            return;
+        }
+    } else if (typeof instructions !== "string") {
+        callback([]);
+        this.log.warning("Unsupported fetch instruction");
+        return;
+    }
+    var self = this;
+    this.itemsDatabase.readItemsFromInstructions(instructions, function (result) {
+        callback(self._dbParse(result));
+    });
+};
+
+BackpacksApi.prototype._dbParse = function (dbItemList) {
+    var i, attributes = [], items = [], itemID;
+    for (i = 0; i < dbItemList.length; i += 1) {
+        var r = dbItemList[i];
+        itemID = r.item_id;
+        attributes.push({
+            defindex: r.attr_defindex,
+            value: r.value,
+            float_value: r.float_value,
+            steamid: r.attr_steamid
+        });
+        if (((i + 1) === dbItemList.length) || dbItemList[i + 1].item_id !== itemID) {
+            if (itemID) {
+                var item = this.mergeItemWithSchemaItem({
+                    id: r.item_id,
+                    owner: r.owner,
+                    original_id: r.original_id,
+                    defindex: r.defindex,
+                    level: r.level,
+                    quantity: r.quantity,
+                    origin: r.origin,
+                    flag_cannot_craft: r.flag_cannot_craft,
+                    flag_cannot_trade: r.flag_cannot_trade,
+                    quality: r.quality,
+                    last_update_date: r.last_update_date,
+                    attributes: attributes
+                }, this.tf2.schema[r.defindex]);
+                item._dbRow = r;
+                items.push(item);
+            }
+            attributes = [];
+        }
+    }
+    return items;
+};
 
 /**
  * @param currentBackpack {Backpack}

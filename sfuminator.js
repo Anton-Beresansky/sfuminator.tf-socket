@@ -301,9 +301,7 @@ Sfuminator.prototype.onAction = function (request, callback) {
             break;
         case "getWallet":
             if (request.getRequester().privilege === "user") {
-                this.users.get(request.getRequester().id).onceLoaded(function (user) {
-                    callback(user.getWallet().valueOf());
-                });
+                this.fetchWallet(request, callback)
             } else {
                 callback(this.responses.notLogged);
             }
@@ -332,6 +330,26 @@ Sfuminator.prototype.onAction = function (request, callback) {
         default:
             callback(this.responses.methodNotRecognised);
     }
+};
+
+/**
+ * @param request {SfuminatorRequest}
+ * @param callback
+ */
+Sfuminator.prototype.fetchWallet = function (request, callback) {
+    var self = this;
+    this.users.get(request.getRequesterSteamid()).onceLoaded(function (user) {
+        var wallet = user.getWallet().valueOf();
+        if (request.getData().hasOwnProperty("marketedItemsHistory") && request.data.marketedItemsHistory) {
+            user.getMarketer().fetchItemsHistory(function (marketedItemsHistory) {
+                wallet.marketedItemsHistory = marketedItemsHistory;
+                wallet.currency = self.shop.tf2Currency.valueOf();
+                callback(wallet);
+            });
+        } else {
+            callback(wallet);
+        }
+    });
 };
 
 /**
@@ -405,7 +423,7 @@ Sfuminator.prototype.getUpdates = function (request) {
         }
     }
     if (data.hasOwnProperty("section") && data.section.type === "marketer") {
-        itemChanges = user.getMarketerSection().getClientChanges(data.section.last_update_date);
+        itemChanges = user.getMarketer().getSection().getClientChanges(data.section.last_update_date);
         if (itemChanges !== false) {
             response.methods.updateItemsVersioning = itemChanges;
         } else {
@@ -520,7 +538,7 @@ Sfuminator.prototype._parseTradeObjectMarketerItems = function (itemList, reques
         //Get type of item and push type === section (marketer items can't be mine or market)
         var item = this.shop.getItem(idList[i]);
         if (item && item.isMarketed()) {
-            if (item.getMarketer() !== request.getRequesterSteamid()) {
+            if (item.getMarketerSteamid() !== request.getRequesterSteamid()) {
                 isWithdraw = false;
             }
             if (itemList[item.getType()] instanceof Array) {

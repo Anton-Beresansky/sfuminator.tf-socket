@@ -130,7 +130,7 @@ Shop.prototype.update = function (_changes) {
                 }
                 this.sections[shopType][action](shopItem);
                 if (shopItem.isMarketed()) {
-                    this.users.get(shopItem.getMarketer()).getMarketerSection()[action](shopItem).commit();
+                    this.users.get(shopItem.getMarketerSteamid()).getMarketer().getSection()[action](shopItem).commit();
                 }
             }
         }
@@ -226,10 +226,10 @@ Shop.prototype.makeMarketerInventory = function (steamid, requesterSteamid) {
         currency: this.tf2Currency.valueOf()
     };
     var user = this.users.get(steamid);
-    if (!user.getMarketerSection().items.length) {
+    if (!user.getMarketer().getSection().items.length) {
         response = this.sfuminator.responses.marketerHasNoItems;
     } else {
-        var section = user.getMarketerSection();
+        var section = user.getMarketer().getSection();
         response.items = section.getCompressedItems();
         response.market_ratio = this.getMarketRatio();
         response.wallet = this.users.get(requesterSteamid).getWallet().getBalance().toScrap();
@@ -441,3 +441,29 @@ Shop.prototype._manageOnceSectionItemsUpdatedHandlers = function (newItems) {
     }
     this._onceSectionItemsUpdatedHandlers = [];
 };
+
+
+
+/*
+
+login.checkNewAccount(function(err){
+    if(err){
+        res.render(....error);
+    } else {
+        login.createNewAccount(function(token){
+            res.redirect(.//redirect)
+        })
+    }
+})
+
+
+Login.prototype.checkNewAccount = function (callback){
+    var err = this.getNewAccountError();
+    if(err){
+        callback(err);
+    } else {
+        this.checkEmail(function(err){
+            callback(err);
+        })
+    }
+}*/
