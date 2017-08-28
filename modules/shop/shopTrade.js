@@ -289,7 +289,7 @@ ShopTrade.prototype.setMarketItemsAsSold = function () {
             var shopItem = this.shop.getItem(itemID);
             var marketItem = this.market.getItem(shopItem ? shopItem : itemID);
             if (marketItem) {
-                if (this.getPartner().getSteamid() === marketItem.getMarketer()) {
+                if (this.getPartner().getSteamid() === marketItem.getMarketerSteamid()) {
                     marketItem.setAsWithdrawn();
                     this.log.error("This shouldn't verify! Setting item as 'withdrawn' on a SHOP trade");
 
@@ -308,7 +308,7 @@ ShopTrade.prototype.setMarketItemsAsWithdrawn = function () {
             var itemID = this.items[shop][i];
             var marketItem = this.market.getItem(itemID);
             if (marketItem) {
-                if (this.getPartner().getSteamid() === marketItem.getMarketer()) {
+                if (this.getPartner().getSteamid() === marketItem.getMarketerSteamid()) {
                     marketItem.setAsWithdrawn();
                     this.log.debug("Set item " + marketItem.getID() + " as withdrawn");
                 } else {
@@ -958,7 +958,7 @@ ShopTrade.prototype._filterWithdrawableAssets = function () {
     var foundWithdrawableAsset = false;
     for (var i = 0; i < this.assets.length; i += 1) {
         var item = this.assets[i];
-        if (item.isMarketed() && item.getMarketer() === this.getPartner().getSteamid()) {
+        if (item.isMarketed() && item.getMarketerSteamid() === this.getPartner().getSteamid()) {
             var scrapPrice = item.getPrice().toScrap();
             this.withdrawableAssetsScrapValue += scrapPrice;
             this.getCurrencyHandler().addToStartingBalance(-scrapPrice);
@@ -970,7 +970,7 @@ ShopTrade.prototype._filterWithdrawableAssets = function () {
 
 ShopTrade.prototype._assetsAreAllWithdrawable = function () {
     for (var i = 0; i < this.assets.length; i += 1) {
-        if (!this.assets[i].isMarketed() || (this.assets[i].getMarketer() !== this.getPartner().getSteamid())) {
+        if (!this.assets[i].isMarketed() || (this.assets[i].getMarketerSteamid() !== this.getPartner().getSteamid())) {
             return false;
         }
     }
