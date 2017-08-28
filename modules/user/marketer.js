@@ -91,6 +91,7 @@ MarketerHistoryItem.prototype.valueOf = function () {
         level: this.tf2Item.getLevel(),
         market_price: this._dbRow.market_price,
         taxed_price: this._dbRow.taxed_price,
-        selling_time: sellingTime
+        selling_time: sellingTime,
+        sell_date: new Date(this._dbRow.sell_date)
     }
 };
