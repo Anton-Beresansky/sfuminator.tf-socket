@@ -340,10 +340,10 @@ Sfuminator.prototype.fetchWallet = function (request, callback) {
     var self = this;
     this.users.get(request.getRequesterSteamid()).onceLoaded(function (user) {
         var wallet = user.getWallet().valueOf();
+        wallet.currency = self.shop.tf2Currency.valueOf();
         if (request.getData().hasOwnProperty("marketedItemsHistory") && request.data.marketedItemsHistory) {
             user.getMarketer().fetchItemsHistory(function (marketedItemsHistory) {
                 wallet.marketedItemsHistory = marketedItemsHistory;
-                wallet.currency = self.shop.tf2Currency.valueOf();
                 callback(wallet);
             });
         } else {
