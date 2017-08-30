@@ -85,6 +85,7 @@ MarketerHistoryItem.prototype.valueOf = function () {
         sellingTime = 0;
     }
     return {
+        id: this.tf2Item.getID(),
         name: this.tf2Item.getFullName(),
         image_url: this.tf2Item.getImageUrl(),
         quality: this.tf2Item.getQuality(),
