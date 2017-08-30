@@ -441,29 +441,3 @@ Shop.prototype._manageOnceSectionItemsUpdatedHandlers = function (newItems) {
     }
     this._onceSectionItemsUpdatedHandlers = [];
 };
-
-
-
-/*
-
-login.checkNewAccount(function(err){
-    if(err){
-        res.render(....error);
-    } else {
-        login.createNewAccount(function(token){
-            res.redirect(.//redirect)
-        })
-    }
-})
-
-
-Login.prototype.checkNewAccount = function (callback){
-    var err = this.getNewAccountError();
-    if(err){
-        callback(err);
-    } else {
-        this.checkEmail(function(err){
-            callback(err);
-        })
-    }
-}*/
