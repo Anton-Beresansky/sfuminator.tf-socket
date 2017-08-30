@@ -875,7 +875,7 @@ ShopTrade.prototype.verifyItems = function (callback) {
     } else if (this.isMarketTrade()) {
         this._verifyPartnerItems(function (success) {
             if (success) {
-                if ((self.getPartner().getMarketedShopItems().length + self.getAssets().length) > Market.ITEMS_LIMIT) {
+                if ((self.getPartner().getMarketer().getItems().length + self.getAssets().length) > Market.ITEMS_LIMIT) {
                     self.emit("tradeRequestResponse", self.ajaxResponses.marketItemsLimit(Market.ITEMS_LIMIT));
                     callback(false);
                 } else {
