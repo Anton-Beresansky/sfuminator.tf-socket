@@ -458,7 +458,7 @@ Sfuminator.prototype.requestTrade = function (request, mode, callback) {
     var data = request.getData();
     var user = this.users.get(request.getRequesterSteamid());
     if (user.isTradeActionRequestedFlagged()) {
-        callback(this.responses.alreadyInTrade);
+        callback(this.responses.tradeAlreadyRequested);
         return;
     }
     user.flagTradeActionRequested();
