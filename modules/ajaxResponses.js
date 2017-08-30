@@ -29,6 +29,11 @@ function AjaxResponses(sfuminator) {
     this.itemCantBeSold = {result: "error", message: "Selected item can't be sold", code: "cant_sell_item"};
     this.alreadyInTrade = {result: "error", message: "You are already in trade", code: "already_in_trade"};
     this.notInTrade = {result: "error", message: "You are not in trade", code: "not_in_trade"};
+    this.tradeAlreadyRequested = {
+        result: "error",
+        message: "Trade already requested.",
+        code: "trade_already_requested"
+    };
     this.notEnoughCurrency = {
         result: "error",
         message: "Sorry, but it seems you don't have enough metal or keys for this trade",
