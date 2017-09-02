@@ -332,11 +332,13 @@ Market.prototype.cancelInTransitItems = function (assets) {
 
 Market.prototype.getShopTradePrices = function (idList) {
     var prices = {};
-    for (var i = 0; i < idList.length; i += 1) {
-        for (var p = 0; p < this.items.length; p += 1) {
-            if (this.items[p].item_id === idList[i]) {
-                prices[idList[i]] = this.items[p].market_price.toScrap();
-                break;
+    if (idList instanceof Array) {
+        for (var i = 0; i < idList.length; i += 1) {
+            for (var p = 0; p < this.items.length; p += 1) {
+                if (this.items[p].item_id === idList[i]) {
+                    prices[idList[i]] = this.items[p].market_price.toScrap();
+                    break;
+                }
             }
         }
     }
