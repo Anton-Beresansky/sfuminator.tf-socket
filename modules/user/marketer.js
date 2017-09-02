@@ -66,7 +66,7 @@ Marketer.QUERIES = {
             + "WHERE my_sfuminator.marketed_items.owner='" + steamid + "' "
             + "AND my_sfuminator.marketed_items.status=" + Market.ITEM_STATUS.SOLD + " "
             + "ORDER BY "
-            + "my_sfuminator.marketed_items.last_update_date "
+            + "my_sfuminator.marketed_items.last_update_date DESC "
             + "LIMIT 100";
     }
 };
