@@ -146,6 +146,7 @@ function AjaxResponses(sfuminator) {
             code: "edit_price_cooldown"
         }
     };
+    this.editPriceItemNotOwned = {result: "error", message: "Error. Cannot edit price", code: "edit_item_not_owned"};
     this.withdrawDisabled = {result: "error", message: "Withdraw is temporarily disabled.", code: "withdraw_disabled"};
 }
 

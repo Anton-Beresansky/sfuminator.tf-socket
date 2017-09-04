@@ -1,10 +1,17 @@
 module.exports = TradeStatus;
 
+var LogLog = require('log-log');
+
+/**
+ * @param sfuminator
+ * @constructor
+ */
 function TradeStatus(sfuminator) {
     this.sfuminator = sfuminator;
     this.db = this.sfuminator.db;
+    this.log = LogLog.create({applicationName: "Trade Status", color: "green", dim: true});
     this.update();
-    this.steam_status_table = {
+    this.steam_status_table = {
         0: "steam_down",
         10: "steam_down",
         11: "maintenance"
@@ -29,6 +36,8 @@ TradeStatus.prototype.update = function () {
                     self[result[i].of] = result[i];
                     self[result[i].of].last_update_date = new Date(parseInt(result[i].last_server_update) * 1000);
                 }
+            } else {
+                self.log.error("Wasn't able to read trade status");
             }
         });
     });

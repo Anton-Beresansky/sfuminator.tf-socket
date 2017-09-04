@@ -50,7 +50,7 @@ Wallet.prototype.updateBalance = function (delta) {
 Wallet.prototype.withdraw = function (callback) {
     if (this.balance > 0) {
         if (!this.sfuminator.status.canTrade() && !this.sfuminator.isAdmin(this.getOwner())) {
-            callback(this.responses.cannotTrade(this.status.get()));
+            callback(this.responses.cannotTrade(this.sfuminator.status.get()));
             return false;
         }
         if (this.user.canTrade()) {
