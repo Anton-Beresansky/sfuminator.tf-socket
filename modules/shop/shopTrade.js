@@ -55,6 +55,7 @@ function ShopTrade(sfuminator, partner) {
     this.assets_limit = {partner: 40, shop: 40, max_key_price: 100};
     this.itemsReserved = false;
     this.itemsReady = false;
+    this.checkEscrowAttempts = 0;
     this.tradeType = ShopTrade.TYPE.NORMAL;
     this.onceItemsReservedCallbacks = [];
     this.onceItemsAreReadyCallbacks = [];
@@ -67,6 +68,8 @@ function ShopTrade(sfuminator, partner) {
 require("util").inherits(ShopTrade, events.EventEmitter);
 
 ShopTrade.addFriendTimeoutTime = 1000 * 60 * 2; //2 min
+
+ShopTrade.CHECK_ESCROW_MAX_ATTEMPTS = 2;
 
 ShopTrade.TYPE = {
     NORMAL: 0,
@@ -191,7 +194,7 @@ ShopTrade.prototype.setAsWaitingForFriendRelation = function () {
     var self = this;
     setTimeout(function () {
         //If not friend on steam.............
-        if (!self.sfuminator.getBotsController().getBot(self.getAssignedBotUser().getSteamid()).steamClient.isFriend(self.getPartner().getSteamid())) {
+        if (!self.getAssignedTraderBot().steamClient.isFriend(self.getPartner().getSteamid())) {
             self.emit("friendRequestTimeout");
         }
     }, ShopTrade.addFriendTimeoutTime);
@@ -528,7 +531,7 @@ ShopTrade.prototype.load = function (callback) {
                         }
                     }
                 } else {
-                    self.sfuminator.getBotsController().getBot(self.getAssignedBotUser().getSteamid()).injectLoadedShopTrade(self);
+                    self.getAssignedTraderBot().injectLoadedShopTrade(self);
                 }
             });
         });
@@ -576,8 +579,7 @@ ShopTrade.prototype.readyItems = function () {
         if (self.transferNeeded) {
             self.setStatusInfo(TradeConstants.statusInfo.active.TRANSFERRING);
             self.commit();
-            var assignedTraderBot = self.sfuminator.getBotsController().getBot(self.getAssignedBotUser().getSteamid());
-            self.transferCluster = self.sfuminator.getBotsController().transfer(assignedTraderBot, assetsToTransfer, function (err) {
+            self.transferCluster = self.sfuminator.getBotsController().transfer(self.getAssignedTraderBot(), assetsToTransfer, function (err) {
                 if (!err) {
                     self.emit("itemsTransferred");
                 } else {
@@ -704,6 +706,15 @@ ShopTrade.prototype.setBot = function (bot) {
  */
 ShopTrade.prototype.getAssignedBotUser = function () {
     return this.bot;
+};
+
+/**
+ * @returns {TraderBot}
+ */
+ShopTrade.prototype.getAssignedTraderBot = function () {
+    if (this.bot) {
+        return this.sfuminator.getBotsController().getBot(this.bot.getSteamid());
+    }
 };
 
 /**
@@ -849,6 +860,46 @@ ShopTrade.prototype.getLastUpdateDate = function () {
 };
 
 /**
+ * Related to verifyItems, is part of the trade checks
+ * but can be done only once traderBot has established
+ * token or friend relation with partner
+ */
+ShopTrade.prototype.checkEscrow = function (callback) {
+    var self = this, checkPassed = true;
+    if (this.isNormalTrade() && this._hasMarketedItems()) {
+        var token = onEscrowDuration = function (err, durationMe, durationYou) {
+            if (err) {
+                self.checkEscrowAttempts += 1;
+                if (self.checkEscrowAttempts < ShopTrade.CHECK_ESCROW_MAX_ATTEMPTS) {
+                    setTimeout(function () {
+                        self.checkEscrow(callback);
+                    }, 2000);
+                } else {
+                    self.emit('tradeRequestResponse', self.ajaxResponses.cannotCheckEscorw);
+                }
+            } else {
+                if (durationMe + durationYou > 0) {
+                    checkPassed = false;
+                    self.log.debug("cEscrow: NOT PASSED. Partner has escrow and items are marketed");
+                    self.emit('tradeRequestResponse', self.ajaxResponses.cannotTradeMarketedOnEscorw);
+                } else {
+                    self.log.debug("cEscrow: PASSED. No escrow time :)");
+                }
+                callback(checkPassed);
+            }
+
+        };
+        if (this.isUsingTradeOfferToken()) {
+            token = this.getPartner().getTradeToken();
+        }
+        this.getAssignedTraderBot().steamClient.tradeOffersManager.getEscrowDuration(this.getPartner().getSteamid(), token, onEscrowDuration);
+    } else {
+        this.log.debug("cEscrow: PASSED. No marketed items.");
+        callback(checkPassed);
+    }
+};
+
+/**
  * Verify that set items can be shop traded
  * @param {Function} callback When executed will pass a Boolean value
  * that establish if items are valid.
@@ -951,6 +1002,15 @@ ShopTrade.prototype._verifyItemsFinalStep = function (callback) {
         this.emit("tradeRequestResponse", this.ajaxResponses.noItems);
         callback(false);
     }
+};
+
+ShopTrade.prototype._hasMarketedItems = function () {
+    for (var i = 0; i < this.assets.length; i += 1) {
+        if (this.assets[i].isMarketed()) {
+            return true;
+        }
+    }
+    return false;
 };
 
 ShopTrade.prototype._filterWithdrawableAssets = function () {
