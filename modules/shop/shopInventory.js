@@ -211,7 +211,7 @@ ShopInventory.prototype._parseTF2ItemsToRemove = function (newItems) {
 
             if (!item_exists) {
                 //Heavy load procedure, just check if there's no match on item id
-                this.log.debug("Detected different id, proceeding with lookup control");
+                this.log.debug("Detected different id, proceeding with lookup control", 4);
                 for (j = 0; j < newItems.length; j += 1) {
                     var newShopItem = new ShopItem(this.shop, newItems[j]);
                     if (this.ids.isLinked(newShopItem) && (oldShopItem.getID() === this.ids.lookup(newShopItem))) {
