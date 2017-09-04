@@ -200,12 +200,19 @@ TraderBot.prototype.sendShopTrade = function (shopTrade) {
  * @param {ShopTrade} shopTrade
  */
 TraderBot.prototype.finalizeSendShopTrade = function (shopTrade) {
-    shopTrade.setAsMaking();
-    this.createSteamTrade(shopTrade);
-    this._bindShopTrade(shopTrade);
-    shopTrade.steamTrade.make();
-    shopTrade.setStatusInfo(TradeConstants.statusInfo.active.MAKING);
-    shopTrade.commit();
+    var self = this;
+    shopTrade.checkEscrow(function (allowed) {
+        if (allowed) {
+            shopTrade.setAsMaking();
+            self.createSteamTrade(shopTrade);
+            self._bindShopTrade(shopTrade);
+            shopTrade.steamTrade.make();
+            shopTrade.setStatusInfo(TradeConstants.statusInfo.active.MAKING);
+            shopTrade.commit();
+        } else {
+            shopTrade.cancel();
+        }
+    });
 };
 
 /**

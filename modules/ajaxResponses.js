@@ -148,6 +148,16 @@ function AjaxResponses(sfuminator) {
     };
     this.editPriceItemNotOwned = {result: "error", message: "Error. Cannot edit price", code: "edit_item_not_owned"};
     this.withdrawDisabled = {result: "error", message: "Withdraw is temporarily disabled.", code: "withdraw_disabled"};
+    this.cannotTradeMarketedOnEscorw = {
+        result: "error",
+        message: "Sorry, you can't buy Marketed Items if you have 'Trade Holds'",
+        code: "cannot_trade_marketed_on_escrow"
+    };
+    this.cannotCheckEscorw = {
+        result: "error",
+        message: "Sorry, we couldn't accomplish this trade because of steam, please try again",
+        code: "cannot_check_escrow"
+    }
 }
 
 /**
