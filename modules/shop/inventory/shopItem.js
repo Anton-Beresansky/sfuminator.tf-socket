@@ -292,6 +292,9 @@ ShopItem.prototype.getMinePrice = function () {
     return finalPrice;
 };
 
+/**
+ * @returns {Price}
+ */
 ShopItem.prototype.getMaximumMarketPrice = function () {
     var maximum = new Price(this.market.item_max_key_price, "keys");
     var historyPrice = this.getLatestHistoryPrice();

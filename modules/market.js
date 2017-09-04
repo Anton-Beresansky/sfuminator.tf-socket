@@ -7,9 +7,7 @@ var ShopItem = require('./shop/inventory/shopItem.js');
 
 /*
 
- TODO Maybe add sold market items history?
-
- TODO Add price history to prevent crazy market prices
+ TODO Fix price history limit disappearing after some time?
 
  TODO FIX On new item (ownmarket) can't click on old items (Maybe not on fresh backpack, coz own market doesn't fresh, but check injection)
  > Seems that when editing price on a certain item that one is not the actual target therefore when selling there's no market price set
@@ -199,15 +197,17 @@ Market.prototype.getCannotEditPriceResponse = function (shopId, scrapPrice, requ
                         return this.ajaxResponses.editPriceCooldown((MarketItem.EDIT_COOLDOWN_TIME - marketItem.getCooldownTime()) / 1000);
                     }
                 } else {
-                    return this.getCannotSetPriceResponse(marketItem.getShopItem(), marketPrice);
+                    return this.getCannotSetPriceResponse(marketItem.getShopItem(), marketPrice, marketItem);
                 }
             } else {
-                return this.ajaxResponses.error;
+                this.log.error("CEP: Not owned by requester: " + requesterSteamid + ", marketer: " + marketItem.getMarketerSteamid() + " | id:" + marketItem.getID());
+                return this.ajaxResponses.editPriceItemNotOwned;
             }
         } else {
             return this.ajaxResponses.itemNotFound;
         }
     } else {
+        this.log.error("CEP: Invalid request: scrapPrice: " + scrapPrice + " | shopID: " + shopId);
         return this.ajaxResponses.error;
     }
 };
@@ -224,11 +224,12 @@ Market.prototype.checkPrice = function (shopItem, marketPrice) {
 /**
  * @param shopItem {ShopItem}
  * @param marketPrice {Price}
+ * @param [marketItem] {MarketItem}
  */
-Market.prototype.getCannotSetPriceResponse = function (shopItem, marketPrice) {
+Market.prototype.getCannotSetPriceResponse = function (shopItem, marketPrice, marketItem) {
     if (shopItem) {
         if (this.taxPrice(marketPrice) > shopItem.getMinimumMarketPrice().toScrap()) {
-            if (marketPrice.toKeys() < this.item_max_key_price) {
+            if (marketPrice.toScrap() < shopItem.getMaximumMarketPrice().toScrap()) {
                 return false;
             } else {
                 return this.ajaxResponses.marketPriceTooHigh;
@@ -237,6 +238,7 @@ Market.prototype.getCannotSetPriceResponse = function (shopItem, marketPrice) {
             return this.ajaxResponses.marketPriceTooLow;
         }
     } else {
+        this.log.error("CSP: shopItem is undefined, market item: " + (marketItem ? marketItem.getID() : "undefined"));
         return this.ajaxResponses.error;
     }
 };
@@ -285,7 +287,7 @@ Market.prototype.updateItemStatus = function (marketItem, status) {
 
 /**
  * @param tradeAssets {ShopItem[]}
- * @param itemsStatus {[number]}
+ * @param [itemsStatus] {number}
  */
 Market.prototype.importItems = function (tradeAssets, itemsStatus) {
     var shopItems = [];
