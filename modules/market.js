@@ -7,8 +7,6 @@ var ShopItem = require('./shop/inventory/shopItem.js');
 
 /*
 
- TODO Fix price history limit disappearing after some time?
-
  TODO FIX On new item (ownmarket) can't click on old items (Maybe not on fresh backpack, coz own market doesn't fresh, but check injection)
  > Seems that when editing price on a certain item that one is not the actual target therefore when selling there's no market price set
  > and you get error
@@ -62,7 +60,7 @@ require("util").inherits(Market, events.EventEmitter);
 
 Market.ITEMS_LIMIT = 12;
 Market.ITEM_MAX_KEY_PRICE = 30;
-Market.ITEM_MAX_PRICE_RATIO = 1.25;
+Market.ITEM_MAX_PRICE_RATIO = 1.3;
 Market.ITEM_STATUS = {
     SOLD: 0, //Item successfully sold through shop
     AVAILABLE: 1, //Item is available in shop
