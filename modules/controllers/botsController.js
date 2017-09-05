@@ -1,8 +1,8 @@
 module.exports = BotsController;
 
 var Logs = require('./../../lib/logs.js');
-var TraderBot = require('./../../bots/traderBot.js');
-var BotCommands = require('./../../bots/botCommands.js');
+var TraderBot = require('../bots/traderBot.js');
+var BotCommands = require('../bots/botCommands.js');
 var TransferNodesCluster = require('./assetsTransfer.js');
 var TF2Constants = require("./../tf2/tf2Constants.js");
 var SteamTradeErrorSolver = require("./steamTradeErrorSolver.js");

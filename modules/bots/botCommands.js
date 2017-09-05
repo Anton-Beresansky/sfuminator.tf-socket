@@ -1,7 +1,7 @@
 module.exports = BotCommands;
 
-var Price = require('./../modules/price.js');
-var ShopTrade = require('./../modules/shop/shopTrade.js');
+var Price = require('../price.js');
+var ShopTrade = require('../shop/shopTrade.js');
 
 /**
  * @parameter {Sfuminator} sfuminator
