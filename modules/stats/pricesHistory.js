@@ -90,7 +90,10 @@ PriceHistory.prototype.loadItemsUIDs = function (callback) {
     var self = this;
     this._fetchItemsUID(function (itemsUIDs) {
         for (var i = 0; i < itemsUIDs.length; i += 1) {
-            self.itemsHistory[itemsUIDs[i].name] = {uid: itemsUIDs[i].uid};
+            var name = itemsUIDs[i].name;
+            if (!self.itemsHistory.hasOwnProperty(name)) {
+                self.itemsHistory[name] = {uid: itemsUIDs[i].uid};
+            }
         }
         callback();
     });
