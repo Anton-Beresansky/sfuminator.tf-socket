@@ -39,6 +39,22 @@ function BotCommands(sfuminator) {
         },
         testComment: function (steamid, command, bot) {
             bot.steamClient.postProfileComment(steamid, "Hum?");
+        },
+        log: function (steamid, command, bot) {
+            try {
+                var properties = [];
+                if (command.getMainParameter()) {
+                    properties = command.getMainParameter().split(".");
+                }
+                var object = self.sfuminator;
+                for (var i = 0; i < properties.length; i += 1) {
+                    object = object[properties[i]];
+                }
+                console.log(object);
+                bot.steamClient.sendMessage(steamid, "Logged");
+            } catch (e) {
+                bot.steamClient.sendMessage(steamid, "Wasn't able to log: " + e)
+            }
         }
     }
 }

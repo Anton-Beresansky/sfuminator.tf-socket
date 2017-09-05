@@ -3,6 +3,7 @@ module.exports = PriceHistory;
 var LogLog = require('log-log');
 var TradeConstants = require('../trade/tradeConstants.js');
 var TF2Item = require('../tf2/tf2Item.js');
+
 /**
  * @parameter stats {Stats}
  * @constructor
