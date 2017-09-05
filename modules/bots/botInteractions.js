@@ -1,6 +1,6 @@
 module.exports = BotInteractions;
 
-var Logs = require("./../lib/logs.js");
+var Logs = require("../../lib/logs.js");
 var Events = require('events');
 
 /**

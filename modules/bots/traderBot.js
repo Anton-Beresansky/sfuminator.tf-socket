@@ -1,13 +1,13 @@
 module.exports = TraderBot;
 
-var SteamClient = require("../lib/steamClient.js");
-var SteamGames = require("../lib/steamGames.js");
-var TradeConstants = require("../modules/trade/tradeConstants.js");
-var SteamTradeOffer = require("../lib/steamTradeOffer.js");
-var SteamTradeError = require('../lib/steamTradeError.js');
+var SteamClient = require("../../lib/steamClient.js");
+var SteamGames = require("../../lib/steamGames.js");
+var TradeConstants = require("../trade/tradeConstants.js");
+var SteamTradeOffer = require("../../lib/steamTradeOffer.js");
+var SteamTradeError = require('../../lib/steamTradeError.js');
 var BotInteractions = require("./botInteractions.js");
-var CFG = require('../cfg.js');
-var Logs = require("../lib/logs.js");
+var CFG = require('../../cfg.js');
+var Logs = require("../../lib/logs.js");
 
 /**
  * Trader Bot
