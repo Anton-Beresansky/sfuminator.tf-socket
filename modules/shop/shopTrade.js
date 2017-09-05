@@ -9,6 +9,7 @@ var TradeConstants = require("../trade/tradeConstants.js");
 var SteamTradeOffer = require("../../lib/steamTradeOffer.js");
 var SteamTradeError = require("../../lib/steamTradeError.js");
 var ShopTradeCurrency = require("./shopTradeCurrency.js");
+
 //Shop Trade Status: hold -> (noFriend) -> active -> sent -> closed/accepted/declined
 
 /**
@@ -468,6 +469,7 @@ ShopTrade.prototype.load = function (callback) {
     this.getPartner().onceLoaded(function () {
         self.database.load(function (rows) {
             var trade = rows[0];
+            console.log(trade);
             self.setID(trade.id);
             self.setStatus(trade.status);
             self.setStatusInfo(trade.status_info);
@@ -521,7 +523,8 @@ ShopTrade.prototype.load = function (callback) {
                 if (typeof callback === "function") {
                     callback(self);
                 }
-                if (self.assets.length === 0) {
+                //If assets where not found and it's not a currency withdraw
+                if (self.assets.length === 0 && !(self.isWithdrawTrade() && self.withdrawableAssetsScrapValue === 0)) {
                     self.log.warning("Assets list is empty, considering trade as accepted");
                     self.setAsAccepted();
                     self.log.warning("Cancelling reservations...");
@@ -531,7 +534,9 @@ ShopTrade.prototype.load = function (callback) {
                         }
                     }
                 } else {
-                    self.getAssignedTraderBot().injectLoadedShopTrade(self);
+                    self.getAssignedTraderBot().steamClient.onceLoggedIn(function () {
+                        self.getAssignedTraderBot().injectLoadedShopTrade(self);
+                    });
                 }
             });
         });
@@ -1185,12 +1190,12 @@ ShopTrade.prototype.getAsset = function (id) {
 ShopTrade.prototype.logAssets = function (level) {
     var self = this;
     this.log.debug("Assets: " + (function () {
-            var result = "";
-            for (var i = 0; i < self.assets.length; i += 1) {
-                result += JSON.stringify(self.assets[i].valueOf()) + "\n";
-            }
-            return result;
-        }()), level);
+        var result = "";
+        for (var i = 0; i < self.assets.length; i += 1) {
+            result += JSON.stringify(self.assets[i].valueOf()) + "\n";
+        }
+        return result;
+    }()), level);
 };
 
 /**
