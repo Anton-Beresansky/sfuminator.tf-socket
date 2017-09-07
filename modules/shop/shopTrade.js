@@ -1092,7 +1092,7 @@ ShopTrade.prototype._verifyShopItems = function (callback) {
  * @returns {Boolean}
  */
 ShopTrade.prototype._verifyShopItem = function (idToCheck, section) {
-    if (!this.shop.sections[section].itemExist(idToCheck)) {
+    if (this.shop.sections.hasOwnProperty(section) && !this.shop.sections[section].itemExist(idToCheck)) {
         this.emit("tradeRequestResponse", this.ajaxResponses.itemsSelectedNotFound);
         return false;
     }
