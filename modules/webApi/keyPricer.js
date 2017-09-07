@@ -46,6 +46,7 @@ KeyPricer.prototype.fetch = function (callback) {
             self.injectBuyers(bptfBuyers);
             self.injectSellers(tradetfSellers);
             self.injectBuyers(tradetfBuyers);
+            self.calculateValue();
             if (typeof callback === "function") {
                 callback();
             }
@@ -109,8 +110,6 @@ KeyPricer.prototype.injectSellers = function (sellers) {
         }
         return 0;
     });
-    this.sellers = this.weightTrades(this.sellers);
-    this.sell_price = this.makeAverage(this.sellers);
 };
 
 KeyPricer.prototype.injectBuyers = function (buyers) {
@@ -127,7 +126,12 @@ KeyPricer.prototype.injectBuyers = function (buyers) {
         }
         return 0;
     });
+};
+
+KeyPricer.prototype.calculateValue = function () {
+    this.sellers = this.weightTrades(this.sellers);
     this.buyers = this.weightTrades(this.buyers);
+    this.sell_price = this.makeAverage(this.sellers);
     this.buy_price = this.makeAverage(this.buyers);
 };
 
