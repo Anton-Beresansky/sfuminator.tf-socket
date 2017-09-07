@@ -4,7 +4,7 @@ var events = require("events");
 var API = require("../../lib/api.js");
 var VDF = require("vdf");
 var FS = require("fs");
-var Logs = require("../../lib/logs.js");
+var LogLog = require("log-log");
 var request = require("request");
 var cheerio = require("cheerio");
 
@@ -23,7 +23,7 @@ function TF2Api(webApi, backpacktf_key, options) {
 
     this.fetchingItemsGame = false;
     this.updateInterval = (options && options.hasOwnProperty("update_interval")) ? options.update_interval : (4 * 60 * 60000); //default 4 hours
-    this.log = new Logs({applicationName: "TF2 Api"});
+    this.log = LogLog.create({applicationName: "TF2 Api"});
     this.debug = (options && options.hasOwnProperty("debug")) ? options.debug : false; //default false
     this.bptfApi = new API("backpack.tf");
     events.EventEmitter.call(this);
@@ -631,6 +631,9 @@ TF2Api.prototype._fetchMarketItemImageURL = function (schemaItem, callback) {
 
 TF2Api.prototype._injectActualKeyPriceToBackpackTFResponse = function (response) {
     this.backpackTFKeyPrice = response.response.currencies.keys.price.value;
+    if (isNaN(this.webApi.keyPricer.getMarketPrice().toMetal())) {
+        this.log.error("Key pricer returned a non number value for keys!");
+    }
     response.response.currencies.keys.price.value = this.webApi.keyPricer.getMarketPrice().toMetal();  //Inject actual key price
     return response;
 };
