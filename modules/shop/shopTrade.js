@@ -929,33 +929,38 @@ ShopTrade.prototype.verifyItems = function (callback) {
             }
         }
     } else if (this.isMarketTrade()) {
-        this._verifyPartnerItems(function (success) {
-            if (success) {
-                if ((self.getPartner().getMarketer().getItems().length + self.getAssets().length) > Market.ITEMS_LIMIT) {
-                    self.emit("tradeRequestResponse", self.ajaxResponses.marketItemsLimit(Market.ITEMS_LIMIT));
+        if (this.items.hasOwnProperty("market") && this.items.market instanceof Array) {
+            this._verifyPartnerItems(function (success) {
+                if (success) {
+                    if ((self.getPartner().getMarketer().getItems().length + self.getAssets().length) > Market.ITEMS_LIMIT) {
+                        self.emit("tradeRequestResponse", self.ajaxResponses.marketItemsLimit(Market.ITEMS_LIMIT));
+                        callback(false);
+                    } else {
+                        callback(true);
+                    }
+                } else {
                     callback(false);
-                } else {
-                    callback(true);
                 }
-            } else {
-                callback(false);
-            }
-        }, function (shopItem) {
-            var itemID = shopItem.getItem().getID();
-            if (self.marketPrices.hasOwnProperty(itemID)) {
-                var marketPrice = new Price(self.marketPrices[itemID], "scrap");
-                if (self.market.checkPrice(shopItem, marketPrice)) {
-                    shopItem.setMarketPrice(marketPrice);
-                    self.assets.push(shopItem);
+            }, function (shopItem) {
+                var itemID = shopItem.getItem().getID();
+                if (self.marketPrices.hasOwnProperty(itemID)) {
+                    var marketPrice = new Price(self.marketPrices[itemID], "scrap");
+                    if (self.market.checkPrice(shopItem, marketPrice)) {
+                        shopItem.setMarketPrice(marketPrice);
+                        self.assets.push(shopItem);
+                    } else {
+                        self.emit("tradeRequestResponse", self.market.getCannotSetPriceResponse(shopItem, marketPrice));
+                        return false;
+                    }
                 } else {
-                    self.emit("tradeRequestResponse", self.market.getCannotSetPriceResponse(shopItem, marketPrice));
+                    self.emit("tradeRequestResponse", self.ajaxResponses.noMarketPrice);
                     return false;
                 }
-            } else {
-                self.emit("tradeRequestResponse", self.ajaxResponses.noMarketPrice);
-                return false;
-            }
-        });
+            });
+        } else {
+            this.emit("tradeRequestResponse", this.ajaxResponses.noItems);
+            callback(false);
+        }
     } else {
         if (!this._verifyShopItems(callback)) {
             return;
