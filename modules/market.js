@@ -114,7 +114,7 @@ Market.prototype.getItem = function (shopItem) {
     if (!(shopItem instanceof ShopItem)) {
         var id = shopItem;
         for (i = 0; i < this.items.length; i += 1) {
-            if (this.items[i].item_id === id) { //This is the very unique id
+            if (this.items[i].item_id === id) { //This is the very unique id (tf2 .id)
                 return this.items[i];
             }
         }
@@ -130,10 +130,13 @@ Market.prototype.getItem = function (shopItem) {
                 return this.items[i];
             }
         }
-        //If there's no match on shop id we backup on original id
-        var originalID = shopItem.getItem().getOriginalID();
-        var foundMarketItems = [];
-        for (i = 0; i < this.items.length; i += 1) {
+    }
+    //Not using original id... will it work?
+    /**
+     //If there's no match on shop id we backup on original id
+     var originalID = shopItem.getItem().getOriginalID();
+     var foundMarketItems = [];
+     for (i = 0; i < this.items.length; i += 1) {
             var marketItem = this.items[i];
             if (marketItem.original_id === originalID) {
                 //Now that we have matched the original id, let's double check on the shop id
@@ -147,7 +150,7 @@ Market.prototype.getItem = function (shopItem) {
                 }
             }
         }
-        if (foundMarketItems.length) {
+     if (foundMarketItems.length) {
             foundMarketItems.sort(function (a, b) {
                 if (a.last_update_date > b.last_update_date) {
                     return -1;
@@ -157,7 +160,7 @@ Market.prototype.getItem = function (shopItem) {
             });
             return foundMarketItems[0];
         }
-    }
+     }**/
     return false;
 };
 
