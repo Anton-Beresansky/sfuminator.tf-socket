@@ -2,6 +2,7 @@ module.exports = TF2Item;
 
 var Price = require("../price.js");
 var TF2Constants = require("./tf2Constants.js");
+var UIDs = require("./uids.js");
 
 /**
  * General purpose TF2Item class
@@ -19,50 +20,16 @@ function TF2Item(item, owner) {
     this.owner = owner;
 }
 
-/**
- * Matching object
- * {
- *   param1: value
- *   param2: [value1, value2, value3]
- * }
- * Item will match if all given params are matching with at least 1 value
- * @param attributes
- * @returns {boolean}
- */
-TF2Item.prototype.isMatchingWith = function (attributes) {
-    var matching = true;
-    for (var property in attributes) {
-        if (this.hasOwnProperty(property)) {
-            if (attributes[property] instanceof Array) {
-                var found = false;
-                for (var i = 0; i < attributes[property].length; i += 1) {
-                    if (this[property] === attributes[property][i]) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    matching = false;
-                    break;
-                }
-            } else if (this[property] !== attributes[property]) {
-                matching = false;
-                break;
-            }
-        } else {
-            matching = false;
-            break;
-        }
-    }
-    return matching;
-};
-
 TF2Item.prototype.getID = function () {
     return this.id;
 };
 
 TF2Item.prototype.getOriginalID = function () {
     return this.original_id;
+};
+
+TF2Item.prototype.getUID = function () {
+    return UIDs.get(this.getFullName());
 };
 
 /**
@@ -287,6 +254,44 @@ TF2Item.prototype.getAttribute = function (defindex) {
         }
     }
     return new TF2Attribute({});
+};
+
+/**
+ * Matching object
+ * {
+ *   param1: value
+ *   param2: [value1, value2, value3]
+ * }
+ * Item will match if all given params are matching with at least 1 value
+ * @param attributes
+ * @returns {boolean}
+ */
+TF2Item.prototype.isMatchingWith = function (attributes) {
+    var matching = true;
+    for (var property in attributes) {
+        if (this.hasOwnProperty(property)) {
+            if (attributes[property] instanceof Array) {
+                var found = false;
+                for (var i = 0; i < attributes[property].length; i += 1) {
+                    if (this[property] === attributes[property][i]) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    matching = false;
+                    break;
+                }
+            } else if (this[property] !== attributes[property]) {
+                matching = false;
+                break;
+            }
+        } else {
+            matching = false;
+            break;
+        }
+    }
+    return matching;
 };
 
 /**

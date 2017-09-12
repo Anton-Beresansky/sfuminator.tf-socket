@@ -309,7 +309,7 @@ ShopItem.prototype.getMinimumMarketPrice = function () {
 };
 
 ShopItem.prototype.getLatestHistoryPrice = function () {
-    var scrapPrice = this.shop.sfuminator.stats.pricesHistory.getLatestHistoryScrapPriceFor(this.getItem().getFullName());
+    var scrapPrice = this.shop.sfuminator.stats.pricesHistory.getLatestHistoryScrapPriceFor(this.getItem().getUID());
     return scrapPrice ? new Price(scrapPrice, "scrap") : false;
 };
 
