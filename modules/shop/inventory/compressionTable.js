@@ -9,12 +9,13 @@ function CompressionLookup() {
     this.schema = {
         defindex: "a",
         name: "b",
+        uid: "B",
         image_url: "c",
-        image_url_large: "d",
+        image_url_large: "C",
         used_by_classes: "e",
         quality: "f",
         particle: "g",
-        decorated_grade: "gg",
+        decorated_grade: "G",
         shop: "h"
     };
     this.items_group = "i";
@@ -23,10 +24,10 @@ function CompressionLookup() {
         level: "y",
         paint_color: "z",
         reserved_to: "w",
-        price: "m",
-        mine_price: "mm",
-        max_price: "MM",
-        real_id: "n"
+        price: "p",
+        real_id: "r",
+        mine_price: "m",
+        max_price: "M"
     };
     this.values = {
         currency: {
