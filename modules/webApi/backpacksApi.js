@@ -61,6 +61,11 @@ require("util").inherits(BackpacksApi, events.EventEmitter);
 BackpacksApi.FETCH_ANTI_SPAM_INTERVAL = 3000;
 
 /**
+ * If Array: List of items id
+ * If query: Any select statement that contains item_id column
+ * Query may not conflict with following columns:
+ * last_update_date, owner, original_id, defindex, level, quantity, origin,
+ * flag_cannot_craft, flag_cannot_trade, quality, attr_defindex, value, float_value, attr_steamid
  * @param instructions {query|Array}
  * @param callback {Function}
  */

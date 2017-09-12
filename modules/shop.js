@@ -2,6 +2,7 @@ module.exports = Shop;
 var events = require("events");
 var Logs = require("../lib/logs.js");
 var Price = require("./price.js");
+var UIDs = require("./tf2/uids.js");
 var TF2Currency = require("./tf2/tf2Currency.js");
 var TF2Item = require("./tf2/tf2Item.js");
 var ShopRatio = require("./shop/shopRatio.js");
@@ -28,6 +29,8 @@ function Shop(sfuminator) {
     this.log = new Logs({applicationName: "Shop", color: "grey", dim: true});
 
     this.ratio = new ShopRatio(this.db);
+    this.uids = UIDs;
+    this.uids.setDatabase(this.db);
     this.tf2Currency = TF2Currency;
     this.tf2Currency.setWebApi(this.webApi);
     this.bots = [];
@@ -87,19 +90,24 @@ Shop.prototype.init = function () {
     self.bots = self.getBots();
     self.log.debug("Updating shop ratios");
     self.ratio.updateHats(function () {
-        self.log.debug("Updating currency");
-        self.tf2Currency.update(function () {
-            self.log.debug("Loading reservations");
-            self.reservations.load(function () {
-                self.log.debug("Loading shop ids");
-                self.inventory.ids.load(function () {
-                    self.log.debug("Loading prices history");
-                    self.sfuminator.stats.pricesHistory.onLoad(function () {
-                        self.log.debug("Loading market");
-                        self.market.load(function () {
-                            self.log.debug("Loading up inventory...");
-                            self.inventory.update(function () {
-                                self.emit("ready");
+        self.log.debug("Loading UIDs");
+        self.uids.load(function () {
+            self.log.debug("Loading prices history");
+            self.sfuminator.stats.pricesHistory.load();
+            self.log.debug("Updating currency");
+            self.tf2Currency.update(function () {
+                self.log.debug("Loading reservations");
+                self.reservations.load(function () {
+                    self.log.debug("Loading shop ids");
+                    self.inventory.ids.load(function () {
+                        self.log.debug("Waiting for prices history to load...");
+                        self.sfuminator.stats.pricesHistory.onLoad(function () {
+                            self.log.debug("Loading market");
+                            self.market.load(function () {
+                                self.log.debug("Loading up inventory...");
+                                self.inventory.update(function () {
+                                    self.emit("ready");
+                                });
                             });
                         });
                     });
