@@ -105,21 +105,25 @@ UIDs.prototype._makeTables = function (callback) {
     });
 };
 
+UIDs.DB = {
+    tableName: "my_sfuminator_items.`unique_items_id_2`"
+};
 UIDs.QUERIES = {
     readUIDs: function () {
-        return "SELECT `name`,`uid` FROM my_sfuminator_items.`unique_items_id`";
+        return "SELECT `name`,`uid` FROM " + UIDs.DB.tableName;
     },
-    saveUIDs: function (UIDs, connection) {
-        var query = "INSERT IGNORE my_sfuminator_items.`unique_items_id` (`name`) VALUES ";
-        for (var i = 0; i < UIDs.length; i += 1) {
-            query += "(" + connection.c.escape(UIDs[i]) + "),";
+    saveUIDs: function (uIDs, connection) {
+        var query = "INSERT IGNORE " + UIDs.DB.tableName + " (`name`) VALUES ";
+        for (var i = 0; i < uIDs.length; i += 1) {
+            query += "(" + connection.c.escape(uIDs[i]) + "),";
         }
         return query.slice(0, -1);
     },
     makeTables: function () {
-        return "CREATE TABLE IF NOT EXISTS my_sfuminator_items.`unique_items_id` ("
+        return "CREATE TABLE IF NOT EXISTS " + UIDs.DB.tableName + " ("
             + "`uid` INT NOT NULL AUTO_INCREMENT,"
             + "`name` VARCHAR(100),"
+            + "KEY (`name`),"
             + "PRIMARY KEY (`uid`)"
             + ") "
             + "ENGINE = InnoDB "
