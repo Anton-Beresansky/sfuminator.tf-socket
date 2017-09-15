@@ -29,6 +29,8 @@ function PriceHistory(stats) {
     this.backpacksApi = this.shop.webApi.backpacks;
     this.queries = PriceHistory.QUERIES;
     this._callbacks = new Callbacks();
+    this._longUpdateIterations = 0;
+    this._isLongUpdate = false;
     this.itemsHistory = {};
     this.log = LogLog.create({applicationName: "Prices History", color: "magenta", dim: true});
 }
@@ -47,7 +49,7 @@ PriceHistory.prototype.load = function (callback) {
                 self.update(function () {
                     self._callbacks.fire("onLoad");
                     self.log.debug("Ready " + self.latestID);
-                });
+                }, 1000000);
             });
         });
     });
@@ -57,28 +59,36 @@ PriceHistory.prototype.onLoad = function (callback) {
     this._callbacks.stack("onLoad", callback);
 };
 
-PriceHistory.prototype.update = function (callback) {
+PriceHistory.prototype.update = function (callback, forcedTradeCount) {
     var self = this;
     this.log.debug("Updating...");
-    this._callbacks.stack("onUpdate", callback);
     this.loadLatestTradeID(function () {
         var loadedLatestID = self.latestID;
-        self.log.debug("Loaded latest trade id to: " + self.latestID);
+        self.log.debug("Loaded latest trade id to: " + loadedLatestID);
         self.readItems(function (items) {
             self.saveItems(items, function () {
-                if (self.latestID > loadedLatestID) {
-                    self.saveLatestTradeID();
+                if (self._isLongUpdate) {
+                    self._longUpdateIterations += 1;
+                    self.update(callback, forcedTradeCount);
+                } else {
+                    if (self.latestID > loadedLatestID) {
+                        self.saveLatestTradeID();
+                    }
+                    self._callbacks.stack("onUpdate", callback);
+                    self._callbacks.fire("onUpdate");
                 }
-                self._callbacks.fire("onUpdate");
             });
         });
-    });
+    }, forcedTradeCount);
 };
 
-PriceHistory.prototype.loadLatestTradeID = function (callback) {
+PriceHistory.prototype.loadLatestTradeID = function (callback, forcedTradeCount) {
     var self = this;
     this._fetchLatestTradeID(function (latestID) {
         self.latestID = latestID;
+        if (forcedTradeCount) {
+            self._injectWantedStartingTradeID(forcedTradeCount);
+        }
         callback();
     });
 };
@@ -171,6 +181,16 @@ PriceHistory.prototype._parseItemsToInsert = function (items) {
     return itemsToInsert;
 };
 
+PriceHistory.prototype._injectWantedStartingTradeID = function (forcedTradeCount) {
+    var actualLatestID = this.latestID;
+    this.latestID = this.latestID - forcedTradeCount + (this._longUpdateIterations * PriceHistory.DB.readLimit);
+    this._isLongUpdate = true;
+    if (this.latestID > actualLatestID) {
+        this._isLongUpdate = false;
+        this.latestID = actualLatestID;
+    }
+};
+
 PriceHistory.prototype._fetchLatestTradeID = function (callback) {
     var self = this;
     this.db.connect(function (connection) {
@@ -209,9 +229,13 @@ PriceHistory.prototype._makeTables = function (callback) {
     });
 };
 
+PriceHistory.DB = {
+    tableName: "`prices_history_2`",
+    readLimit: 20000
+};
 PriceHistory.QUERIES = {
     makePricesHistoryTable: function () {
-        return "CREATE TABLE IF NOT EXISTS `prices_history` ("
+        return "CREATE TABLE IF NOT EXISTS " + PriceHistory.DB.tableName + " ("
             + "`id` INT NOT NULL AUTO_INCREMENT, "
             + "`item_uid` INT,"
             + "`scrapPrice` INT,"
@@ -230,10 +254,10 @@ PriceHistory.QUERIES = {
         return "UPDATE `tasks` set `version`=" + latestID + " WHERE `of`='pHistory_tradeid'";
     },
     readItemsPrices: function () {
-        return "SELECT item_uid,scrapPrice,max(sell_date) as sell_date FROM prices_history GROUP BY item_uid";
+        return "SELECT item_uid,scrapPrice,max(sell_date) as sell_date FROM " + PriceHistory.DB.tableName + " GROUP BY item_uid";
     },
     insertItemsPrices: function (items) {
-        var query = "INSERT IGNORE INTO `prices_history` (`item_uid`,`scrapPrice`,`sell_date`) VALUES ";
+        var query = "INSERT IGNORE INTO " + PriceHistory.DB.tableName + " (`item_uid`,`scrapPrice`,`sell_date`) VALUES ";
         for (var i = 0; i < items.length; i += 1) {
             var item = items[i];
             query += "(" + item.uid + "," + item.scrapPrice + ",'" + item.last_update_date.toMysqlFormat() + "'),";
@@ -249,7 +273,7 @@ PriceHistory.QUERIES = {
             + "AND my_sfuminator.shop_trades.status='closed' "
             + (latestID ? ("AND my_sfuminator.shop_trades.id>" + (latestID - 50) + " ") : "")
             + "ORDER BY "
-            + "my_sfuminator.shop_trades.id DESC LIMIT 20000"
+            + "my_sfuminator.shop_trades.id LIMIT " + PriceHistory.DB.readLimit
             + ") "
             + "as trades "
             + "JOIN "
