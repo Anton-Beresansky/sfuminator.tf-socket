@@ -453,7 +453,7 @@ Market.prototype.runItemsFixer = function () {
     this._fixCancelledItems(function (allGood2) {
         self._fixAvailableItems(function (allGood1) {
             if (allGood2 && allGood1) {
-                self.fixerLog.success("All good!");
+                self.fixerLog.debug("All good!");
             } else {
                 self.fixerLog.warning("Hmmm there was something wrong...");
             }
