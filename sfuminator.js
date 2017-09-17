@@ -155,7 +155,7 @@ Sfuminator.prototype.bindInterrupts = function () {
         self.stats.pricesHistory.update();
     });
     this.interrupts.on("marketShopIDFixer", function () {
-        self.shop.market.runShopIDsFixer();
+        self.shop.market.runItemsFixer();
     });
 };
 
