@@ -429,13 +429,16 @@ Market.QUERIES = {
             + "DEFAULT CHARACTER SET = utf8 "
             + "COLLATE = utf8_bin";
     },
-    getItemsToFix: function () {
+    getItemsToFix_available: function () {
         return "SELECT sin.shop_id as actual_shop_id ,fuzz.*,sin.item_id as sin_orig_id " +
             "FROM (SELECT marketed_items.item_id as marketed_item_id,marketed_items.shop_id as marketed_shop_id,owner,status,market_price,taxed_price,last_update_date,original_id,shop_inventory_ids.* " +
             "FROM (SELECT * FROM marketed_items WHERE last_update_date>'2017-08-19' AND status=1 order by last_update_date) as marketed_items " +
             "LEFT JOIN (select shop_id as s_shop_id, item_id as s_original_id from shop_inventory_ids) as shop_inventory_ids " +
             "ON marketed_items.shop_id=shop_inventory_ids.s_shop_id WHERE `s_original_id` IS NULL) as fuzz " +
             "LEFT JOIN shop_inventory_ids as sin ON sin.item_id=fuzz.original_id"
+    },
+    getItemsToFix_cancelled: function () {
+        return "SELECT * FROM marketed_items WHERE status=3 AND last_update_date between date_sub(now(), INTERVAL 60 minute) and now()";
     },
     updateShopID: function (dbItem) {
         return "UPDATE marketed_items SET shop_id=" + dbItem.actual_shop_id + " WHERE shop_id=" + dbItem.marketed_shop_id;
@@ -445,29 +448,60 @@ Market.QUERIES = {
     }
 };
 
-Market.prototype.runShopIDsFixer = function () {
+Market.prototype.runItemsFixer = function () {
     var self = this;
-    this.db.connect(function (connection) {
-        connection.query(self.queries.getItemsToFix(), function (result, isEmpty) {
-            connection.release();
-            if (isEmpty) {
-                self.fixerLog.debug("All good!");
+    this._fixCancelledItems(function (allGood2) {
+        self._fixAvailableItems(function (allGood1) {
+            if (allGood2 && allGood1) {
+                self.fixerLog.success("All good!");
             } else {
-                self.fixerLog.warning("Hmmm there's something wrong...");
-                for (var i = 0; i < result.length; i += 1) {
-                    var dbItem = result[i];
-                    if (dbItem.actual_shop_id) {
-                        //So item should be available but we lost shop id link
-                        self.fixerLog.warning("Outdated Shop ID: " + dbItem.marketed_shop_id + " -> " + dbItem.actual_shop_id);
-                        self._updateShopID(dbItem);
-                    } else {
-                        //This should mean that item has been sold gotta update status
-                        self.fixerLog.warning("Item seems gone. No inventory link: " + dbItem.marketed_shop_id + " -> " + dbItem.actual_shop_id);
-                        self._resolveItemStatus(dbItem);
-                    }
-                }
+                self.fixerLog.warning("Hmmm there was something wrong...");
             }
         });
+    });
+};
+
+Market.prototype._fixCancelledItems = function (callback) {
+    var self = this;
+    this.db.singleQuery(self.queries.getItemsToFix_cancelled(), function (result, isEmpty) {
+        var allGood = true;
+        if (!isEmpty) {
+            for (var i = 0; i < result.length; i += 1) {
+                var dbItem = result[i];
+                self.log.debug("Found item with status 3 (cancelled)");
+                self.log.debug(JSON.stringify(dbItem));
+                if (self.shop.getItem(dbItem.marketed_shop_id)) {
+                    self.log.debug("Found " + dbItem.marketed_shop_id + " in shop, so status should be updated to 1 (Available)");
+                    allGood = false;
+                } else {
+                    self.log.debug("Didn't find " + dbItem.marketed_shop_id + " in shop, I guess it's not a problem then");
+                }
+            }
+        }
+        callback(allGood);
+    });
+};
+
+Market.prototype._fixAvailableItems = function (callback) {
+    var self = this;
+    this.db.singleQuery(self.queries.getItemsToFix_available(), function (result, isEmpty) {
+        if (isEmpty) {
+            callback(true);
+        } else {
+            for (var i = 0; i < result.length; i += 1) {
+                var dbItem = result[i];
+                if (dbItem.actual_shop_id) {
+                    //So item should be available but we lost shop id link
+                    self.fixerLog.warning("Outdated Shop ID: " + dbItem.marketed_shop_id + " -> " + dbItem.actual_shop_id);
+                    self._updateShopID(dbItem);
+                } else {
+                    //This should mean that item has been sold gotta update status
+                    self.fixerLog.warning("Item seems gone. No inventory link: " + dbItem.marketed_shop_id + " -> " + dbItem.actual_shop_id);
+                    self._resolveItemStatus(dbItem);
+                }
+            }
+            callback(false);
+        }
     });
 };
 
