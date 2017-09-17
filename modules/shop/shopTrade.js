@@ -214,7 +214,7 @@ ShopTrade.prototype.setAsSent = function (tradeOfferID) {
  */
 ShopTrade.prototype.cancel = function (statusInfo) {
     var self = this;
-    if (this.getSteamTrade() && (this.getSteamTrade().getTradeOfferID() || this.getSteamTrade().isMaking())) {
+    if (this.getSteamTrade()) {
         this.log.debug("Found open steamTrade associated, cancelling first");
         this.steamTrade.cancel(function () {
             self.unsetSteamTrade();
