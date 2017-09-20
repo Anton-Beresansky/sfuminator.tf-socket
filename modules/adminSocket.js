@@ -16,10 +16,10 @@ function AdminSocket(sfuminator) {
 }
 
 AdminSocket.prototype.init = function () {
-    if (fs.existsSync('bufferedTradedItems')) {
+   /* if (fs.existsSync('bufferedTradedItems')) {
         this.log.debug("Reading traded items...");
         this.tradedItems = JSON.parse(fs.readFileSync('bufferedTradedItems'));
-    }
+    }*/
 };
 
 /**
@@ -45,6 +45,15 @@ AdminSocket.prototype.request = function (request, callback) {
     }
 };
 
+AdminSocket.prototype.getUIDs = function (callback) {
+    callback(null, this.sfuminator.shop.uids.lookupTable);
+};
+
+AdminSocket.prototype.getItemHistory = function (callback, request) {
+    this.sfuminator.stats.pricesHistory.readItemHistory(request.getData().uid, callback);
+};
+
+/*
 AdminSocket.prototype.getTradedItems = function (callback) {
     this.log.debug("Getting traded items...");
     var self = this;
@@ -64,7 +73,7 @@ AdminSocket.prototype.getTradedItems = function (callback) {
             });
         });
     }
-};
+};*/
 
 AdminSocket.prototype.getSchema = function (callback) {
     callback(null, this.sfuminator.webApi.backpacks.tf2.schema);

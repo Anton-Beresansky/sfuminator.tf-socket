@@ -144,6 +144,21 @@ PriceHistory.prototype.readItems = function (callback) {
     });
 };
 
+/**
+ * @param uid
+ * @param [limit]
+ * @param callback
+ */
+PriceHistory.prototype.readItemHistory = function (uid, limit, callback) {
+    if (typeof limit === "function") {
+        callback = limit;
+    }
+    var self = this;
+    this.db.singleQuery(self.queries.readItemHistory(uid, !isNaN(limit) ? limit : null), function (result) {
+        callback(result);
+    });
+};
+
 PriceHistory.prototype._parseItemsToInsert = function (items) {
     var itemsToInsert = [];
     items.sort(function (a, b) {
@@ -168,6 +183,8 @@ PriceHistory.prototype._parseItemsToInsert = function (items) {
             }
         }
     }
+    this.log.debug("Parsed trades from " + new Date(items[0]._dbRow.trade_last_update_date)
+        + " to " + new Date(items[items.length - 1]._dbRow.trade_last_update_date));
     return itemsToInsert;
 };
 
@@ -217,7 +234,7 @@ PriceHistory.QUERIES = {
             + "`scrapPrice` INT,"
             + "`sell_date` DATETIME,"
             + "PRIMARY KEY (`id`),"
-            + "KEY (`item_uid`)"
+            + "INDEX (`item_uid`)"
             + ") "
             + "ENGINE = InnoDB "
             + "DEFAULT CHARACTER SET = utf8 "
@@ -239,6 +256,9 @@ PriceHistory.QUERIES = {
             query += "(" + item.uid + "," + item.scrapPrice + ",'" + item.last_update_date.toMysqlFormat() + "'),";
         }
         return query.slice(0, -1);
+    },
+    readItemHistory: function (uid, length) {
+        return "SELECT * FROM " + PriceHistory.DB.tableName + " WHERE item_uid=" + uid + " ORDER BY id DESC" + (length ? (" LIMIT " + length) : "");
     },
     readTradedItems: function (latestID) {
         return "SELECT trades.id as trade_id, trades.last_update_date as trade_last_update_date, "

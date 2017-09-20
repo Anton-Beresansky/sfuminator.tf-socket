@@ -72,7 +72,9 @@ UIDs.prototype._fetch = function (callback) {
             connection.release();
             var UIDs = [];
             if (!isEmpty) {
-                UIDs = result;
+                for (var i = 0; i < result.length; i += 1) {
+                    UIDs.push({name: result[i].name, uid: result[i].uid});
+                }
             }
             callback(UIDs);
         });
