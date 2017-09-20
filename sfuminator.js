@@ -11,7 +11,7 @@ var Stats = require('./modules/stats.js');
 var TradeStatus = require('./modules/trade/status.js');
 var Interrupts = require('./lib/interrupts.js');
 var BotPorting = require('./v3_bot_porting.js');
-//var AdminSocket = require('./modules/adminSocket.js');
+var AdminSocket = require('./modules/adminSocket.js');
 var Valve = require("./valve.js");
 
 //Test modules
@@ -65,7 +65,7 @@ function Sfuminator(webApi, db) {
     this.botsController = new BotsController(this);
     this.stats = new Stats(this);
     this.status = new TradeStatus(this);
-//    this.adminSocket = new AdminSocket(this);
+    this.adminSocket = new AdminSocket(this);
 
     if (TestingEnabled) {
         //this.priceMachine = new PriceMachine(this);
