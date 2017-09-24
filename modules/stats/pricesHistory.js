@@ -49,7 +49,7 @@ PriceHistory.prototype.load = function (callback) {
                 self.update(function () {
                     self._callbacks.fire("onLoad");
                     self.log.debug("Ready " + self.latestID);
-                }, 1000000);
+                });
             });
         });
     });
@@ -193,8 +193,10 @@ PriceHistory.prototype._parseItemsToInsert = function (items) {
             }
         }
     }
-    this.log.debug("Parsed trades from " + new Date(items[0]._dbRow.trade_last_update_date)
-        + " to " + new Date(items[items.length - 1]._dbRow.trade_last_update_date));
+    if (items.length) {
+        this.log.debug("Parsed trades from " + new Date(items[0]._dbRow.trade_last_update_date)
+            + " to " + new Date(items[items.length - 1]._dbRow.trade_last_update_date));
+    }
     return itemsToInsert;
 };
 
@@ -247,7 +249,7 @@ PriceHistory.prototype._makeTables = function (callback) {
 };
 
 PriceHistory.DB = {
-    tableName: "`prices_history_2`",
+    tableName: "`prices_history`",
     readLimit: 20000
 };
 PriceHistory.QUERIES = {
