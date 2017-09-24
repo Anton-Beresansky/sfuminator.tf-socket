@@ -108,7 +108,7 @@ UIDs.prototype._makeTables = function (callback) {
 };
 
 UIDs.DB = {
-    tableName: "my_sfuminator_items.`unique_items_id_2`"
+    tableName: "my_sfuminator_items.`unique_items_id`"
 };
 UIDs.QUERIES = {
     readUIDs: function () {
@@ -125,7 +125,7 @@ UIDs.QUERIES = {
         return "CREATE TABLE IF NOT EXISTS " + UIDs.DB.tableName + " ("
             + "`uid` INT NOT NULL AUTO_INCREMENT,"
             + "`name` VARCHAR(100),"
-            + "KEY (`name`),"
+            + "UNIQUE (`name`),"
             + "PRIMARY KEY (`uid`)"
             + ") "
             + "ENGINE = InnoDB "
