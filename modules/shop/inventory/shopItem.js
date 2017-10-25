@@ -109,7 +109,8 @@ ShopItem.prototype.getType = function () {
             } else if (this.item.isTaunt()) {
                 return ShopItem.TYPE.TAUNT;
             } else if (
-                (this.item.isDecorated() || this.item.isTool() || this.item.isStrangePart() || this.item.isPaint())
+                (//this.item.isDecorated() ||
+                    this.item.isTool() || this.item.isStrangePart() || this.item.isPaint())
                 && this.item.isCraftable()) {
                 return ShopItem.TYPE.OTHER;
             }
