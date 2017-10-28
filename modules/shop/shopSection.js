@@ -95,12 +95,18 @@ Section.prototype.itemExist = function (id) {
 Section.prototype.getCompressedItems = function () {
     for (var i = 0; i < this.compressedItems.length; i += 1) {
         for (var j = 0; j < this.compressedItems[i][CompressionLookup.items_group].length; j += 1) {
-            var holder = this.shop.reservations.get(this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.id]).getHolder();
+            var id = this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.id];
+            var holder = this.shop.reservations.get(id).getHolder();
             if (holder) {
                 this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.reserved_to] = holder;
             } else {
                 //OFC! OFC!!!!!!! this.compressedItems doesn't change in time, when dereserving, reservation has to be deleted!
                 delete this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.reserved_to]
+            }
+            var shopItem = this.shop.getItem(id);
+            if (shopItem.isMarketed() && !this.compressedItems[i][CompressionLookup.items_group][j].hasOwnProperty(CompressionLookup.unique_identifiers.max_price)) {
+                this.log.warning("Yeppolino");
+                this.remove(shopItem).add(shopItem).commit();
             }
         }
     }
