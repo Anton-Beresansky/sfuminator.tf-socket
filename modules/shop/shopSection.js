@@ -3,6 +3,7 @@ module.exports = Section;
 
 var Logs = require("../../lib/logs.js");
 var Versioning = require("../../lib/dataVersioning.js");
+var ShopItem = require('./inventory/shopItem.js');
 var CompressionLookup = require("./inventory/compressionTable.js");
 
 /**
@@ -104,7 +105,7 @@ Section.prototype.getCompressedItems = function () {
                 delete this.compressedItems[i][CompressionLookup.items_group][j][CompressionLookup.unique_identifiers.reserved_to]
             }
             var shopItem = this.shop.getItem(id);
-            if (shopItem.isMarketed() && !this.compressedItems[i][CompressionLookup.items_group][j].hasOwnProperty(CompressionLookup.unique_identifiers.max_price)) {
+            if (shopItem instanceof ShopItem && shopItem.isMarketed() && !this.compressedItems[i][CompressionLookup.items_group][j].hasOwnProperty(CompressionLookup.unique_identifiers.max_price)) {
                 this.log.warning("Yeppolino");
                 this.remove(shopItem).add(shopItem).commit();
             }
