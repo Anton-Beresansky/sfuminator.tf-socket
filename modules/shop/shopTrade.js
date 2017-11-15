@@ -507,7 +507,7 @@ ShopTrade.prototype.load = function (callback) {
                         if (marketItem) {
                             self.withdrawableAssetsScrapValue += marketItem.getPrice().toScrap();
                         } else {
-                            this.log.error("No marketed item in withdraw... wut? (when building withdrawable assets value)");
+                            self.log.error("No marketed item in withdraw... wut? (when building withdrawable assets value)");
                         }
                     }
                 }
