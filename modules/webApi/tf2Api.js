@@ -238,7 +238,7 @@ TF2Api.prototype.updateSchema = function (callback) {
     var self = this;
     this.isSchemaUpToDate(function (newVersion) {
         self.emit("debug", "New version is: " + newVersion);
-        if (newVersion > 0 || true) {
+        if (newVersion > 0) {
             self.downloadSchema(newVersion, function () {
                 self.fetchItemsGame(function () {
                     if (typeof callback === "function") {
