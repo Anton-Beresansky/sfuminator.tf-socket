@@ -6,6 +6,7 @@ var BotCommands = require('../bots/botCommands.js');
 var TransferNodesCluster = require('./assetsTransfer.js');
 var TF2Constants = require("./../tf2/tf2Constants.js");
 var SteamTradeErrorSolver = require("./steamTradeErrorSolver.js");
+
 /**
  * @class BotsController
  * @parameter {Sfuminator} sfuminator
@@ -26,6 +27,7 @@ function BotsController(sfuminator) {
     this.tradeBots = [];
 
     this.preSmeltedQuantity = 12;
+    this.preSmeltMaxQuantity = this.preSmeltedQuantity * 2;
     this.busyDistributionManagerTimeoutInterval = ***REMOVED***00; //5 minutes
 
     /**
@@ -239,8 +241,43 @@ BotsController.prototype.preSmeltMetal = function () {
             }
         });
     };
+    var preCraft = function (bot) {
+        var backpack = bot.getUser().getTF2Backpack();
+        backpack.getCached(function () {
+            var metalToCraft = [
+                TF2Constants.defindexes.ReclaimedMetal,
+                TF2Constants.defindexes.ScrapMetal
+            ];
+            for (var i = 0; i < metalToCraft.length; i += 1) {
+                var count = backpack.getCount({defindex: metalToCraft[i]});
+                if (count > self.preSmeltMaxQuantity) {
+                    self.log.debug("Crafting metal, count for " + metalToCraft[i] + " is " + count);
+                    var itemsLength = backpack.getItems().length;
+                    var filter = {id: []};
+                    if (itemsLength > 0) {
+                        while (itemsLength -= 1) {
+                            var itemsToCraft = backpack.getItems(filter, {defindex: metalToCraft[i]}, 3);
+                            if (itemsToCraft.length === 3) {
+                                if (!self.sfuminator.shop.reservations.exist(itemsToCraft[0].getID())
+                                    && !self.sfuminator.shop.reservations.exist(itemsToCraft[1].getID())
+                                    && !self.sfuminator.shop.reservations.exist(itemsToCraft[2].getID())) {
+                                    bot.steamClient.craftTF2Items(itemsToCraft);
+                                    break;
+                                } else {
+                                    filter.id.push(itemsToCraft[0].getID());
+                                    filter.id.push(itemsToCraft[1].getID());
+                                    filter.id.push(itemsToCraft[2].getID());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    };
     for (var i = 0; i < this.tradeBots.length; i += 1) {
         preSmelt(this.tradeBots[i]);
+        preCraft(this.tradeBots[i]);
     }
 };
 
@@ -305,6 +342,7 @@ BotsController.prototype.manageItemsDistribution = function () {
     }
 
     i = 0;
+
     function compensate(index) {
         var toCompensate = compensations[index];
         var itemsToTransfer = [];
