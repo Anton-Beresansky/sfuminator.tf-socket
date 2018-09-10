@@ -1,3 +1,5 @@
+// Sfuminator.tf | Main handler for a Trading Bot
+
 module.exports = TraderBot;
 
 var SteamClient = require("../../lib/steamClient.js");
@@ -7,7 +9,7 @@ var SteamTradeOffer = require("../../lib/steamTradeOffer.js");
 var SteamTradeError = require('../../lib/steamTradeError.js');
 var BotInteractions = require("./botInteractions.js");
 var CFG = require('../../cfg.js');
-var Logs = require("../../lib/logs.js");
+var LogLog = require("log-log");
 
 /**
  * Trader Bot
@@ -20,7 +22,7 @@ function TraderBot(user, sfuminator) {
     this.user = user;
     this.sfuminator = sfuminator;
     this.steamid = user.getSteamid();
-    this.friendListLimit = 170;
+    this.friendListLimit = CFG.bot_friend_list_limit;
     this.available = false;
     /**
      * @type {SteamClient}
@@ -35,7 +37,7 @@ function TraderBot(user, sfuminator) {
      */
     this.interactions = new BotInteractions();
 
-    this.log = new Logs({applicationName: "Trader bot " + this.steamid, color: "red", dim: true});
+    this.log = LogLog.create({applicationName: "Trader bot " + this.steamid, color: "red", dim: true});
     var self = this;
     this.steamClient.login();
     this.steamClient.onceLoggedIn(function () {
@@ -43,7 +45,7 @@ function TraderBot(user, sfuminator) {
     });
 }
 
-TraderBot.AUTOMATIC_CANCEL_TIME = 600000; //10 minutes
+TraderBot.AUTOMATIC_CANCEL_TIME = CFG.bot_automatic_trade_cancel_time; //10 minutes
 
 TraderBot.prototype.onFirstLogin = function () {
     var self = this;

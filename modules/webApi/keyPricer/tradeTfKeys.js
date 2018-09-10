@@ -1,8 +1,10 @@
+// Sfuminator.tf | Trade.TF Key price
+
 module.exports = TradeTFKeys;
 
 var request = require("request");
 var cheerio = require("cheerio");
-var Logs = require("../../../lib/logs.js");
+var LogLog = require("log-log");
 
 /**
  * @constructor
@@ -10,8 +12,8 @@ var Logs = require("../../../lib/logs.js");
 function TradeTFKeys() {
     this.sellers = [];
     this.buyers = [];
-    this.log = new Logs({applicationName: "TradeTFKeys", dim: true});
-    this.log.setLevel(2);
+    this.log = LogLog.create({applicationName: "TradeTFKeys", dim: true});
+    this.log.setDepthLevel(2);
 }
 
 TradeTFKeys.prototype.getSellers = function () {

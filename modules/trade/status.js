@@ -1,3 +1,5 @@
+// Sfuminator.tf | Handling trading status, queue functionality is only for manual trade (obsolete)
+
 module.exports = TradeStatus;
 
 var LogLog = require('log-log');
@@ -75,23 +77,3 @@ TradeStatus.prototype.getQueue = function (steamid) {
 TradeStatus.prototype.getQueueInfo = function () {
     return JSON.parse(this.botStatus.additional);
 };
-
-/*
- +-------------------+---------+--------------------+--------+----------------------------------------------------------------------------------------------------------------------------+
- | of                | version | last_server_update | active | additional                                                                                                                 |
- +-------------------+---------+--------------------+--------+----------------------------------------------------------------------------------------------------------------------------+
- | schema            | 2734753 |         1430617654 |      1 |                                                                                                                            |
- | prices            |       0 |         1430617695 |      1 |                                                                                                                            |
- | premium           |       0 |                  0 |      0 |                                                                                                                            |
- | apicalls          |       4 |         1439767838 |      0 |                                                                                                                            |
- | steam_status      |       0 |         1439771233 |      0 |                                                                                                                            |
- | axe_fish_backpack |  878930 |         1427306125 |      0 |                                                                                                                            |
- | botStatus         |       0 |         1439771328 |      1 | {"me":"You are trading...","all":"Trading with '#player'...","additional":3}                                               |
- | homeMessage       |       0 |                  0 |      0 | Happy Easter!                                                                                                              |
- | tradeAlert        |       2 |         1439768416 |      0 |                                                                                                                            |
- | brdMsg            |       0 |                  0 |      0 | {"color":"rgb(0,180,180)","message":"We advice to not trade - many people are reporting items disappearing after a trade"} |
- | betaProgram       |       0 |                  0 |      1 |                                                                                                                            |
- | shopInventory     |  749633 |         1439771312 |      0 |                                                                                                                            |
- | scanned_profiles  |  117064 |                  0 |      0 |                                                                                                                            |
- +-------------------+---------+--------------------+--------+----------------------------------------------------------------------------------------------------------------------------+
- */

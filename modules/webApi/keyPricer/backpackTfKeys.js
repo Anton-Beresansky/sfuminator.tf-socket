@@ -1,8 +1,10 @@
+// Sfuminator.tf | Backpack.TF Key price
+
 module.exports = BackpackTFKeys;
 
 var request = require("request");
 var cheerio = require("cheerio");
-var Logs = require("../../../lib/logs.js");
+var LogLog = require("log-log");
 
 /**
  *
@@ -12,7 +14,7 @@ function BackpackTFKeys() {
     this._pageToFetch = 5;
     this.sellers = [];
     this.buyers = [];
-    this.log = new Logs({applicationName: "BackpackTFKeys"});
+    this.log = LogLog.create({applicationName: "BackpackTFKeys"});
 }
 
 BackpackTFKeys.prototype.getSellers = function () {

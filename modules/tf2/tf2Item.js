@@ -1,3 +1,5 @@
+// Sfuminator.tf | TF2 Item Class
+
 module.exports = TF2Item;
 
 var Price = require("../price.js");

@@ -1,3 +1,5 @@
+// Sfuminator.tf | TF2 Web Api Interfaces
+
 module.exports = TF2Api;
 
 var events = require("events");

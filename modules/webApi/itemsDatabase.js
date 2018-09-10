@@ -1,3 +1,5 @@
+// Sfuminator.tf | NOT IMPLEMENTED | Interface enhancement for BackpackApi, faster and lighter, not working properly.
+
 module.exports = ItemsDatabase;
 
 var LogLog = require('log-log');

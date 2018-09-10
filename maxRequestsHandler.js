@@ -1,16 +1,17 @@
+// Sfuminator.tf | Requests supervisor
+
 module.exports = MaxRequestsHandler;
 
-var Logs = require("./lib/logs.js");
+var LogLog = require("log-log");
+var CFG = require('./cfg.js');
 
 /**
  * General purpose Max Requests Handler class
  * @returns {MaxRequestsHandler}
  */
 function MaxRequestsHandler() {
-    this.log = new Logs({applicationName: "Max requests handler", color: "gray"});
-    this.whitelist = [
-        "***REMOVED***"
-    ];
+    this.log = LogLog.create({applicationName: "Max requests handler", color: "gray"});
+    this.whitelist = CFG.requests_ip_whitelist;
     this.requests = {};
     this.banned = {};
     this.ban_window_mls = 120000;

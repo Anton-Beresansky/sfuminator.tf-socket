@@ -1,10 +1,13 @@
+// Sfuminator.tf | Transferring items between bots
+
 module.exports = TransferNodesCluster;
 
 var SteamTradeOffer = require("./../../lib/steamTradeOffer.js");
-var Logs = require("./../../lib/logs.js");
+var LogLog = require("log-log");
 var Events = require("events");
 
 /**
+ * Many to One Transfer, handling one or more transfer nodes
  * @param {BotsController} botsController
  * @param {TraderBot} receiver
  * @constructor
@@ -17,7 +20,7 @@ function TransferNodesCluster(botsController, receiver) {
      */
     this.nodes = [];
     this.lastTransferErrored = false;
-    this.log = new Logs({
+    this.log = LogLog.create({
         applicationName: "Transfer Nodes Cluster > " + receiver.getSteamid(),
         color: "blue"
     });
@@ -89,6 +92,7 @@ TransferNodesCluster.prototype.nodeExist = function (steamid) {
 };
 
 /**
+ * One to One Transfer
  * @param {TraderBot} sender
  * @param {TraderBot} receiver
  * @constructor
@@ -102,7 +106,7 @@ function TransferNode(sender, receiver) {
     this.items = [];
     this.finished = false;
 
-    this.log = new Logs({
+    this.log = LogLog.create({
         applicationName: "Transfer Node ("
         + this.sender.steamClient.getCredentials().getUsername() + " > " + this.receiver.steamClient.getCredentials().getUsername() + ")",
         color: "blue"
@@ -235,7 +239,7 @@ TransferNode.prototype.unlockItems = function () {
 };
 
 /**
- * After an internal item transfer we have to update item id and owner
+ * After an internal item transfer we have to update item id and owner (steam is too slow)
  * @param oldItems
  * @param newItems
  * @private

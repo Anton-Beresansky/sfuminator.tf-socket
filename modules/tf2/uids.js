@@ -1,3 +1,5 @@
+// Sfuminator.tf | uID Manager. Items with same uID will be grouped under the same stock
+
 var LogLog = require('log-log');
 var Callbacks = require('../../lib/callbacks.js');
 

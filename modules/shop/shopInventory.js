@@ -1,11 +1,14 @@
+// Sfuminator.tf | Shop Inventory manager
+
 module.exports = ShopInventory;
 
 var events = require("events");
-var Logs = require("../../lib/logs.js");
+var LogLog = require("log-log");
 var Price = require("../price.js");
 var ItemVersioning = require("../../lib/dataVersioning.js");
 var ShopItem = require("./inventory/shopItem.js");
 var ShopItemIds = require("./inventory/shopItemIds.js");
+var CFG = require('./../../cfg.js');
 
 /**
  * Shop Inventory, contains full backpack with tf2 formatted items
@@ -19,10 +22,10 @@ function ShopInventory(shop) {
     this.users = shop.sfuminator.users;
     this.db = shop.db;
 
-    this.log = new Logs({applicationName: "Shop Inventory", color: "green"});
-    this.log.setLevel(3);
+    this.log = LogLog.create({applicationName: "Shop Inventory", color: "green"});
+    this.log.setDepthLevel(3);
     this.ids = new ShopItemIds(this.db);
-    this.versioning = new ItemVersioning(10, "inventory");
+    this.versioning = new ItemVersioning(CFG.shop_versioning_snapshots, "inventory");
     /**
      * Full Shop Items list
      * @type {ShopItem[]}
@@ -37,7 +40,7 @@ function ShopInventory(shop) {
 
 require("util").inherits(ShopInventory, events.EventEmitter);
 
-ShopInventory.MAX_BUSY_FETCH_ATTEMPTS = 5;
+ShopInventory.MAX_BUSY_FETCH_ATTEMPTS = CFG.shop_max_fetch_attempts;
 
 /**
  * Update shop inventory

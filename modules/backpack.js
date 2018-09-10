@@ -1,7 +1,9 @@
+// Sfuminator.tf | Inventory Class
+
 module.exports = Backpack;
 
 var events = require("events");
-var Logs = require('../lib/logs.js');
+var LogLog = require('log-log');
 var Price = require("../modules/price.js");
 var TF2Item = require("./tf2/tf2Item.js");
 var SteamGames = require('../lib/steamGames.js');
@@ -16,7 +18,7 @@ var SteamGames = require('../lib/steamGames.js');
  */
 function Backpack(steamid, game, webApi) {
     this.webApi = webApi;
-    this.log = new Logs({applicationName: "Backpack " + steamid});
+    this.log = LogLog.create({applicationName: "Backpack " + steamid});
     this.game = game;
     this.owner = steamid;
     this.decayTime = 90000; // 1:30min

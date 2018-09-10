@@ -1,3 +1,5 @@
+// Sfuminator.tf | Collection of TF2 Constants and Identifiers
+
 module.exports = new TF2Constants();
 
 function TF2Constants() {

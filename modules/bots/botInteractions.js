@@ -1,6 +1,9 @@
+// Sfuminator.tf | Bot and User chat interactions
+
 module.exports = BotInteractions;
 
-var Logs = require("../../lib/logs.js");
+var LogLog = require("log-log");
+var CFG = require('./../../cfg.js');
 var Events = require('events');
 
 /**
@@ -12,10 +15,8 @@ function BotInteractions() {
      * @type {UserInteraction[]}
      */
     this.interactions = [];
-    this.moderatorSteamids = [
-        "***REMOVED***"
-    ];
-    this.log = new Logs({applicationName: "Bot Interaction", color: "cyan", dim: true});
+    this.moderatorSteamids = CFG.getAdmins();
+    this.log = LogLog.create({applicationName: "Bot Interaction", color: "cyan", dim: true});
     Events.EventEmitter.call(this);
 
     var self = this;

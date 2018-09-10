@@ -1,7 +1,9 @@
+// Sfuminator.tf | Users manager
+
 module.exports = Users;
 
 var events = require("events");
-var Logs = require('../lib/logs.js');
+var LogLog = require('log-log');
 var User = require("./user/user.js");
 
 /**
@@ -14,8 +16,8 @@ function Users(sfuminator) {
     this.sfuminator = sfuminator;
     this.db = this.sfuminator.db;
     this.webApi = this.sfuminator.webApi;
-    this.log = new Logs({applicationName: "Users", color: "cyan"});
-    this.log.setLevel(0);
+    this.log = LogLog.create({applicationName: "Users", color: "cyan"});
+    this.log.setDepthLevel(0);
     this._users = {};
     events.EventEmitter.call(this);
 }

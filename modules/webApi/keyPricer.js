@@ -1,6 +1,8 @@
+// Sfuminator.tf | Mann Co. Key Tracking and Pricing Web Api
+
 module.exports = KeyPricer;
 
-var Logs = require("../../lib/logs.js");
+var LogLog = require("log-log");
 var BackpackTFKeys = require("./keyPricer/backpackTfKeys.js");
 var TradeTFKeys = require("./keyPricer/tradeTfKeys.js");
 var Price = require("../price.js");
@@ -27,7 +29,7 @@ function KeyPricer() {
 
     this.backpackTFKeys = new BackpackTFKeys();
     this.tradeTFKeys = new TradeTFKeys();
-    this.log = new Logs({applicationName: "Key Pricer", color: "cyan", dim: true});
+    this.log = LogLog.create({applicationName: "Key Pricer", color: "cyan", dim: true});
 }
 
 KeyPricer.prototype.fetch = function (callback) {

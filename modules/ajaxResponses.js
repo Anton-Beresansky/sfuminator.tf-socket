@@ -1,3 +1,5 @@
+// Sfuminator.tf | Collection of Ajax Responses
+
 module.exports = AjaxResponses;
 
 /**
@@ -29,6 +31,7 @@ function AjaxResponses(sfuminator) {
     this.itemCantBeSold = {result: "error", message: "Selected item can't be sold", code: "cant_sell_item"};
     this.alreadyInTrade = {result: "error", message: "You are already in trade", code: "already_in_trade"};
     this.notInTrade = {result: "error", message: "You are not in trade", code: "not_in_trade"};
+    this.tradeActionNotAllowed = {result: "error", message: "This action can't be performed"};
     this.tradeAlreadyRequested = {
         result: "error",
         message: "Trade already requested.",

@@ -1,6 +1,8 @@
+// Sfuminator.tf | Keeping track shop items stock
+
 module.exports = ShopItemCount;
 
-var Logs = require("../../lib/logs.js");
+var LogLog = require("log-log");
 var ShopItem = require("../../modules/shop/inventory/shopItem.js");
 var TF2Item = require("../../modules/tf2/tf2Item.js");
 
@@ -10,7 +12,7 @@ var TF2Item = require("../../modules/tf2/tf2Item.js");
  * @returns {ShopItemCount}
  */
 function ShopItemCount() {
-    this.log = new Logs({applicationName: "Item count", color: "green", dim: true});
+    this.log = LogLog.create({applicationName: "Item count", color: "green", dim: true});
     this._counters = [];
 }
 

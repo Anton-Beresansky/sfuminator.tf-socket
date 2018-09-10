@@ -1,3 +1,5 @@
+// Sfuminator.tf | Private Stats Handler, reporting latest trades
+
 module.exports = LastTrades;
 
 var TF2Item = require('../tf2/tf2Item.js');

@@ -1,3 +1,5 @@
+// Sfuminator.tf | Private Stats Handler for pricing history
+
 module.exports = PriceHistory;
 
 var LogLog = require('log-log');

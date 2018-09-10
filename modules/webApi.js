@@ -1,8 +1,11 @@
+// Sfuminator.tf | Web Api Manager
+
 module.exports = WebApi;
 
-var BackpacksAPI = require("./backpacksApi.js");
-var TF2API = require("./tf2Api.js");
-var KeyPricer = require("./keyPricer.js");
+var BackpacksAPI = require("./webApi/backpacksApi.js");
+var TF2API = require("./webApi/tf2Api.js");
+var KeyPricer = require("./webApi/keyPricer.js");
+var CFG = require('./../cfg.js');
 
 /**
  * @param {Database} db_items
@@ -22,7 +25,7 @@ function WebApi(db_items, steamApi) {
     /**
      * @type {TF2Api}
      */
-    this.tf2 = new TF2API(this, "***REMOVED***", {debug: true});
+    this.tf2 = new TF2API(this, CFG.getApiKey('backpack_tf'), {debug: true});
     /**
      * @type {BackpacksApi}
      */

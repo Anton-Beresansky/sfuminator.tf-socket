@@ -1,8 +1,12 @@
+// Sfuminator.tf | Before this Node application Socket was directly on PHP,
+//               | this code is needed for backward compatibility, but probably not all of it (or none?)
+
 module.exports = BotPorting;
 
-var Logs = require("./lib/logs.js");
+var LogLog = require("log-log");
 var API = require("./lib/api.js");
 var Versioning = require("./lib/dataVersioning.js");
+var CFG = require('./cfg.js');
 
 /**
  * Bot porting class
@@ -15,9 +19,9 @@ function BotPorting(sfuminator) {
     this.shop = this.sfuminator.shop;
     this.users = this.sfuminator.users;
     this.db = this.sfuminator.db;
-    this.log = new Logs({applicationName: "v3 Bot Porting", color: "yellow", dim: true});
+    this.log = LogLog.create({applicationName: "v3 Bot Porting", color: "yellow", dim: true});
     this.site_api = new API("dev.sfuminator.tf");
-    this.site_key = "***REMOVED***";
+    this.site_key = CFG.v3_key;
 }
 
 BotPorting.prototype.requestAvailable = function (request) {

@@ -1,3 +1,5 @@
+// Sfuminator.tf | Price Class
+
 module.exports = Price;
 
 var TF2Currency = require("./tf2/tf2Currency.js");

@@ -1,6 +1,8 @@
+// Sfuminator.tf | Public statistics interface
+
 module.exports = Stats;
 
-var Logs = require("../lib/logs.js");
+var LogLog = require("log-log");
 var LastTrades = require('./stats/lastTrades.js');
 var PricesHistory = require('./stats/pricesHistory.js');
 
@@ -34,7 +36,7 @@ function Stats(sfuminator) {
      * @type {PriceHistory}
      */
     this.pricesHistory = new PricesHistory(this);
-    this.log = new Logs({applicationName: "Stats"});
+    this.log = LogLog.create({applicationName: "Stats"});
 }
 
 /**

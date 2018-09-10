@@ -1,3 +1,5 @@
+// Sfuminator.tf | Compression table for client api interface
+
 module.exports = new CompressionLookup();
 
 /**

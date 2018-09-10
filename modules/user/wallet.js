@@ -1,3 +1,5 @@
+// Sfuminator.tf | User Wallet Class
+
 module.exports = Wallet;
 
 var Price = require('../price.js');

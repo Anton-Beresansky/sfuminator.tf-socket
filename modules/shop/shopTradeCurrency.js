@@ -1,10 +1,13 @@
+// Sfuminator.tf | Shop Trade Currency, currency exchange manager for shop trades
+
 module.exports = ShopTradeCurrency;
 
 var events = require("events");
-var Logs = require("../../lib/logs.js");
+var LogLog = require("log-log");
 var TF2Constants = require("../tf2/tf2Constants.js");
 var Price = require("../price.js");
 var ShopItem = require("./inventory/shopItem.js");
+var CFG = require('./../../cfg.js');
 
 /**
  * @param {ShopTrade} shopTrade
@@ -24,7 +27,7 @@ function ShopTradeCurrency(shopTrade) {
     this.iSmelted = 0;
     this.importAssets();
 
-    this.log = new Logs({
+    this.log = LogLog.create({
         applicationName: "Shop Trade Currency " + this.shopTrade.getPartner().getSteamid(),
         color: "green"
     });
@@ -415,7 +418,7 @@ ShopTradeCurrency.prototype.canBuyWithKeys = function () {
     return false;
 };
 
-ShopTradeCurrency.KEYS_REFINED_MINIMUM_RATIO = 0.15; // Out of 100 refined, minimum of 15 keys
+ShopTradeCurrency.KEYS_REFINED_MINIMUM_RATIO = CFG.inventory_keys_refined_minimum_ratio; // Out of 100 refined, minimum of 15 keys
 
 ShopTradeCurrency.SORTED_CURRENCY_DEFINDEXES = {
     DEFAULT: [

@@ -1,7 +1,3 @@
-/**
- * TODO Test when buyer has only keys and when seller has only keys
- */
-
 process.on('warning', function (warning) {
     console.warn(warning.name);    // Print the warning name
     console.warn(warning.message); // Print the warning message
@@ -9,27 +5,19 @@ process.on('warning', function (warning) {
 });
 
 var Database = require('./lib/database.js');
-
-//>Items rework
 var SteamAPI = require('./lib/steamapi.js');
-var WebAPI = require('./modules/webApi/webApi.js');
-//<
-
+var WebAPI = require('./modules/webApi.js');
 var SfuminatorRequest = require('./modules/requests.js');
 var Sfuminator = require('./sfuminator.js');
 var MaxRequestsHandler = require('./maxRequestsHandler.js');
 var CFG = require("./cfg.js");
 
-var httpListenPort = CFG.getHTTPListenPort(); //dev ***REMOVED*** | main ***REMOVED***
+var httpListenPort = CFG.getHTTPListenPort();
 
-var db = new Database({user: "root", password: "***REMOVED***", database: "my_sfuminator"});
-
-//>Items rework
-var db_items = new Database({user: "root", password: "***REMOVED***", database: "my_sfuminator_items"});
-var steamAPI = new SteamAPI("***REMOVED***");
+var db = new Database(CFG.getDatabaseCredentials('my_sfuminator'));
+var db_items = new Database(CFG.getDatabaseCredentials('my_sfuminator_items'));
+var steamAPI = new SteamAPI(CFG.getApiKey('steam'));
 var webApi = new WebAPI(db_items, steamAPI);
-//<
-
 var reqHandler = new MaxRequestsHandler();
 
 webApi.onceReady(function () {

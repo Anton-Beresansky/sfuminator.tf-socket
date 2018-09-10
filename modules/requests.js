@@ -1,8 +1,11 @@
+// Sfuminator.tf | Wrapper for Ajax Requests
+
 module.exports = SfuminatorRequest;
 
 var events = require("events");
 var qs = require("querystring");
-var Logs = require("../lib/logs.js");
+var LogLog = require("log-log");
+var CFG = require('./../cfg.js');
 
 /**
  * General purpose Sfuminator Request Class<br>
@@ -12,14 +15,14 @@ var Logs = require("../lib/logs.js");
  * @returns {SfuminatorRequest}
  */
 function SfuminatorRequest(req, body) {
-    this.log = new Logs({applicationName: "Sfuminator Request", color: "magenta", dim: true});
-    this.log.setLevel(0);
+    this.log = LogLog.create({applicationName: "Sfuminator Request", color: "magenta", dim: true});
+    this.log.setDepthLevel(0);
     this.log.debug("Got new request", 3);
     this.log.debug(body, 3);
     this.req = req;
     this.body = body;
     this.requester = {privilege: "", id: ""};
-    this._rootKey = "***REMOVED***";
+    this._rootKey = CFG.getApiKey('root');
     this._validHeaderParameters = {
         host: function (value) {
             return value === 'sfuminator.tf' || value === "dev.sfuminator.tf";

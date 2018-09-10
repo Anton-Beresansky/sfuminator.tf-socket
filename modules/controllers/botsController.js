@@ -1,11 +1,14 @@
+// Sfuminator.tf | Managing trading bots and assets transfers
+
 module.exports = BotsController;
 
-var Logs = require('./../../lib/logs.js');
+var LogLog = require('log-log');
 var TraderBot = require('../bots/traderBot.js');
 var BotCommands = require('../bots/botCommands.js');
 var TransferNodesCluster = require('./assetsTransfer.js');
 var TF2Constants = require("./../tf2/tf2Constants.js");
 var SteamTradeErrorSolver = require("./steamTradeErrorSolver.js");
+var CFG = require('./../../cfg.js');
 
 /**
  * @class BotsController
@@ -26,16 +29,16 @@ function BotsController(sfuminator) {
      */
     this.tradeBots = [];
 
-    this.preSmeltedQuantity = 12;
-    this.preSmeltMaxQuantity = this.preSmeltedQuantity * 2;
-    this.busyDistributionManagerTimeoutInterval = ***REMOVED***00; //5 minutes
+    this.preSmeltedQuantity = CFG.bot_pre_smelted_quantity;
+    this.preSmeltMaxQuantity = CFG.bot_pre_smelted_max_quantity;
+    this.busyDistributionManagerTimeoutTime = CFG.bot_busy_distribution_manager_timeout_time; //5 minutes
 
     /**
      * @type {SteamTradeErrorSolver}
      */
     this.steamTradeErrorSolver = new SteamTradeErrorSolver(this.sfuminator);
     this.commands = new BotCommands(this.sfuminator);
-    this.log = new Logs({applicationName: "Bots Controller", color: "blue", dim: true});
+    this.log = LogLog.create({applicationName: "Bots Controller", color: "blue", dim: true});
 }
 
 BotsController.prototype._bindHandlers = function () {
@@ -60,7 +63,7 @@ BotsController.prototype._bindBotHandler = function (bot) {
 };
 
 BotsController.prototype.loadBots = function () {
-    var tradeBotSteamids = this.sfuminator.getCFG().getTradeBotSteamids();
+    var tradeBotSteamids = CFG.getTradeBotSteamids();
     for (var i = 0; i < tradeBotSteamids.length; i += 1) {
         this.tradeBots.push(new TraderBot(this.sfuminator.shop.getBotUser(tradeBotSteamids[i]), this.sfuminator));
     }
@@ -281,7 +284,7 @@ BotsController.prototype.preSmeltMetal = function () {
     }
 };
 
-BotsController.prototype.manageItemsDistribution = function () {
+BotsController.prototype.manageItemsDistribution = function () { // Mess but works
     var compensationSpaceLimitPercentile = 0.95;
     var compensationMarginPercentile = 0.15;
 
@@ -294,7 +297,7 @@ BotsController.prototype.manageItemsDistribution = function () {
                     self.log.warning("Distribution manager didn't finish yet, resetting busy status");
                     self.managingDistribution = false;
                 }
-            }, this.busyDistributionManagerTimeoutInterval);
+            }, this.busyDistributionManagerTimeoutTime);
         }
         return;
     }

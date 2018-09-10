@@ -1,4 +1,6 @@
-var Logs = require("../../lib/logs.js");
+// Sfuminator.tf | TF2 Currency handler
+
+var LogLog = require("log-log");
 module.exports = new TF2Currency();
 
 /**
@@ -8,7 +10,7 @@ module.exports = new TF2Currency();
  * @returns {TF2Currency}
  */
 function TF2Currency() {
-    this.log = new Logs({applicationName: "TF2 Currency", color: "blue"});
+    this.log = LogLog.create({applicationName: "TF2 Currency", color: "blue"});
     this._currency = {};
 }
 

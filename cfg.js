@@ -3,7 +3,7 @@ var SENTRYFILES_PATH = './sentryFiles/';
 var fs = require("fs");
 var crypto = require("crypto");
 var SteamTotp = require('steam-totp');
-var Logs = require("./lib/logs.js");
+var LogLog = require("log-log");
 
 /**
  * Class for socket configuration and loading cfg
@@ -11,9 +11,65 @@ var Logs = require("./lib/logs.js");
  * @constructor
  */
 function CFG(name) {
-    this.log = new Logs({applicationName: "CFG", color: "red", dim: true});
+    this.log = LogLog.create({applicationName: "CFG", color: "red", dim: true});
     this.setConfigFile(name);
 }
+
+/*
+CFG Structure
+{
+  "name": "",
+  "root_key": "",
+  "application": "", // "main" | "dev"
+  "http_listen_port": , // port number
+  "bot_friend_list_limit": 170,
+  "bot_automatic_trade_cancel_time": 600000,
+  "bot_pre_smelted_quantity": 12,
+  "bot_pre_smelted_max_quantity": 24,
+  "bot_busy_distribution_manager_timeout_time": ***REMOVED***00,
+  "shop_max_fetch_attempts": 5,
+  "shop_versioning_snapshots": 10,
+  "trade_add_friend_timeout": 120000,
+  "trade_check_escrow_max_attempts": 2,
+  "inventory_keys_refined_minimum_ratio": 0.15,
+  "inventory_fetch_timeout": ***REMOVED***,
+  "sfuminator": {
+    "admin": [ // Steamid list
+      "***REMOVED***"
+    ],
+    "market_disabled": [ // Steamid list
+      "76561198045065602"
+    ],
+    "bots": {
+      "trading": {
+        "76561198195936315": {
+          "steamid": "",
+          "username": "",
+          "password": "",
+          "tradeToken": "",
+          "steamApiKey": "",
+          "steamGuardCode": "",
+          "mobileAuth": {
+                //maFile object
+          }
+        },
+        "76561198045065602": {
+
+        },
+        "76561198228007284": {
+
+        },
+        "76561198145778912": {
+
+        }
+      },
+      "other": {
+
+      }
+    }
+  }
+}
+ */
 
 CFG.prototype.create = function (name) {
     return new CFG(name);
@@ -37,20 +93,20 @@ CFG.prototype.getHTTPListenPort = function () {
     return this.http_listen_port;
 };
 
-CFG.prototype.getConnectCloudPort = function () {
-    return this.cloud_ports.connect;
-};
-
-CFG.prototype.getListenCloudPort = function () {
-    return this.cloud_ports.listen;
-};
-
 /**
  * Admin steam ids
  * @returns {Array}
  */
 CFG.prototype.getAdmins = function () {
     return this.sfuminator.admin;
+};
+
+CFG.prototype.getDatabaseCredentials = function (db_name) {
+    return {user: this.db_credentials.user, password: this.db_credentials.password, database: db_name};
+};
+
+CFG.prototype.getApiKey = function (name) {
+    return this.api_keys[name];
 };
 
 /**
@@ -129,7 +185,7 @@ var events = require('events');
 function BotCredentials(data) {
     this.botCredentials = data;
     this.steamid = this.botCredentials.steamid;
-    this.log = new Logs({applicationName: "BotCredentials " + this.steamid, color: "red", dim: true});
+    this.log = LogLog.create({applicationName: "BotCredentials " + this.steamid, color: "red", dim: true});
 
     events.EventEmitter.call(this);
     this._bindHandlers();

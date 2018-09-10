@@ -1,3 +1,5 @@
+// Sfuminator.tf | Bot chat control interface
+
 module.exports = BotCommands;
 
 var Price = require('../price.js');

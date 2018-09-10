@@ -1,6 +1,8 @@
+// Sfuminator.tf | Shop handler
+
 module.exports = Shop;
 var events = require("events");
-var Logs = require("../lib/logs.js");
+var LogLog = require("log-log");
 var Price = require("./price.js");
 var UIDs = require("./tf2/uids.js");
 var TF2Currency = require("./tf2/tf2Currency.js");
@@ -13,6 +15,7 @@ var Section = require("./shop/shopSection.js");
 var Reservations = require("./shop/shopReservations.js");
 var ItemCount = require("./shop/shopItemCount.js");
 var Search = require('./shop/shopSearch.js');
+var CFG = require('./../cfg.js');
 
 /**
  * General purpose Shop class
@@ -26,7 +29,7 @@ function Shop(sfuminator) {
     this.db = this.sfuminator.db;
     this.interrupts = this.sfuminator.interrupts;
     this.users = this.sfuminator.users;
-    this.log = new Logs({applicationName: "Shop", color: "grey", dim: true});
+    this.log = LogLog.create({applicationName: "Shop", color: "grey", dim: true});
 
     this.ratio = new ShopRatio(this.db);
     this.uids = UIDs;
@@ -324,9 +327,10 @@ Shop.prototype.filterMarketItems = function (backpack) {
 };
 
 Shop.prototype.canBeMarketed = function (item) {
-    if (item.getItem() instanceof TF2Item) {
-        return (item.canBeMarketed() && this.count.get(item.getItem()) < this.getLimit(item));
-    }
+    // !!!Market disabled for unreliability reasons. All items are bypassed and unmarketable!!!
+    // if (item.getItem() instanceof TF2Item) {
+    //     return (item.canBeMarketed() && this.count.get(item.getItem()) < this.getLimit(item));
+    // }
     return false;
 };
 
@@ -393,7 +397,7 @@ Shop.prototype.getBotUser = function (steamid) {
  */
 Shop.prototype.getBots = function () {
     var bots = [];
-    var steamids = this.sfuminator.getCFG().getBotSteamids();
+    var steamids = CFG.getBotSteamids();
     for (var i = 0; i < steamids.length; i += 1) {
         bots.push(this.users.get(steamids[i]));
     }

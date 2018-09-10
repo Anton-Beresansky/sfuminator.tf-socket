@@ -1,3 +1,5 @@
+// Sfuminator.tf | Local shop item ID manager and db management
+
 module.exports = ShopItemIDs;
 
 var LogLog = require("log-log");

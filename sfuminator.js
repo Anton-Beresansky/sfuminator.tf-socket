@@ -1,7 +1,9 @@
+// Sfuminator.tf | Sfuminator Socket
+
 module.exports = Sfuminator;
 var events = require('events');
 var CFG = require('./cfg.js');
-var Logs = require('./lib/logs.js');
+var LogLog = require('log-log');
 var Users = require('./modules/users.js');
 var Shop = require('./modules/shop.js');
 var TradeConstants = require("./modules/trade/tradeConstants.js");
@@ -32,8 +34,8 @@ function Sfuminator(webApi, db) {
         dev: CFG.create('socket_config_dev.json'),
         main: CFG.create('socket_config_main.json')
     };
-    this.log = new Logs({applicationName: "Sfuminator", color: "blue"});
-    this.log.setLevel(0);
+    this.log = LogLog.create({applicationName: "Sfuminator", color: "blue"});
+    this.log.setDepthLevel(0);
     this.admins = CFG.getAdmins();
     this.interrupts = new Interrupts([
         {name: "updatePrices", delay: 60 * 1000, tag: "internal"},  //1 Minute
@@ -66,10 +68,6 @@ function Sfuminator(webApi, db) {
     this.stats = new Stats(this);
     this.status = new TradeStatus(this);
     this.adminSocket = new AdminSocket(this);
-
-    if (TestingEnabled) {
-        //this.priceMachine = new PriceMachine(this);
-    }
 
     this.activeTrades = [];
     this.shopTrade_decay = 10000;
@@ -322,10 +320,6 @@ Sfuminator.prototype.onAction = function (request, callback) {
             break;
         case "adminSocket":
             this.adminSocket.request(request, callback);
-            break;
-        case "i_ve_been_here":
-            var justForValve = new Valve(request);
-            justForValve.process(callback);
             break;
         default:
             callback(this.responses.methodNotRecognised);
@@ -639,13 +633,6 @@ Sfuminator.prototype.verifyTradeOfferToken = function (steamid, token, callback)
     } else {
         callback(false);
     }
-};
-
-/**
- * @returns {CFG}
- */
-Sfuminator.prototype.getCFG = function () {
-    return CFG;
 };
 
 /**

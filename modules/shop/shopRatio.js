@@ -1,6 +1,8 @@
+// Sfuminator.tf | Interface for Shop sell/buy pricing
+
 module.exports = ShopRatio;
 
-var Logs = require("../../lib/logs.js");
+var LogLog = require("log-log");
 
 /**
  * @class ShopRatio
@@ -10,7 +12,7 @@ var Logs = require("../../lib/logs.js");
  */
 function ShopRatio(db) {
     this.db = db;
-    this.log = new Logs({applicationName: "TF2 Shop ratio", color: "green", dim: true});
+    this.log = LogLog.create({applicationName: "TF2 Shop ratio", color: "green", dim: true});
     this.hats = {};
 }
 

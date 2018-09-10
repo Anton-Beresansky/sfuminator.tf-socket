@@ -1,6 +1,8 @@
+// Sfuminator.tf | Shop Trade Handler, main trading instance
+
 module.exports = ShopTrade;
 var events = require("events");
-var Logs = require("../../lib/logs.js");
+var LogLog = require("log-log");
 var ShopItem = require("./inventory/shopItem.js");
 var Market = require("../market.js");
 var Price = require("../price.js");
@@ -9,6 +11,7 @@ var TradeConstants = require("../trade/tradeConstants.js");
 var SteamTradeOffer = require("../../lib/steamTradeOffer.js");
 var SteamTradeError = require("../../lib/steamTradeError.js");
 var ShopTradeCurrency = require("./shopTradeCurrency.js");
+var CFG = require('./../../cfg.js');
 
 //Shop Trade Status: hold -> (noFriend) -> active -> sent -> closed/accepted/declined
 
@@ -19,7 +22,7 @@ var ShopTradeCurrency = require("./shopTradeCurrency.js");
  * @event newStatus
  * @event newStatusInfo
  * @param {Sfuminator} sfuminator The sfuminator instance
- * @param {User} partner Shop trade partner
+ * @param {User} partner Shop trade part.ner
  * @returns {ShopTrade}
  * @constructor
  */
@@ -50,7 +53,7 @@ function ShopTrade(sfuminator, partner) {
      */
     this.currency = new ShopTradeCurrency(this);
 
-    this.log = new Logs({applicationName: "Shop Trade " + this.partner.getSteamid(), color: "green"});
+    this.log = LogLog.create({applicationName: "Shop Trade " + this.partner.getSteamid(), color: "green"});
     this._available_modes = ["offer", "manual"];
     this.last_update_date = new Date();
     this.assets_limit = {partner: 40, shop: 40, max_key_price: 100};
@@ -68,9 +71,9 @@ function ShopTrade(sfuminator, partner) {
 
 require("util").inherits(ShopTrade, events.EventEmitter);
 
-ShopTrade.addFriendTimeoutTime = 1000 * 60 * 2; //2 min
+ShopTrade.addFriendTimeoutTime = CFG.trade_add_friend_timeout; //2 min
 
-ShopTrade.CHECK_ESCROW_MAX_ATTEMPTS = 2;
+ShopTrade.CHECK_ESCROW_MAX_ATTEMPTS = CFG.trade_check_escrow_max_attempts;
 
 ShopTrade.TYPE = {
     NORMAL: 0,
@@ -1247,7 +1250,7 @@ function ShopTradeAssetDataStructure(shopItem) {
 function TradeDb(trade, db) {
     this.trade = trade;
     this.db = db;
-    this.log = new Logs({
+    this.log = LogLog.create({
         applicationName: "TradeDB " + this.trade.getPartner().getSteamid(),
         color: "green",
         dim: true

@@ -1,7 +1,9 @@
+// Sfuminator.tf | Shop Section Class, instance group shop items to section
+
 module.exports = Section;
 //Section changes (add, remove) are applied only on commit
 
-var Logs = require("../../lib/logs.js");
+var LogLog = require("log-log");
 var Versioning = require("../../lib/dataVersioning.js");
 var ShopItem = require('./inventory/shopItem.js');
 var CompressionLookup = require("./inventory/compressionTable.js");
@@ -20,10 +22,10 @@ function Section(shop, type) {
     this.compressedItems = [];
     this.toAdd = [];
     this.toRemove = [];
-    this.log = new Logs({applicationName: "Section " + type, color: "green"});
+    this.log = LogLog.create({applicationName: "Section " + type, color: "green"});
     if (!this.isMine() && !this.isMarket()) {
         this.versioning = new Versioning(40, "section " + type);
-        this.log.setLevel(1);
+        this.log.setDepthLevel(1);
     }
 }
 

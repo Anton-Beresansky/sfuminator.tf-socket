@@ -1,3 +1,5 @@
+// Sfuminator.tf | Private interface for administration purposes
+
 module.exports = AdminSocket;
 
 var LogLog = require('log-log');
@@ -12,15 +14,7 @@ function AdminSocket(sfuminator) {
     this.db = this.sfuminator.db;
     this.queries = AdminSocket.QUERIES;
     this.log = LogLog.create({applicationName: "Admin Socket", color: "yellow"});
-    this.init();
 }
-
-AdminSocket.prototype.init = function () {
-   /* if (fs.existsSync('bufferedTradedItems')) {
-        this.log.debug("Reading traded items...");
-        this.tradedItems = JSON.parse(fs.readFileSync('bufferedTradedItems'));
-    }*/
-};
 
 /**
  * @param request {SfuminatorRequest}
@@ -52,28 +46,6 @@ AdminSocket.prototype.getUIDs = function (callback) {
 AdminSocket.prototype.getItemHistory = function (callback, request) {
     this.sfuminator.stats.pricesHistory.readItemHistory(request.getData().uid, callback);
 };
-
-/*
-AdminSocket.prototype.getTradedItems = function (callback) {
-    this.log.debug("Getting traded items...");
-    var self = this;
-    if (this.tradedItems) {
-        callback(null, {path: "bti"});
-    } else {
-        this.db.connect(function (connection) {
-            connection.query(self.queries.getTradedItems(), function (result) {
-                connection.release();
-                self.log.debug("Query ended");
-                console.log(JSON.stringify(result).slice(0, 200));
-                self.tradedItems = self.compressTradedItems(result);
-                self.log.debug("Storing traded items... " + result.length + " records");
-                fs.writeFileSync('bufferedTradedItems', JSON.stringify({items: self.tradedItems}));
-                self.log.debug("Done");
-                callback(null, self.tradedItems.toString('utf8'));
-            });
-        });
-    }
-};*/
 
 AdminSocket.prototype.getSchema = function (callback) {
     callback(null, this.sfuminator.webApi.backpacks.tf2.schema);

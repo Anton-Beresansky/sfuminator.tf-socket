@@ -1,3 +1,5 @@
+// Sfuminator.tf | Interface for fetching, reading and storing inventories information
+
 //> get: (owner, callback, options)
 //- owner: steamid
 //- callback: steam backpack object + last_update_date property
@@ -34,6 +36,7 @@ module.exports = BackpacksApi;
 var events = require("events");
 var ItemsDatabase = require('./itemsDatabase.js');
 var Loglog = require('log-log');
+var CFG = require('./../../cfg.js');
 
 /**
  * @param db {Database}
@@ -58,7 +61,7 @@ function BackpacksApi(db, steam, tf2, options) {
 
 require("util").inherits(BackpacksApi, events.EventEmitter);
 
-BackpacksApi.FETCH_ANTI_SPAM_INTERVAL = ***REMOVED***;
+BackpacksApi.FETCH_ANTI_SPAM_INTERVAL = CFG.inventory_fetch_timeout;
 
 /**
  * If Array: List of items id

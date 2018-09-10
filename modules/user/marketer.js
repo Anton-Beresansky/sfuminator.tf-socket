@@ -1,3 +1,5 @@
+// Sfuminator.tf | User Market Class
+
 module.exports = Marketer;
 
 var Section = require("../shop/shopSection.js");

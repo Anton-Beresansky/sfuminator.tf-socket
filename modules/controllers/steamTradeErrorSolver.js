@@ -1,7 +1,9 @@
+// Sfuminator.tf | Various handlers build for solving trade errors
+
 module.exports = SteamTradeErrorSolver;
 
 var SteamTradeError = require("./../../lib/steamTradeError.js");
-var Logs = require("./../../lib/logs.js");
+var LogLog = require("log-log");
 
 /**
  * @param {Sfuminator} sfuminator
@@ -16,7 +18,7 @@ function SteamTradeErrorSolver(sfuminator) {
      * @type {SteamTradeOffer[]}
      */
     this.heldTrades = [];
-    this.log = new Logs({applicationName: "Trade Error Solver", color: "magenta"});
+    this.log = LogLog.create({applicationName: "Trade Error Solver", color: "magenta"});
 }
 
 /**

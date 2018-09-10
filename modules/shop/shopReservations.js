@@ -1,6 +1,8 @@
+// Sfuminator.tf | Shop Reservations Manager, keep track of items in hold during trade
+
 module.exports = Reservations;
 
-var Logs = require("../../lib/logs.js");
+var LogLog = require("log-log");
 var ReservationsVersioning = require("../../lib/dataVersioning.js");
 
 /**
@@ -11,7 +13,7 @@ var ReservationsVersioning = require("../../lib/dataVersioning.js");
  */
 function Reservations(db) {
     this.db = db;
-    this.log = new Logs({applicationName: "Reservations", color: "green"});
+    this.log = LogLog.create({applicationName: "Reservations", color: "green"});
     this.versioning = new ReservationsVersioning(50, "Reservations");
     /**
      * Reservation list

@@ -1,7 +1,9 @@
+// Sfuminator.tf | User Class
+
 module.exports = User;
 
 var events = require("events");
-var Logs = require('../../lib/logs.js');
+var LogLog = require('log-log');
 var Backpack = require('../backpack.js');
 var ShopTrade = require('../shop/shopTrade.js');
 var SteamGames = require('../../lib/steamGames.js');
@@ -28,7 +30,7 @@ function User(steamid, sfuminator) {
     this.webApi = this.sfuminator.webApi;
     this.tf2Backpack = new Backpack(steamid, SteamGames.TF2, this.webApi);
     this.marketer = new Marketer(this);
-    this.log = new Logs({applicationName: "User " + JSON.stringify(steamid), color: "cyan"});
+    this.log = LogLog.create({applicationName: "User " + JSON.stringify(steamid), color: "cyan"});
     this.decayTime = 1000 * 60 * 60 * 8; // 8hrs
     this.last_use_date = new Date();
     this.databaseHasBeenLoaded = false;

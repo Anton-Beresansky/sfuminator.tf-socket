@@ -1,6 +1,8 @@
+// Sfuminator.tf | Shop item search algorithm
+
 module.exports = Search;
 
-var Logs = require("../../lib/logs.js");
+var LogLog = require("log-log");
 
 /**
  * Generic purpose search shop items class
@@ -11,7 +13,7 @@ var Logs = require("../../lib/logs.js");
 function Search(shop, ajaxResponses) {
     this.shop = shop;
     this.ajaxResponses = ajaxResponses;
-    this.log = new Logs({applicationName: "Search"});
+    this.log = LogLog.create({applicationName: "Search"});
 }
 
 /**

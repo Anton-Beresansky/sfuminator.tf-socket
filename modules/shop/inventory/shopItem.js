@@ -1,3 +1,5 @@
+// Sfuminator.tf | Shop Item Class
+
 module.exports = ShopItem;
 
 var CompressionLookup = require("./compressionTable.js");
@@ -119,6 +121,11 @@ ShopItem.prototype.getType = function () {
     }
 };
 
+/**
+ * While Shop.canBeMarketed will check weather an item can be marketed or not taking care of limits or external factors
+ * this method will check if the item itself is an item that could be marketed
+ * @returns {*}
+ */
 ShopItem.prototype.canBeMarketed = function () {
     var gameItem = this.getItem();
     if (gameItem instanceof TF2Item) {
@@ -238,13 +245,6 @@ ShopItem.prototype.getMinePrice = function () {
         var item = this.getItem();
         var originalPrice = item.getPrice();
         if (item.isHat()) {
-            //Cut price we pay if maximum exceeded
-            /*
-             if (originalPrice.toMetal() > this.shop.ratio.hats.weBuy.maximum) {
-             originalPrice = new Price(this.shop.ratio.hats.weBuy.maximum, Price.REFINED_METAL);
-             }
-             */
-
             //Apply ratio to price
             if (originalPrice.toMetal() === 1.66) {
                 finalPrice = new Price(this.shop.ratio.hats.weBuy.default166, Price.REFINED_METAL);
@@ -255,35 +255,21 @@ ShopItem.prototype.getMinePrice = function () {
                 }
                 finalPrice = new Price(parseInt(originalPrice.toScrap() * ratio), Price.SCRAP_METAL);
             }
-
-            //Compensate price if it's lower than the minimum we pay
-            /*if (finalPrice.toMetal() < this.shop.ratio.hats.weBuy.minimum) {
-             finalPrice = new Price(this.shop.ratio.hats.weBuy.minimum, Price.REFINED_METAL);
-             }*/
+            //Compensate price if it's lower than the minimum
             if (finalPrice.toScrap() === 0) {
                 finalPrice = new Price(1, Price.SCRAP_METAL);
             }
         } else if (item.isStrangeWeapon()) {
-            //Cut
-            /*
-             if (originalPrice.toMetal() > this.shop.ratio.strange.weBuy.maximum) {
-             originalPrice = new Price(this.shop.ratio.strange.weBuy.maximum, Price.REFINED_METAL);
-             }
-             */
-
             //Ratio
             finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.strange.weBuy.normal), Price.SCRAP_METAL);
             //Compensate
-            /*if (finalPrice.toMetal() < this.shop.ratio.strange.weBuy.minimum) {
-             finalPrice = new Price(this.shop.ratio.strange.weBuy.minimum, Price.REFINED_METAL);
-             }*/
             if (finalPrice.toScrap() === 0) {
                 finalPrice = new Price(1, Price.SCRAP_METAL);
             }
         } else if (item.isTaunt()) {
             finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.hats.weBuy.normal), Price.SCRAP_METAL);
         } else if (item.isPaint() || this.item.isDecorated() || this.item.isTool() || this.item.isStrangePart()) {
-            //A bit higher than normal (0.01)
+            //A bit higher than normal
             finalPrice = new Price(parseInt(originalPrice.toScrap() * this.shop.ratio.hats.weBuy.lowTier), Price.SCRAP_METAL);
         } else {
             finalPrice = Price(0);

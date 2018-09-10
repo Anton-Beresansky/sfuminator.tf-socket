@@ -1,3 +1,5 @@
+// Sfuminator.tf | Collection of trading Constants and Identifiers
+
 module.exports = new TradeConstants();
 
 /**
