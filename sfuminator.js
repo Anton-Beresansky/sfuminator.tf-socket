@@ -16,10 +16,6 @@ var BotPorting = require('./v3_bot_porting.js');
 var AdminSocket = require('./modules/adminSocket.js');
 var Valve = require("./valve.js");
 
-//Test modules
-//var PriceMachine = require('./modules/testing/priceMachine.js');
-var TestingEnabled = false;
-
 /**
  * General purpose Sfuminator class
  * @param {WebApi} webApi
