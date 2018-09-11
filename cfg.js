@@ -26,16 +26,16 @@ CFG Structure
   "bot_automatic_trade_cancel_time": 600000,
   "bot_pre_smelted_quantity": 12,
   "bot_pre_smelted_max_quantity": 24,
-  "bot_busy_distribution_manager_timeout_time": ***REMOVED***00,
+  "bot_busy_distribution_manager_timeout_time": 300000,
   "shop_max_fetch_attempts": 5,
   "shop_versioning_snapshots": 10,
   "trade_add_friend_timeout": 120000,
   "trade_check_escrow_max_attempts": 2,
   "inventory_keys_refined_minimum_ratio": 0.15,
-  "inventory_fetch_timeout": ***REMOVED***,
+  "inventory_fetch_timeout": 3000,
   "sfuminator": {
     "admin": [ // Steamid list
-      "***REMOVED***"
+      "76561197992634049"
     ],
     "market_disabled": [ // Steamid list
       "76561198045065602"

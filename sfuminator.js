@@ -14,7 +14,6 @@ var TradeStatus = require('./modules/trade/status.js');
 var Interrupts = require('./lib/interrupts.js');
 var BotPorting = require('./v3_bot_porting.js');
 var AdminSocket = require('./modules/adminSocket.js');
-var Valve = require("./valve.js");
 
 /**
  * General purpose Sfuminator class
@@ -34,7 +33,7 @@ function Sfuminator(webApi, db) {
         {name: "updateKeyPrice", delay: 2 * 60 * 60 * 1000, tag: "global"}, // 2 Hours
         {name: "updateTF2Data", delay: 3 * 60 * 60 * 1000, tag: "global"}, //3 Hours
         {name: "updateShopInventory", delay: 4 * 1000, tag: "internal"}, //4 Seconds
-        {name: "updateShopCurrentID", delay: ***REMOVED***, tag: "internal"},
+        {name: "updateShopCurrentID", delay: 3000, tag: "internal"},
         {name: "updateActiveTrades", delay: 1.5 * 1000, tag: "internal"}, //1.5 Seconds
         {name: "updateStats", delay: 1000, tag: "global"},  //1 Second
         {name: "updateTradeStatus", delay: 1000, tag: "global"}, //1 Second
@@ -637,7 +636,7 @@ Sfuminator.prototype.getBotsController = function () {
 Sfuminator.prototype._cleanBuggedReservations = function () {
     var self = this;
     this.db.connect(function (connection) {
-        connection.query("DELETE FROM `shop_reservations` WHERE `reservation_date`<'" + (new Date(Date.now() - ***REMOVED***000).toMysqlFormat()) + "'", function (result) {
+        connection.query("DELETE FROM `shop_reservations` WHERE `reservation_date`<'" + (new Date(Date.now() - 3000000).toMysqlFormat()) + "'", function (result) {
             connection.release();
             self.log.debug("Boh.. io queste di un'ora fa le cancello " + result);
         });

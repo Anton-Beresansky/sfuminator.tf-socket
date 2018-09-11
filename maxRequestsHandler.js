@@ -20,7 +20,7 @@ function MaxRequestsHandler() {
     var self = this;
     setInterval(function () {
         self.cleanOldRequests();
-    }, this.requests_window_seconds * ***REMOVED***);
+    }, this.requests_window_seconds * 3000);
     setInterval(function () {
         var clients = 0;
         var users = 0;
