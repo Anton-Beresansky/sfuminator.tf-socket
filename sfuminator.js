@@ -30,10 +30,6 @@ var TestingEnabled = false;
 function Sfuminator(webApi, db) {
     this.webApi = webApi;
     this.db = db;
-    this.config = {
-        dev: CFG.create('socket_config_dev.json'),
-        main: CFG.create('socket_config_main.json')
-    };
     this.log = LogLog.create({applicationName: "Sfuminator", color: "blue"});
     this.log.setDepthLevel(0);
     this.admins = CFG.getAdmins();

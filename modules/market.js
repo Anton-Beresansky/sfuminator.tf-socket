@@ -6,6 +6,7 @@ var Price = require('./price.js');
 var LogLog = require('log-log');
 var events = require("events");
 var ShopItem = require('./shop/inventory/shopItem.js');
+var CFG = require('./../cfg.js');
 
 /*
 
@@ -513,17 +514,16 @@ Market.prototype._updateShopID = function (dbItem) {
 
 Market.prototype._resolveItemStatus = function (dbItem) {
     var self = this;
-    var config = self.sfuminator.config;
     this._fetchItemHistory(dbItem, function (history) {
         self.fixerLog.debug("Found history for item: " + dbItem.original_id);
         var startingPointFound = 0;
         for (var i = 0; i < history.length; i += 1) {
             var historyItem = history[i];
             if (startingPointFound > 0) { //Once starting point is found check owner
-                if (config.dev.isBot(historyItem.owner) || config.main.isBot(historyItem.owner)) {
+                if (CFG.isBot(historyItem.owner)) {
                     startingPointFound += 1;
                 } else if (startingPointFound === 1) {
-                    self.fixerLog.error("Starting point just found and next owner is not bot?? " + historyItem.id);
+                    self.fixerLog.warning("Starting point just found and next owner is not bot?? " + historyItem.id);
                 } else {
                     var marketItem = self.getItem(dbItem.marketed_shop_id);
                     if (marketItem) {
