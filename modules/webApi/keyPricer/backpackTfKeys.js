@@ -86,7 +86,7 @@ BackpackTFKeys.prototype.parsePages = function (callback) {
                 var listing = $listing.find(".listing-item > div");
                 var userID = listing.attr("data-listing_account_id");
                 var refined_price = parseFloat(listing.attr("data-listing_price").slice(0, -4));
-                var intent = parseInt(listing.attr("data-listing_intent")) ? "sell" : "buy";
+                var intent = listing.attr("data-listing_intent");
                 listings[listingID] = {steamid: userID, metal_price: refined_price, intent: intent};
             }
             go();
